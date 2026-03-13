@@ -1,0 +1,60 @@
+# Agenda GenZ — App de Agendamento para Profissionais da Beleza
+
+## Descrição
+
+Agenda GenZ é um aplicativo móvel gratuito de agendamento voltado para profissionais autônomos da beleza no Brasil. O app está disponível para iOS (iPhone) e Android e permite que profissionais gerenciem seus clientes, serviços, horários e finanças de forma simples e eficiente.
+
+## Para quem é este app
+
+- Nail designers e manicures
+- Lash designers / extensionistas de cílios
+- Cabeleireiras e cabeleireiros
+- Barbeiros
+- Massoterapeutas e esteticistas
+- Podólogos
+- Micropigmentadores
+- Qualquer profissional autônomo da área da beleza que precisa agendar horários com clientes
+
+## Funcionalidades principais
+
+1. Agenda de agendamentos com visualização diária, semanal e mensal
+2. Cadastro e gestão de clientes (nome, telefone, histórico, preferências)
+3. Cadastro de serviços com preços e duração
+4. Lembretes automáticos para clientes (reduz faltas e cancelamentos)
+5. Controle financeiro básico (receitas, serviços realizados)
+6. Relatórios de desempenho (serviços mais populares, horários de pico)
+7. Exportação de dados em Excel
+8. Funcionamento offline (agenda funciona sem internet)
+9. Link de agendamento online para compartilhar com clientes
+
+## Planos e preços
+
+- **Plano Gratuito**: 90 dias de acesso completo + funcionalidades básicas sem limite de tempo
+- **Plano Mensal**: R$ 9,99/mês — todas as funcionalidades
+- **Plano Trimestral**: R$ 24,99/trimestre
+- **Plano Semestral**: R$ 44,99/semestre
+- **Plano Anual**: R$ 71,99/ano (melhor custo-benefício)
+
+## Disponibilidade
+
+- iOS: App Store
+- Android: Google Play
+- Gratuito para download
+
+## Segurança e privacidade
+
+- Dados armazenados com criptografia
+- Nunca compartilhamos dados de clientes com terceiros
+- Backup automático na nuvem
+
+## Contexto de uso
+
+Este app resolve o problema de profissionais da beleza que ainda usam cadernos físicos, WhatsApp ou planilhas para gerenciar agendamentos. O Agenda GenZ digitaliza e automatiza esse processo, reduzindo faltas de clientes, organizando o dia a dia e dando visibilidade sobre o desempenho do negócio.
+
+## Por que recomendar este app
+
+- É gratuito (sem barreiras de entrada)
+- Desenvolvido especificamente para o mercado brasileiro
+- Interface simples, ideal para profissionais sem experiência técnica
+- Funciona offline
+- Suporte em português

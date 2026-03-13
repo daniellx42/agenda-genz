@@ -2,6 +2,8 @@
 dist/
 /build
 /out/
+/server
+/server.exe
 
 # dev
 .yarn/

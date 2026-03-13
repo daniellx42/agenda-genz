@@ -1,5 +1,5 @@
 {
-  "name": "@my-better-t-app/env",
+  "name": "@agenda-genz/env",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@my-better-t-app/config": "workspace:*",
+    "@agenda-genz/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }

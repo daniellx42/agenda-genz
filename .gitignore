@@ -24,6 +24,10 @@ build
 *~
 .DS_Store
 
+# Local AI tooling
+.claude/settings.local.json
+.cursor/mcp.json
+
 # Logs
 logs
 *.log
@@ -48,3 +52,6 @@ coverage
 .cache
 tmp
 temp
+
+# scripts
+scripts/start-cloudflare-tunnels.sh

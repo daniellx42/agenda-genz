@@ -1,0 +1,199 @@
+import Entypo from '@expo/vector-icons/Entypo';
+import Feather from "@expo/vector-icons/Feather";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const TAB_BAR_HEIGHT = 66;
+const FAB_SIZE = 58;
+const MAX_BAR_WIDTH = 360;
+const SIDE_GAP = 12;
+
+const TAB_CONFIG = {
+  appointments: {
+    label: "Agenda",
+    renderIcon: (color: string) => <Feather name="calendar" size={20} color={color} />,
+  },
+  clients: {
+    label: "Clientes",
+    renderIcon: (color: string) => <Feather name="users" size={20} color={color} />,
+  },
+  services: {
+    label: "Servicos",
+    renderIcon: (color: string) => (
+      <Entypo name="tools" size={20} color={color} />
+    ),
+  },
+  "time-slots": {
+    label: "Horarios",
+    renderIcon: (color: string) => <Feather name="clock" size={20} color={color} />,
+  },
+} as const;
+
+type TabRouteName = keyof typeof TAB_CONFIG;
+
+interface CurvedTabBarProps extends BottomTabBarProps {
+  onPressCenter: (activeRouteName: string) => void;
+  width: number;
+}
+
+export function CurvedTabBar({
+  state,
+  navigation,
+  onPressCenter,
+  width,
+}: CurvedTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const activeRouteName = state.routes[state.index]?.name ?? "appointments";
+  const bottomOffset = Math.max(insets.bottom, 12);
+  const barWidth = Math.min(width - 24, MAX_BAR_WIDTH);
+  const fabBottom = bottomOffset + TAB_BAR_HEIGHT - FAB_SIZE / 2;
+
+  const leftRoutes = state.routes.slice(0, 2);
+  const rightRoutes = state.routes.slice(2);
+
+  const renderTab = (route: typeof state.routes[0], index: number) => {
+    const isFocused = state.index === index;
+    const config = TAB_CONFIG[(route.name as TabRouteName) ?? "appointments"];
+
+    const onPress = () => {
+      const event = navigation.emit({
+        type: "tabPress",
+        target: route.key,
+        canPreventDefault: true,
+      });
+
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate(route.name);
+      }
+    };
+
+    const color = isFocused ? "#f43f5e" : "#a1a1aa";
+
+    return (
+      <Pressable
+        key={route.key}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={config.label}
+        style={[styles.tabButton, isFocused && styles.tabButtonActive]}
+      >
+        {config.renderIcon(color)}
+        {isFocused ? <View style={styles.activeDot} /> : null}
+      </Pressable>
+    );
+  };
+
+  return (
+    <View style={styles.tabBarWrapper} pointerEvents="box-none">
+      <View style={[styles.tabBar, { width: barWidth, bottom: bottomOffset }]} pointerEvents="none" />
+
+      <View
+        style={[
+          styles.tabBarRight,
+          {
+            width: (barWidth - FAB_SIZE - SIDE_GAP * 2) / 2,
+            bottom: bottomOffset,
+            right: (width - barWidth) / 2 + SIDE_GAP,
+          },
+        ]}
+      >
+        {rightRoutes.map((route) => renderTab(route, state.routes.indexOf(route)))}
+      </View>
+
+      <View
+        style={[
+          styles.tabBarLeft,
+          {
+            width: (barWidth - FAB_SIZE - SIDE_GAP * 2) / 2,
+            bottom: bottomOffset,
+            left: (width - barWidth) / 2 + SIDE_GAP,
+          },
+        ]}
+      >
+        {leftRoutes.map((route) => renderTab(route, state.routes.indexOf(route)))}
+      </View>
+
+      <Pressable
+        onPress={() => onPressCenter(activeRouteName)}
+        style={[styles.fab, { bottom: fabBottom }]}
+        accessibilityRole="button"
+        accessibilityLabel="Novo agendamento"
+      >
+        <Feather name="plus" size={24} color="white" />
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabBarWrapper: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    pointerEvents: "box-none",
+    minHeight: TAB_BAR_HEIGHT + FAB_SIZE,
+    alignItems: "center",
+  },
+  tabBar: {
+    position: "absolute",
+    height: TAB_BAR_HEIGHT,
+    borderRadius: 30,
+    backgroundColor: "rgba(255,255,255,0.98)",
+    borderWidth: 1,
+    borderColor: "#ffe4ec",
+    shadowColor: "#19070d",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 14,
+  },
+  tabBarLeft: {
+    position: "absolute",
+    flexDirection: "row",
+    height: TAB_BAR_HEIGHT,
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  tabBarRight: {
+    position: "absolute",
+    flexDirection: "row",
+    height: TAB_BAR_HEIGHT,
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  tabButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  tabButtonActive: {
+    backgroundColor: "#fff1f5",
+  },
+  activeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "#f43f5e",
+  },
+  fab: {
+    position: "absolute",
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
+    backgroundColor: "#f43f5e",
+    borderWidth: 5,
+    borderColor: "#fff9fb",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#f43f5e",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    elevation: 16,
+  },
+});

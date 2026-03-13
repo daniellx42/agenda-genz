@@ -1,4 +1,4 @@
-import { env } from "@my-better-t-app/env/server";
+import { env } from "@agenda-genz/env/server";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../prisma/generated/client";

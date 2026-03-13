@@ -1,0 +1,175 @@
+export const Errors = {
+  AUTH: {
+    UNAUTHORIZED: {
+      code: "UNAUTHORIZED",
+      message: "Não autorizado",
+      httpStatus: 401,
+    },
+  },
+
+  CLIENT: {
+    NOT_FOUND: {
+      code: "CLIENT_NOT_FOUND",
+      message: "Cliente não encontrado",
+      httpStatus: 404,
+    },
+    PROFILE_IMAGE_NOT_FOUND: {
+      code: "CLIENT_PROFILE_IMAGE_NOT_FOUND",
+      message: "Foto de perfil não encontrada",
+      httpStatus: 404,
+    },
+    PHONE_REQUIRED: {
+      code: "CLIENT_PHONE_REQUIRED",
+      message: "Telefone é obrigatório",
+      httpStatus: 400,
+    },
+  },
+
+  SERVICE: {
+    NOT_FOUND: {
+      code: "SERVICE_NOT_FOUND",
+      message: "Serviço não encontrado",
+      httpStatus: 404,
+    },
+    IN_USE: {
+      code: "SERVICE_IN_USE",
+      message: "Serviço possui agendamentos e não pode ser removido",
+      httpStatus: 409,
+    },
+  },
+
+  TIME_SLOT: {
+    NOT_FOUND: {
+      code: "TIME_SLOT_NOT_FOUND",
+      message: "Horário não encontrado",
+      httpStatus: 404,
+    },
+    ALREADY_EXISTS: {
+      code: "TIME_SLOT_ALREADY_EXISTS",
+      message: "Esse horário já está cadastrado para este dia",
+      httpStatus: 409,
+    },
+    IN_USE: {
+      code: "TIME_SLOT_IN_USE",
+      message: "Horário possui agendamentos e não pode ser removido",
+      httpStatus: 409,
+    },
+    BLOCK_ALREADY_EXISTS: {
+      code: "TIME_SLOT_BLOCK_ALREADY_EXISTS",
+      message: "Esse horário já está bloqueado para a data selecionada",
+      httpStatus: 409,
+    },
+    BLOCK_DATE_MISMATCH: {
+      code: "TIME_SLOT_BLOCK_DATE_MISMATCH",
+      message: "Selecione uma data compatível com o dia deste horário",
+      httpStatus: 400,
+    },
+    BLOCK_HAS_APPOINTMENT: {
+      code: "TIME_SLOT_BLOCK_HAS_APPOINTMENT",
+      message: "Não foi possível bloquear. Existe um agendamento para este horário na data selecionada",
+      httpStatus: 409,
+    },
+    BLOCK_NOT_FOUND: {
+      code: "TIME_SLOT_BLOCK_NOT_FOUND",
+      message: "Não existe bloqueio para esta data",
+      httpStatus: 404,
+    },
+    INVALID_TIME_FORMAT: {
+      code: "TIME_SLOT_INVALID_FORMAT",
+      message: "Formato de horário inválido. Use HH:MM",
+      httpStatus: 400,
+    },
+  },
+
+  UPLOAD: {
+    INVALID_TYPE: {
+      code: "UPLOAD_INVALID_TYPE",
+      message: "Tipo de arquivo inválido. Apenas imagens são permitidas",
+      httpStatus: 400,
+    },
+    UNAUTHORIZED_KEY: {
+      code: "UPLOAD_UNAUTHORIZED_KEY",
+      message: "Acesso negado a este arquivo",
+      httpStatus: 403,
+    },
+  },
+
+  APPOINTMENT: {
+    NOT_FOUND: {
+      code: "APPOINTMENT_NOT_FOUND",
+      message: "Agendamento não encontrado",
+      httpStatus: 404,
+    },
+    SLOT_UNAVAILABLE: {
+      code: "APPOINTMENT_SLOT_UNAVAILABLE",
+      message: "Este horário já está reservado para esta data",
+      httpStatus: 409,
+    },
+    INVALID_DATE: {
+      code: "APPOINTMENT_INVALID_DATE",
+      message: "Data inválida",
+      httpStatus: 400,
+    },
+    SHARE_RANGE_TOO_LARGE: {
+      code: "APPOINTMENT_SHARE_RANGE_TOO_LARGE",
+      message: "Selecione no máximo 7 dias para compartilhar",
+      httpStatus: 400,
+    },
+    IMAGE_NOT_FOUND: {
+      code: "APPOINTMENT_IMAGE_NOT_FOUND",
+      message: "Imagem não encontrada neste agendamento",
+      httpStatus: 404,
+    },
+    INVALID_STATUS_TRANSITION: {
+      code: "APPOINTMENT_INVALID_STATUS",
+      message: "Transição de status inválida",
+      httpStatus: 400,
+    },
+  },
+  BILLING: {
+    PLAN_NOT_FOUND: {
+      code: "BILLING_PLAN_NOT_FOUND",
+      message: "Plano não encontrado",
+      httpStatus: 404,
+    },
+    PLAN_INACTIVE: {
+      code: "BILLING_PLAN_INACTIVE",
+      message: "Plano não está disponível",
+      httpStatus: 400,
+    },
+    PAYMENT_NOT_FOUND: {
+      code: "BILLING_PAYMENT_NOT_FOUND",
+      message: "Pagamento não encontrado",
+      httpStatus: 404,
+    },
+    PAYMENT_ALREADY_PROCESSED: {
+      code: "BILLING_PAYMENT_ALREADY_PROCESSED",
+      message: "Pagamento já processado",
+      httpStatus: 409,
+    },
+    PAYMENT_CREATION_FAILED: {
+      code: "BILLING_PAYMENT_CREATION_FAILED",
+      message: "Erro ao criar pagamento PIX",
+      httpStatus: 502,
+    },
+    PLAN_EXPIRED: {
+      code: "BILLING_PLAN_EXPIRED",
+      message: "Plano expirado. Renove sua assinatura.",
+      httpStatus: 402,
+    },
+    WEBHOOK_INVALID_SIGNATURE: {
+      code: "BILLING_WEBHOOK_INVALID_SIGNATURE",
+      message: "Assinatura inválida",
+      httpStatus: 401,
+    },
+  },
+} as const;
+
+export type ErrorCode =
+  | (typeof Errors.AUTH)[keyof typeof Errors.AUTH]["code"]
+  | (typeof Errors.CLIENT)[keyof typeof Errors.CLIENT]["code"]
+  | (typeof Errors.SERVICE)[keyof typeof Errors.SERVICE]["code"]
+  | (typeof Errors.TIME_SLOT)[keyof typeof Errors.TIME_SLOT]["code"]
+  | (typeof Errors.APPOINTMENT)[keyof typeof Errors.APPOINTMENT]["code"]
+  | (typeof Errors.UPLOAD)[keyof typeof Errors.UPLOAD]["code"]
+  | (typeof Errors.BILLING)[keyof typeof Errors.BILLING]["code"];

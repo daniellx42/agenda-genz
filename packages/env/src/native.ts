@@ -5,6 +5,11 @@ export const env = createEnv({
   clientPrefix: "EXPO_PUBLIC_",
   client: {
     EXPO_PUBLIC_SERVER_URL: z.url(),
+    EXPO_PUBLIC_FRONTEND_URL: z.url(),
+
+    EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: z.string().min(1),
+    EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: z.string(),
+    EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME: z.string(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

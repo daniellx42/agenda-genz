@@ -1,5 +1,5 @@
 {
-  "name": "@my-better-t-app/db",
+  "name": "@agenda-genz/db",
   "type": "module",
   "exports": {
     ".": {
@@ -10,13 +10,15 @@
     }
   },
   "scripts": {
-    "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force",
+    "db:seed": "prisma db seed",
+    "db:seed-plans": "bun run prisma/seed-plans.ts"
   },
   "dependencies": {
-    "@my-better-t-app/env": "workspace:*",
+    "@agenda-genz/env": "workspace:*",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "catalog:",
     "dotenv": "catalog:",
@@ -24,7 +26,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@my-better-t-app/config": "workspace:*",
+    "@agenda-genz/config": "workspace:*",
     "@types/pg": "^8.16.0",
     "prisma": "^7.2.0",
     "typescript": "catalog:"

@@ -1,24 +1,101 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
-import { Geist, Geist_Mono } from "next/font/google";
-
-import "../index.css";
 import Header from "@/components/header";
 import Providers from "@/components/providers";
+import { env } from "@agenda-genz/env/web";
+import "../index.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f0ff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1028" },
+  ],
+};
+
+const siteUrl = env.NEXT_PUBLIC_FRONTEND_URL;
+const siteName = "Agenda GenZ";
+const siteDescription =
+  "Aplicativo gratuito de agendamento para nail designers, lash artists, manicures, cabeleireiras e todos os profissionais da beleza. Organize clientes, serviços e horários com facilidade.";
 
 export const metadata: Metadata = {
-  title: "my-better-t-app",
-  description: "my-better-t-app",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: `${siteName} | App Gratuito para Profissionais da Beleza`,
+    template: `%s | ${siteName}`,
+  },
+  description: siteDescription,
+  keywords: [
+    "app agendamento nail designer",
+    "sistema agendamento nail",
+    "agenda eletrônica beleza",
+    "app gratuito agendamento lash",
+    "sistema agendamento profissional beleza",
+    "agenda manicure",
+    "app cabeleireiro agendamento",
+    "software agendamento salão",
+    "agenda digital beleza grátis",
+    "app agendamento grátis",
+    "gestão salão de beleza",
+    "agenda online manicure",
+  ],
+  authors: [{ name: "Agenda GenZ" }],
+  creator: "Agenda GenZ",
+  publisher: "Agenda GenZ",
+  applicationName: siteName,
+  category: "productivity",
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: siteUrl,
+    siteName,
+    title: `${siteName} | App Gratuito para Profissionais da Beleza`,
+    description: siteDescription,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Agenda GenZ — App de agendamento para profissionais da beleza",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteName} | App Gratuito para Profissionais da Beleza`,
+    description: siteDescription,
+    images: ["/opengraph-image"],
+    creator: "@agendagenz",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: siteUrl,
+    languages: {
+      "pt-BR": siteUrl,
+    },
+  },
+  verification: {
+    google: env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export default function RootLayout({
@@ -27,12 +104,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className={`${plusJakartaSans.variable} antialiased`}>
         <Providers>
-          <div className="grid grid-rows-[auto_1fr] h-svh">
+          <div className="min-h-screen bg-background text-foreground">
             <Header />
-            {children}
+            <div className="mx-auto flex w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+              {children}
+            </div>
           </div>
         </Providers>
       </body>

@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Agenda GenZ",
+    "slug": "agenda-genz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "app",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.daniellx42.agendagenz"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.daniellx42.agendagenz",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#7d0000",
+          "sounds": [
+            "./assets/sounds/notifications/agendamento1h.wav",
+            "./assets/sounds/notifications/agendamento30min.wav"
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "411da2ab-584a-404f-a776-dd0c7a2d2554"
+      }
+    },
+    "owner": "daniellx42"
+  }
+}

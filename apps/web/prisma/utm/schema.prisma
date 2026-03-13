@@ -1,0 +1,168 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../../src/generated/utm-client"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DeviceType {
+  MOBILE
+  TABLET
+  DESKTOP
+  UNKNOWN
+}
+
+enum EventType {
+  APPLE_STORE_CLICK
+  PLAY_STORE_CLICK
+}
+
+model TrackingLink {
+  id            String           @id @default(uuid())
+  slug          String           @unique
+  name          String
+  description   String?
+  landingPath   String           @default("/")
+  source        String           @default("direct")
+  medium        String?
+  campaign      String?
+  term          String?
+  content       String?
+  influencer    String?
+  platform      String?
+  creativeLabel String?
+  creativeType  String?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  pageVisits    PageVisit[]
+  pageEvents    PageEvent[]
+  aggregateLink AggregateLink?
+  aggregateDays AggregateDaily[]
+
+  @@index([source])
+  @@index([campaign])
+  @@index([influencer])
+}
+
+model PageVisit {
+  id             String        @id @default(uuid())
+  createdAt      DateTime      @default(now())
+  sessionId      String
+  trackingLinkId String?
+  trackingLink   TrackingLink? @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)
+  source         String        @default("direct")
+  medium         String?
+  campaign       String?
+  term           String?
+  content        String?
+  influencer     String?
+  platform       String?
+  creativeLabel  String?
+  creativeType   String?
+  pagePath       String        @default("/")
+  referrer       String?
+  ipAddress      String?
+  userAgent      String?
+  deviceType     DeviceType    @default(UNKNOWN)
+  country        String?
+  region         String?
+  city           String?
+  pageEvents     PageEvent[]
+
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([trackingLinkId])
+  @@index([source])
+  @@index([campaign])
+  @@index([influencer])
+}
+
+model PageEvent {
+  id             String        @id @default(uuid())
+  createdAt      DateTime      @default(now())
+  eventType      EventType
+  sessionId      String
+  pageVisitId    String?
+  pageVisit      PageVisit?    @relation(fields: [pageVisitId], references: [id], onDelete: SetNull)
+  trackingLinkId String?
+  trackingLink   TrackingLink? @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)
+  source         String        @default("direct")
+  campaign       String?
+  influencer     String?
+  creativeLabel  String?
+  destination    String?
+  metadata       Json?
+
+  @@index([createdAt])
+  @@index([eventType])
+  @@index([sessionId])
+  @@index([trackingLinkId])
+  @@index([source])
+  @@index([campaign])
+  @@index([influencer])
+}
+
+model AggregateCursor {
+  id                          String    @id
+  lastProcessedVisitCreatedAt DateTime?
+  lastProcessedVisitId        String?
+  lastProcessedEventCreatedAt DateTime?
+  lastProcessedEventId        String?
+  updatedAt                   DateTime  @updatedAt
+}
+
+model AggregateOverview {
+  id               String    @id
+  generatedAt      DateTime  @default(now())
+  totalVisits      Int       @default(0)
+  appleStoreClicks Int       @default(0)
+  playStoreClicks  Int       @default(0)
+  lastVisitAt      DateTime?
+}
+
+model AggregateDaily {
+  id               String        @id @default(uuid())
+  bucketKey        String        @unique
+  date             DateTime      @db.Date
+  trackingLinkId   String?
+  trackingLink     TrackingLink? @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  source           String        @default("direct")
+  campaign         String?
+  influencer       String?
+  totalVisits      Int           @default(0)
+  appleStoreClicks Int           @default(0)
+  playStoreClicks  Int           @default(0)
+  lastUpdatedAt    DateTime      @updatedAt
+
+  @@index([date])
+  @@index([trackingLinkId])
+  @@index([source])
+  @@index([campaign])
+  @@index([influencer])
+}
+
+model AggregateLink {
+  id               String       @id @default(uuid())
+  trackingLinkId   String       @unique
+  trackingLink     TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  slug             String
+  name             String
+  source           String       @default("direct")
+  campaign         String?
+  influencer       String?
+  totalVisits      Int          @default(0)
+  appleStoreClicks Int          @default(0)
+  playStoreClicks  Int          @default(0)
+  conversionRate   Float        @default(0)
+  lastVisitAt      DateTime?
+  lastAggregatedAt DateTime     @default(now())
+
+  @@index([slug])
+  @@index([source])
+  @@index([campaign])
+  @@index([influencer])
+}

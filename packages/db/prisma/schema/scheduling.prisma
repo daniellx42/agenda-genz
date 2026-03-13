@@ -1,0 +1,118 @@
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  DEPOSIT_PAID
+  PAID
+}
+
+model Client {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  phone           String
+  email           String?
+  instagram       String?
+  cpf             String?
+  address         String?
+  age             Int?
+  gender          String?
+  notes           String?
+  profileImageKey String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@index([userId])
+  @@index([userId, name])
+  @@map("client")
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  price              Int  // em centavos
+  depositPercentage  Int? // porcentagem do sinal (1-100)
+  color              String?
+  emoji       String?
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@index([userId])
+  @@index([userId, active])
+  @@map("service")
+}
+
+model TimeSlot {
+  id        String  @id @default(cuid())
+  userId    String
+  dayOfWeek Int // 0=Domingo, 1=Segunda ... 6=Sábado
+  time      String // formato "09:00"
+  active    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+  exceptions   TimeSlotException[]
+
+  @@unique([userId, dayOfWeek, time])
+  @@index([userId])
+  @@index([userId, dayOfWeek])
+  @@map("time_slot")
+}
+
+model TimeSlotException {
+  id         String   @id @default(cuid())
+  userId     String
+  timeSlotId String
+  date       DateTime @db.Date
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  timeSlot TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+
+  @@unique([timeSlotId, date])
+  @@index([userId])
+  @@index([userId, date])
+  @@map("time_slot_exception")
+}
+
+model Appointment {
+  id              String            @id @default(cuid())
+  userId          String
+  clientId        String
+  serviceId       String
+  timeSlotId      String
+  date            DateTime          @db.Date
+  status          AppointmentStatus @default(PENDING)
+  paymentStatus   PaymentStatus     @default(PENDING)
+  notes           String?
+  beforeImageKey  String?
+  afterImageKey   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  timeSlot TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Restrict)
+
+  @@unique([timeSlotId, date])
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, status])
+  @@map("appointment")
+}

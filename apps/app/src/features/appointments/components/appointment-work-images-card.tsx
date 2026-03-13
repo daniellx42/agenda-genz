@@ -1,0 +1,52 @@
+import { AppointmentImageUploadCard } from "./appointment-image-upload-card";
+import { Text, View } from "react-native";
+import type { ImageSlot } from "../lib/appointment-images";
+
+interface AppointmentWorkImagesCardProps {
+  beforeImageUrl: string | null;
+  afterImageUrl: string | null;
+  uploadingSlot: ImageSlot | null;
+  deletingSlot: ImageSlot | null;
+  onUpload: (slot: ImageSlot) => void;
+  onOpenViewer: (url: string | null, label: string) => void;
+  onDelete: (slot: ImageSlot) => void;
+}
+
+export function AppointmentWorkImagesCard({
+  beforeImageUrl,
+  afterImageUrl,
+  uploadingSlot,
+  deletingSlot,
+  onUpload,
+  onOpenViewer,
+  onDelete,
+}: AppointmentWorkImagesCardProps) {
+  return (
+    <View className="mb-4 rounded-2xl border border-rose-100 bg-white p-4">
+      <Text className="mb-4 text-sm font-semibold text-zinc-900">
+        Antes e Depois
+      </Text>
+
+      <View className="flex-row gap-3">
+        <AppointmentImageUploadCard
+          label="Antes"
+          imageUrl={beforeImageUrl}
+          uploading={uploadingSlot === "before"}
+          deleting={deletingSlot === "before"}
+          onUpload={() => onUpload("before")}
+          onPress={() => onOpenViewer(beforeImageUrl, "Antes")}
+          onDelete={() => onDelete("before")}
+        />
+        <AppointmentImageUploadCard
+          label="Depois"
+          imageUrl={afterImageUrl}
+          uploading={uploadingSlot === "after"}
+          deleting={deletingSlot === "after"}
+          onUpload={() => onUpload("after")}
+          onPress={() => onOpenViewer(afterImageUrl, "Depois")}
+          onDelete={() => onDelete("after")}
+        />
+      </View>
+    </View>
+  );
+}

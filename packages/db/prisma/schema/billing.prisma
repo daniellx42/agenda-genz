@@ -1,0 +1,55 @@
+enum BillingPlanInterval {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+enum BillingPaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+model BillingPlan {
+  id           String              @id @default(cuid())
+  interval     BillingPlanInterval @unique
+  name         String
+  priceInCents Int
+  durationDays Int
+  discountLabel String?
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  payments BillingPayment[]
+
+  @@map("billing_plan")
+}
+
+model BillingPayment {
+  id               String               @id @default(cuid())
+  userId           String
+  planId           String
+  mpPaymentId      String?              @unique
+  mpIdempotencyKey String               @unique
+  amount           Int
+  durationDays     Int
+  status           BillingPaymentStatus @default(PENDING)
+  pixQrCode        String?
+  pixQrCodeBase64  String?              @db.Text
+  pixExpiresAt     DateTime?
+  paidAt           DateTime?
+  expiresAt        DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan BillingPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@map("billing_payment")
+}
