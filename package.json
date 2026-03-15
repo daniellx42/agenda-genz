@@ -34,7 +34,7 @@
     "dev:server": "turbo -F server dev",
     "db:studio": "turbo -F @agenda-genz/db db:studio",
     "db:generate": "turbo -F @agenda-genz/db db:generate",
-    "db:deploy": "turbo -F @agenda-genz/db db:migrate deploy",
+    "db:deploy": "turbo -F @agenda-genz/db db:deploy",
     "db:migrate": "turbo -F @agenda-genz/db db:migrate --",
     "db:reset": "turbo -F @agenda-genz/db db:reset"
   },
