@@ -3,6 +3,8 @@ import "dotenv/config";
 import { z } from "zod";
 
 export const env = createEnv({
+  clientPrefix: "",
+  client: {},
   server: {
     DATABASE_URL: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(32),
@@ -22,4 +24,5 @@ export const env = createEnv({
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
+  skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });
