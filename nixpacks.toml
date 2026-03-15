@@ -6,7 +6,7 @@ nixPkgs = ["bun"]
 
 [phases.install]
 cmds = [
-  "bun install --frozen-lockfile --filter './apps/server' --filter './packages/*'"
+  "bun install --frozen-lockfile"
 ]
 
 [phases.build]
@@ -14,7 +14,7 @@ cmds = [
   "bun run db:generate",
   "bun run db:deploy",
   "cd apps/server && bun run compile",
-  "rm -rf node_modules apps/server/node_modules"
+  "find . -name node_modules -type d -prune -exec rm -rf '{}' +"
 ]
 
 [start]
