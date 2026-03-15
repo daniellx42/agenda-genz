@@ -11,20 +11,22 @@ export function useFormSheet({
   bottomPadding = 32,
 }: UseFormSheetOptions = {}) {
   const insets = useSafeAreaInsets();
+  const contentBottomPadding = Math.max(insets.bottom, 12) + bottomPadding;
 
   return useMemo(
     () => ({
-      bottomInset: insets.bottom,
+      bottomInset: 0,
       enablePanDownToClose: true,
       enableBlurKeyboardOnGesture: true,
       keyboardBehavior: "interactive" as const,
       keyboardBlurBehavior: "restore" as const,
       androidKeyboardInputMode: "adjustResize" as const,
+      contentBottomPadding,
       scrollContentContainerStyle: {
         paddingHorizontal: horizontalPadding,
-        paddingBottom: Math.max(insets.bottom, 12) + bottomPadding,
+        paddingBottom: contentBottomPadding,
       },
     }),
-    [bottomPadding, horizontalPadding, insets.bottom],
+    [contentBottomPadding, horizontalPadding],
   );
 }

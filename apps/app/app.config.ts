@@ -3,6 +3,16 @@ import "dotenv/config";
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
 const googleIosUrlScheme = env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
+const buildPropertiesPlugin: NonNullable<ExpoConfig["plugins"]> = [
+  [
+    "expo-build-properties",
+    {
+      ios: {
+        buildReactNativeFromSource: true,
+      },
+    },
+  ],
+];
 const googlePlugin: NonNullable<ExpoConfig["plugins"]> = googleIosUrlScheme
   ? [["@react-native-google-signin/google-signin", { iosUrlScheme: googleIosUrlScheme }]]
   : [];
@@ -12,6 +22,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...baseConfig,
-    plugins: [...(baseConfig.plugins ?? []), ...googlePlugin],
+    plugins: [...(baseConfig.plugins ?? []), ...buildPropertiesPlugin, ...googlePlugin],
   };
 };

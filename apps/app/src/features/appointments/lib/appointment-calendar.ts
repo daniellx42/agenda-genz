@@ -1,4 +1,6 @@
-function normalizeDateKey(value: unknown): string | null {
+import type { DateLikeInput } from "@/lib/types/date-like";
+
+function normalizeDateKey(value: DateLikeInput): string | null {
   if (typeof value === "string") {
     return value.slice(0, 10);
   }
@@ -8,8 +10,7 @@ function normalizeDateKey(value: unknown): string | null {
   }
 
   if (typeof value === "object" && value !== null && "date" in value) {
-    const nestedDate = (value as { date?: unknown }).date;
-    return normalizeDateKey(nestedDate);
+    return normalizeDateKey(value.date);
   }
 
   return null;
@@ -26,7 +27,7 @@ export function formatSelectedDay(dateStr: string): string {
 }
 
 export function buildMarkedDates(
-  calendarDots: { date: unknown }[],
+  calendarDots: Array<{ date: DateLikeInput }>,
   selectedDate: string,
 ) {
   const marks: Record<

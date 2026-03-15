@@ -3,9 +3,13 @@ import { Errors } from "../../../shared/constants/errors";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function loadClientService() {
+  return import(`../client.service?test=${Date.now()}-${Math.random()}`);
+}
+
 // status() do Elysia lança um ElysiaCustomStatusResponse (não um Error)
-async function expectElysiaError(
-  promise: Promise<unknown>,
+async function expectElysiaError<T>(
+  promise: Promise<T>,
   expectedMessage: string,
   expectedCode: number,
 ) {
@@ -65,7 +69,7 @@ describe("ClientService.create", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.create("user-1", {
       name: "Ana Silva",
       phone: "11999999999",
@@ -103,7 +107,7 @@ describe("ClientService.create", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
 
     await CS.create("user-1", {
       name: " Ana   Silva ",
@@ -137,7 +141,7 @@ describe("ClientService.getById", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.getById("client-1", "user-1");
 
     expect(result).toEqual(mockClient);
@@ -150,7 +154,7 @@ describe("ClientService.getById", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
 
     await expectElysiaError(
       CS.getById("nao-existe", "user-1"),
@@ -171,7 +175,7 @@ describe("ClientService.update", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.update("client-1", "user-1", { name: "Ana Costa" });
 
     expect(result.name).toBe("Ana Costa");
@@ -196,7 +200,7 @@ describe("ClientService.update", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
 
     await expectElysiaError(
       CS.update("nao-existe", "user-1", { name: "X" }),
@@ -214,8 +218,13 @@ describe("ClientService.delete", () => {
         delete: mock(() => Promise.resolve(true)),
       },
     }));
+    mock.module("../../appointments/appointment.repository", () => ({
+      AppointmentRepository: {
+        findImageKeysByClientId: mock(() => Promise.resolve([])),
+      },
+    }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
 
     await expect(CS.delete("client-1", "user-1")).resolves.toBeUndefined();
   });
@@ -228,7 +237,7 @@ describe("ClientService.delete", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
 
     await expectElysiaError(
       CS.delete("nao-existe", "user-1"),
@@ -246,6 +255,11 @@ describe("ClientService.delete", () => {
         delete: mock(() => Promise.resolve(true)),
       },
     }));
+    mock.module("../../appointments/appointment.repository", () => ({
+      AppointmentRepository: {
+        findImageKeysByClientId: mock(() => Promise.resolve([])),
+      },
+    }));
     mock.module("@agenda-genz/env/server", () => ({
       env: { CLOUDFLARE_BUCKET: "appointmentsimages" },
     }));
@@ -255,12 +269,14 @@ describe("ClientService.delete", () => {
       },
     }));
     mock.module("@aws-sdk/client-s3", () => ({
-      DeleteObjectCommand: mock(function (this: unknown) { }),
-      GetObjectCommand: mock(function (this: unknown) { }),
-      PutObjectCommand: mock(function (this: unknown) { }),
+      DeleteObjectCommand: mock(function () { }),
+      DeleteObjectsCommand: mock(function () { }),
+      GetObjectCommand: mock(function () { }),
+      ListObjectsV2Command: mock(function () { }),
+      PutObjectCommand: mock(function () { }),
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     await expect(CS.delete("client-1", "user-1")).resolves.toBeUndefined();
   });
 });
@@ -273,7 +289,7 @@ describe("ClientService.list", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.list("user-1", 1, 20);
 
     expect(result.data).toHaveLength(1);
@@ -297,9 +313,11 @@ describe("ClientService.deleteProfileImage", () => {
       },
     }));
     mock.module("@aws-sdk/client-s3", () => ({
-      DeleteObjectCommand: mock(function (this: unknown) { }),
-      GetObjectCommand: mock(function (this: unknown) { }),
-      PutObjectCommand: mock(function (this: unknown) { }),
+      DeleteObjectCommand: mock(function () { }),
+      DeleteObjectsCommand: mock(function () { }),
+      GetObjectCommand: mock(function () { }),
+      ListObjectsV2Command: mock(function () { }),
+      PutObjectCommand: mock(function () { }),
     }));
   }
 
@@ -315,7 +333,7 @@ describe("ClientService.deleteProfileImage", () => {
     }));
     mockUploadInfra(true);
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.deleteProfileImage("client-1", "user-1");
 
     expect(result.profileImageKey).toBeNull();
@@ -328,7 +346,7 @@ describe("ClientService.deleteProfileImage", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
 
     await expectElysiaError(
       CS.deleteProfileImage("nao-existe", "user-1"),
@@ -344,7 +362,7 @@ describe("ClientService.deleteProfileImage", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
 
     await expectElysiaError(
       CS.deleteProfileImage("client-1", "user-1"),
@@ -365,7 +383,7 @@ describe("ClientService.deleteProfileImage", () => {
     }));
     mockUploadInfra(false); // R2 vai falhar
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.deleteProfileImage("client-1", "user-1");
     expect(result.profileImageKey).toBeNull();
   });
@@ -385,7 +403,7 @@ describe("ClientService — profileImageKey", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.create("user-1", {
       name: "Ana Silva",
       phone: "11999999999",
@@ -414,7 +432,7 @@ describe("ClientService — profileImageKey", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.create("user-1", {
       name: "Ana Silva",
       phone: "11999999999",
@@ -433,7 +451,7 @@ describe("ClientService — profileImageKey", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.update("client-1", "user-1", { profileImageKey: null });
 
     expect(result.profileImageKey).toBeNull();
@@ -471,7 +489,7 @@ describe("ClientService.search", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.search("user-1", "Ana");
 
     expect(result).toHaveLength(1);
@@ -485,7 +503,7 @@ describe("ClientService.search", () => {
       },
     }));
 
-    const { ClientService: CS } = await import("../client.service");
+    const { ClientService: CS } = await loadClientService();
     const result = await CS.search("user-1", "xyz");
 
     expect(result).toHaveLength(0);

@@ -6,6 +6,7 @@ import { CalendarMarkedDay } from "@/components/ui/calendar-marked-day";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import { toLocalDateString } from "@/lib/formatters";
+import type { DateLikeInput } from "@/lib/types/date-like";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -56,7 +57,7 @@ export function BlockTimeSlotDateSheet({
   const [currentMonth, setCurrentMonth] = useState<string>(today);
   const slotDayLabel = slot?.dayLabel?.toLowerCase() ?? "dia correspondente";
 
-  const normalizeDateKey = useCallback((value: unknown) => {
+  const normalizeDateKey = useCallback((value: DateLikeInput) => {
     if (typeof value === "string") {
       return value.slice(0, 10);
     }
@@ -66,13 +67,7 @@ export function BlockTimeSlotDateSheet({
     }
 
     if (typeof value === "object" && value !== null && "date" in value) {
-      const date = (value as { date?: unknown }).date;
-      if (typeof date === "string") {
-        return date.slice(0, 10);
-      }
-      if (date instanceof Date) {
-        return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
-      }
+      return normalizeDateKey(value.date);
     }
 
     return null;

@@ -4,6 +4,10 @@ import {
 } from "../api/appointment-mutations";
 import { appointmentKeys } from "../api/appointment-query-options";
 import { useApiError } from "@/hooks/use-api-error";
+import {
+  cancelAppointmentReminders,
+  scheduleAppointmentReminders,
+} from "@/lib/notifications";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
@@ -15,12 +19,16 @@ import type {
 
 interface UseAppointmentStatusActionsParams {
   appointmentId: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
   paymentStatus: AppointmentPaymentStatus;
   serviceStatus: AppointmentServiceStatus;
 }
 
 export function useAppointmentStatusActions({
   appointmentId,
+  appointmentDate,
+  appointmentTime,
   paymentStatus,
   serviceStatus,
 }: UseAppointmentStatusActionsParams) {
@@ -91,6 +99,21 @@ export function useAppointmentStatusActions({
       setUpdatingServiceStatus(nextStatus);
       try {
         await updateAppointmentStatus({ id: appointmentId, status: nextStatus });
+
+        if (nextStatus === "CANCELLED") {
+          void cancelAppointmentReminders(appointmentId).catch(() => undefined);
+        } else if (
+          serviceStatus === "CANCELLED" &&
+          appointmentDate &&
+          appointmentTime
+        ) {
+          void scheduleAppointmentReminders(
+            appointmentDate,
+            appointmentTime,
+            appointmentId,
+          ).catch(() => undefined);
+        }
+
         await invalidateAppointments();
         serviceSheetRef.current?.dismiss();
         toast.success("Status do serviço atualizado");
@@ -101,7 +124,14 @@ export function useAppointmentStatusActions({
         setUpdatingServiceStatus(null);
       }
     },
-    [appointmentId, invalidateAppointments, serviceStatus, showError],
+    [
+      appointmentDate,
+      appointmentId,
+      appointmentTime,
+      invalidateAppointments,
+      serviceStatus,
+      showError,
+    ],
   );
 
   return {

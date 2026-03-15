@@ -1,19 +1,19 @@
-import { clientKeys } from "../api/client-query-options";
-import { createClient } from "../api/client-mutations";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
+import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { toast } from "sonner-native";
+import { createClient } from "../api/client-mutations";
+import { clientKeys } from "../api/client-query-options";
 import { ClientFormFields } from "../components/client-form-fields";
-import { useClientForm } from "../hooks/use-client-form";
 import { ProfileAvatarPicker } from "../components/profile-avatar-picker";
+import { useClientForm } from "../hooks/use-client-form";
 import { clientSchema } from "../lib/client-form-schema";
 import { pickImageFromSource, uploadImageToR2 } from "../lib/client-image";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 
 interface ClientFormSheetProps {
   sheetRef: React.RefObject<BottomSheetModal | null>;
@@ -43,17 +43,17 @@ export function ClientFormSheet({
   };
 
   const form = useClientForm({
-      defaultValues: {
-        name: "",
-        phone: "",
-        email: "",
-        instagram: "",
-        cpf: "",
-        address: "",
-        age: "",
-        gender: "",
-        notes: "",
-      },
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      instagram: "",
+      cpf: "",
+      address: "",
+      age: "",
+      gender: "",
+      notes: "",
+    },
     onSubmit: async ({ value }) => {
       const parsed = clientSchema.safeParse(value);
       if (!parsed.success) return;
@@ -136,7 +136,7 @@ export function ClientFormSheet({
           keyboardDismissMode="interactive"
         >
           <Text className="mb-5 mt-2 text-lg font-bold text-zinc-900">
-            Novo cliente
+            Novo cliente +
           </Text>
 
           <View className="mb-6 items-center">

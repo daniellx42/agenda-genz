@@ -108,7 +108,7 @@ export function StepTimeSlot() {
               <Pressable
                 onPress={() => {
                   dismissAll();
-                  router.navigate("/time-slots" as never);
+                  router.navigate("/time-slots");
                 }}
                 className="bg-rose-50 border border-rose-200 rounded-2xl px-5 py-3"
               >

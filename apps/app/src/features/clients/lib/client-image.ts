@@ -1,4 +1,5 @@
 import { uploadImageAsset } from "@/lib/api/image-upload";
+import type { ApiErrorHandler } from "@/lib/api/query-utils";
 import { toast } from "sonner-native";
 import * as ImagePicker from "expo-image-picker";
 
@@ -39,7 +40,7 @@ export async function pickImageFromSource(
 export async function uploadImageToR2(
   uri: string,
   folder: "profile" | "services",
-  showError: (error: unknown) => void,
+  showError: ApiErrorHandler,
 ): Promise<string | undefined> {
   return uploadImageAsset(
     {

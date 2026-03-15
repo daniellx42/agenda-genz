@@ -59,7 +59,7 @@ export function DeleteAccountSheet({
       <BottomSheetView
         style={{
           paddingHorizontal: 20,
-          paddingBottom: Math.max(formSheet.bottomInset, 12) + 20,
+          paddingBottom: formSheet.contentBottomPadding,
         }}
       >
         <View className="rounded-[28px] border border-rose-100 bg-white p-5">

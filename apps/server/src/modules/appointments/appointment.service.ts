@@ -3,11 +3,18 @@ import { Errors } from "../../shared/constants/errors";
 import { parseDateOnly } from "../../shared/lib/date-only";
 import { ClientRepository } from "../clients/client.repository";
 import { TimeSlotRepository } from "../time-slots/time-slot.repository";
-import { UploadService } from "../uploads/upload.service";
 import { AppointmentRepository } from "./appointment.repository";
 import type { AppointmentModel } from "./appointment.model";
 
 export abstract class AppointmentService {
+  private static async deleteStoredObject(
+    userId: string,
+    key: string,
+  ): Promise<void> {
+    const { UploadService } = await import("../uploads/upload.service");
+    await UploadService.deleteObject(userId, key);
+  }
+
   static async create(
     userId: string,
     data: AppointmentModel.createBody,
@@ -224,7 +231,7 @@ export abstract class AppointmentService {
 
     // Remove o arquivo do R2 (best effort — se falhar, o DB já está limpo)
     try {
-      await UploadService.deleteObject(userId, key);
+      await AppointmentService.deleteStoredObject(userId, key);
     } catch {
       // Arquivo órfão no R2 é aceitável; não falha a operação
     }
@@ -232,8 +239,18 @@ export abstract class AppointmentService {
     return updated;
   }
 
-  static async cancel(id: string, userId: string): Promise<void> {
-    const deleted = await AppointmentRepository.delete(id, userId);
+  static async deleteById(id: string, userId: string): Promise<void> {
+    const appointment = await AppointmentRepository.findById(id, userId);
+
+    if (!appointment) {
+      throw status(
+        Errors.APPOINTMENT.NOT_FOUND.httpStatus,
+        Errors.APPOINTMENT.NOT_FOUND
+          .message satisfies AppointmentModel.errorNotFound,
+      );
+    }
+
+    const deleted = await AppointmentRepository.deleteById(id, userId);
 
     if (!deleted) {
       throw status(
@@ -242,6 +259,15 @@ export abstract class AppointmentService {
           .message satisfies AppointmentModel.errorNotFound,
       );
     }
+
+    const imageKeys = [appointment.beforeImageKey, appointment.afterImageKey].filter(
+      (key): key is string => Boolean(key),
+    );
+
+    // O banco já foi limpo; falha no storage não deve reverter a exclusão.
+    await Promise.allSettled(
+      imageKeys.map((key) => AppointmentService.deleteStoredObject(userId, key)),
+    );
   }
 
   static async getAvailableSlotsByDateRange(

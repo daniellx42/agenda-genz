@@ -1,5 +1,7 @@
+import { formatAppointmentShortDate } from "@/features/appointments/lib/appointment-date";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { useFormSheet } from "@/hooks/use-form-sheet";
+import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -11,7 +13,6 @@ import { StepClient } from "./new-appointment-step-client";
 import { StepReview } from "./new-appointment-step-review";
 import { StepService } from "./new-appointment-step-service";
 import { StepTimeSlot } from "./new-appointment-step-time-slot";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 
 interface Props {
   onClose: () => void;
@@ -20,10 +21,10 @@ interface Props {
 const SNAP_POINTS = ["75%", "92%"];
 
 const STEP_LABELS = {
-  client: "1 · Cliente",
-  service: "2 · Serviço",
-  slot: "3 · Horário",
-  review: "4 · Confirmação",
+  client: "Cliente",
+  service: "Serviço",
+  slot: "Horário",
+  review: "Confirmação",
 };
 
 const Backdrop = (props: BottomSheetBackdropProps) => (
@@ -37,7 +38,7 @@ const Backdrop = (props: BottomSheetBackdropProps) => (
 
 export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
   function NewAppointmentSheet({ onClose }, ref) {
-    const { step, goBack } = useAppointmentDraft();
+    const { date, step, goBack } = useAppointmentDraft();
     const formSheet = useFormSheet();
 
     const renderBackdrop = useCallback(
@@ -69,9 +70,9 @@ export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
           keyboardDismissMode="interactive"
         >
           {/* Header */}
-          <View className="flex-row items-center justify-between mb-6 mt-2">
+          <View className="mb-6 mt-2 flex-row items-start justify-between gap-3">
             {canGoBack ? (
-              <View className="flex-row items-center gap-2">
+              <View className="min-h-7 flex-row items-center gap-2">
                 <Text
                   onPress={goBack}
                   className="text-rose-400 text-sm font-medium"
@@ -80,12 +81,21 @@ export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
                 </Text>
               </View>
             ) : (
-              <View />
+              <View className="min-h-7" />
             )}
-            <View className="bg-rose-50 rounded-full px-3 py-1">
-              <Text className="text-rose-400 text-xs font-semibold">
-                {STEP_LABELS[step]}
-              </Text>
+
+            <View className="flex-1 flex-row flex-wrap items-center justify-end gap-2">
+              <View className="rounded-full bg-emerald-50 px-3 py-1">
+                <Text className="text-emerald-700 text-xs font-semibold">
+                  Data selecionada: {formatAppointmentShortDate(date)}
+                </Text>
+              </View>
+
+              <View className="bg-blue-50 rounded-full px-3 py-1">
+                <Text className="text-blue-500 text-xs font-semibold">
+                  {STEP_LABELS[step]}
+                </Text>
+              </View>
             </View>
           </View>
 

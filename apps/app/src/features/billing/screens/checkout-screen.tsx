@@ -1,12 +1,3 @@
-import { createCheckout } from "../api/billing-mutations";
-import {
-  billingPaymentStatusQueryOptions,
-} from "../api/billing-query-options";
-import { PaymentStatusIndicator } from "../components/payment-status-indicator";
-import { PixQrDisplay } from "../components/pix-qr-display";
-import { usePaymentWs } from "../hooks/use-payment-ws";
-import { useSubscriptionStore } from "../store/subscription-store";
-import { formatPrice } from "../lib/billing-formatters";
 import { useApiError } from "@/hooks/use-api-error";
 import Feather from "@expo/vector-icons/Feather";
 import { useQuery } from "@tanstack/react-query";
@@ -20,6 +11,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { createCheckout } from "../api/billing-mutations";
+import {
+  billingPaymentStatusQueryOptions,
+} from "../api/billing-query-options";
+import { PaymentStatusIndicator } from "../components/payment-status-indicator";
+import { PixQrDisplay } from "../components/pix-qr-display";
+import { usePaymentWs } from "../hooks/use-payment-ws";
+import { formatPrice } from "../lib/billing-formatters";
+import { useSubscriptionStore } from "../store/subscription-store";
 
 interface CheckoutData {
   paymentId: string;
@@ -71,7 +71,7 @@ export default function CheckoutScreen() {
       setIsApproved(true);
       setPlanExpiresAt(planExpiresAt);
       setTimeout(() => {
-        router.replace("/(paywall)/success" as any);
+        router.replace("/(paywall)/success");
       }, 1500);
     },
     [setPlanExpiresAt, router],

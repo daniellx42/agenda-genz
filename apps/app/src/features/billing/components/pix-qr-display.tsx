@@ -1,8 +1,8 @@
-import { usePixCountdown } from "../hooks/use-pix-countdown";
-import * as Clipboard from "expo-clipboard";
 import Feather from "@expo/vector-icons/Feather";
+import * as Clipboard from "expo-clipboard";
 import { Image, Pressable, Text, View } from "react-native";
 import { toast } from "sonner-native";
+import { usePixCountdown } from "../hooks/use-pix-countdown";
 
 interface PixQrDisplayProps {
   pixQrCode: string | null;
@@ -42,9 +42,8 @@ export function PixQrDisplay({
       <View className="flex-row items-center gap-2 mb-4">
         <Feather name="clock" size={16} color={isExpired ? "#ef4444" : "#6b7280"} />
         <Text
-          className={`text-base font-mono font-semibold ${
-            isExpired ? "text-red-500" : "text-gray-600"
-          }`}
+          className={`text-base font-mono font-semibold ${isExpired ? "text-red-500" : "text-gray-600"
+            }`}
         >
           {isExpired ? "PIX expirado" : `Expira em ${formatted}`}
         </Text>

@@ -9,11 +9,18 @@ import {
   toNullableString,
   toOptionalString,
 } from "../../shared/lib/normalization";
-import { UploadService } from "../uploads/upload.service";
 import { ClientRepository } from "./client.repository";
 import type { ClientModel } from "./client.model";
 
 export abstract class ClientService {
+  private static async deleteStoredObject(
+    userId: string,
+    key: string,
+  ): Promise<void> {
+    const { UploadService } = await import("../uploads/upload.service");
+    await UploadService.deleteObject(userId, key);
+  }
+
   static async create(
     userId: string,
     data: ClientModel.createBody,
@@ -123,7 +130,7 @@ export abstract class ClientService {
 
     // Remove do R2 (best effort)
     try {
-      await UploadService.deleteObject(userId, client.profileImageKey);
+      await ClientService.deleteStoredObject(userId, client.profileImageKey);
     } catch {
       // Arquivo órfão no R2 é aceitável
     }
@@ -141,16 +148,23 @@ export abstract class ClientService {
       );
     }
 
-    await ClientRepository.delete(id, userId);
+    // Remove from R2: appointment work images (before/after) and client profile image
+    // before DB cascade deletes appointments. (Dynamic import to avoid loading db/env in tests that don't call delete.)
+    const { AppointmentRepository } = await import("../appointments/appointment.repository");
+    const imageKeys = await AppointmentRepository.findImageKeysByClientId(id, userId);
+    const keysToDelete: string[] = [
+      ...imageKeys.flatMap((r) =>
+        [r.beforeImageKey, r.afterImageKey].filter(
+          (k): k is string => typeof k === "string" && k.length > 0,
+        ),
+      ),
+      ...(client.profileImageKey ? [client.profileImageKey] : []),
+    ];
+    await Promise.allSettled(
+      keysToDelete.map((key) => ClientService.deleteStoredObject(userId, key)),
+    );
 
-    // Remove foto de perfil do R2 (best-effort)
-    if (client.profileImageKey) {
-      try {
-        await UploadService.deleteObject(userId, client.profileImageKey);
-      } catch {
-        // Arquivo órfão no R2 é aceitável
-      }
-    }
+    await ClientRepository.delete(id, userId);
   }
 
   static async list(

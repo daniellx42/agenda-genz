@@ -1,12 +1,24 @@
-export type ApiErrorHandler = (error: unknown) => void;
+export interface ApiErrorValue {
+  message?: string | number | boolean | null;
+}
+
+export interface ApiErrorObject {
+  message?: string;
+  status?: number;
+  value?: string | ApiErrorValue | null;
+}
+
+export type ApiErrorLike = Error | ApiErrorObject | string | null | undefined;
+
+export type ApiErrorHandler = <TError>(error: TError) => void;
 
 interface ApiResult<TData> {
   data: TData;
-  error: unknown;
+  error: ApiErrorLike;
 }
 
 export function throwIfApiError(
-  error: unknown,
+  error: ApiErrorLike,
   handleError?: ApiErrorHandler,
 ): void {
   if (!error) return;

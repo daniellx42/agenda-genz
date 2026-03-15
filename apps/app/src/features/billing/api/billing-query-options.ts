@@ -19,7 +19,8 @@ export function billingPlansQueryOptions(handleError?: ApiErrorHandler) {
       const result = await api.api.billing.plans.get();
       return getDataOrThrow(result, handleError) ?? [];
     },
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
 }
 

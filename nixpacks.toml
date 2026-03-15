@@ -1,0 +1,21 @@
+[variables]
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["bun"]
+
+[phases.install]
+cmds = [
+  "bun install --frozen-lockfile --filter './apps/server' --filter './packages/*'"
+]
+
+[phases.build]
+cmds = [
+  "bun run db:generate",
+  "bun run db:deploy",
+  "cd apps/server && bun run compile",
+  "rm -rf node_modules apps/server/node_modules"
+]
+
+[start]
+cmd="/app/apps/server/server"

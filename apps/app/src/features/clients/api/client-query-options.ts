@@ -17,9 +17,11 @@ export const clientKeys = {
 export function clientsInfiniteQueryOptions(
   search: string,
   handleError?: ApiErrorHandler,
+  enabled = true,
 ) {
   return infiniteQueryOptions({
     queryKey: clientKeys.list(search),
+    enabled,
     initialPageParam: 1,
     queryFn: async ({ pageParam }): Promise<ClientListResponse> => {
       const result = await api.api.clients.get({

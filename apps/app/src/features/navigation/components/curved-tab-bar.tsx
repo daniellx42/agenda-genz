@@ -3,11 +3,43 @@ import Feather from "@expo/vector-icons/Feather";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 
 const TAB_BAR_HEIGHT = 66;
-const FAB_SIZE = 58;
+const FAB_SIZE = 64;
 const MAX_BAR_WIDTH = 360;
 const SIDE_GAP = 12;
+const TAB_BAR_RADIUS = 30;
+const TAB_BAR_BORDER_COLOR = "#ffe4ec";
+const TAB_BAR_FILL = "rgba(255,255,255,0.98)";
+const FAB_RING_COLOR = "#fff9fb";
+const CENTER_CUTOUT_WIDTH = FAB_SIZE + 32;
+
+function createTabBarPath(barWidth: number) {
+  const centerX = barWidth / 2;
+  const notchShoulderY = 20;
+  const notchBottom = 38;
+  const notchStart = centerX - CENTER_CUTOUT_WIDTH / 1.5;
+  const notchEnd = centerX + CENTER_CUTOUT_WIDTH / 1.5;
+
+  return [
+    `M ${TAB_BAR_RADIUS} 0`,
+    `H ${notchStart}`,
+    `C ${notchStart + 10} 0 ${centerX - 36} 0 ${centerX - 31} ${notchShoulderY}`,
+    `C ${centerX - 24} ${notchBottom - 2} ${centerX - 9} ${notchBottom} ${centerX} ${notchBottom}`,
+    `C ${centerX + 9} ${notchBottom} ${centerX + 24} ${notchBottom - 2} ${centerX + 31} ${notchShoulderY}`,
+    `C ${centerX + 36} 0 ${notchEnd - 10} 0 ${notchEnd} 0`,
+    `H ${barWidth - TAB_BAR_RADIUS}`,
+    `Q ${barWidth} 0 ${barWidth} ${TAB_BAR_RADIUS}`,
+    `V ${TAB_BAR_HEIGHT - TAB_BAR_RADIUS}`,
+    `Q ${barWidth} ${TAB_BAR_HEIGHT} ${barWidth - TAB_BAR_RADIUS} ${TAB_BAR_HEIGHT}`,
+    `H ${TAB_BAR_RADIUS}`,
+    `Q 0 ${TAB_BAR_HEIGHT} 0 ${TAB_BAR_HEIGHT - TAB_BAR_RADIUS}`,
+    `V ${TAB_BAR_RADIUS}`,
+    `Q 0 0 ${TAB_BAR_RADIUS} 0`,
+    "Z",
+  ].join(" ");
+}
 
 const TAB_CONFIG = {
   appointments: {
@@ -47,7 +79,10 @@ export function CurvedTabBar({
   const activeRouteName = state.routes[state.index]?.name ?? "appointments";
   const bottomOffset = Math.max(insets.bottom, 12);
   const barWidth = Math.min(width - 24, MAX_BAR_WIDTH);
-  const fabBottom = bottomOffset + TAB_BAR_HEIGHT - FAB_SIZE / 2;
+  const barLeft = (width - barWidth) / 2;
+  const sideWidth = (barWidth - CENTER_CUTOUT_WIDTH - SIDE_GAP * 2) / 2;
+  const tabBarPath = createTabBarPath(barWidth);
+  const fabBottom = bottomOffset + TAB_BAR_HEIGHT - FAB_SIZE / 2 - 2;
 
   const leftRoutes = state.routes.slice(0, 2);
   const rightRoutes = state.routes.slice(2);
@@ -86,15 +121,35 @@ export function CurvedTabBar({
 
   return (
     <View style={styles.tabBarWrapper} pointerEvents="box-none">
-      <View style={[styles.tabBar, { width: barWidth, bottom: bottomOffset }]} pointerEvents="none" />
+      <View
+        style={[
+          styles.tabBarShape,
+          {
+            width: barWidth,
+            bottom: bottomOffset,
+            left: barLeft,
+          },
+        ]}
+        pointerEvents="none"
+      >
+        <Svg width={barWidth} height={TAB_BAR_HEIGHT}>
+          <Path d={tabBarPath} fill={TAB_BAR_FILL} />
+          <Path
+            d={tabBarPath}
+            fill="none"
+            stroke={TAB_BAR_BORDER_COLOR}
+            strokeWidth={1}
+          />
+        </Svg>
+      </View>
 
       <View
         style={[
           styles.tabBarRight,
           {
-            width: (barWidth - FAB_SIZE - SIDE_GAP * 2) / 2,
+            width: sideWidth,
             bottom: bottomOffset,
-            right: (width - barWidth) / 2 + SIDE_GAP,
+            right: barLeft + SIDE_GAP,
           },
         ]}
       >
@@ -105,9 +160,9 @@ export function CurvedTabBar({
         style={[
           styles.tabBarLeft,
           {
-            width: (barWidth - FAB_SIZE - SIDE_GAP * 2) / 2,
+            width: sideWidth,
             bottom: bottomOffset,
-            left: (width - barWidth) / 2 + SIDE_GAP,
+            left: barLeft + SIDE_GAP,
           },
         ]}
       >
@@ -133,16 +188,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     pointerEvents: "box-none",
-    minHeight: TAB_BAR_HEIGHT + FAB_SIZE,
+    minHeight: TAB_BAR_HEIGHT + FAB_SIZE + 12,
     alignItems: "center",
   },
-  tabBar: {
+  tabBarShape: {
     position: "absolute",
     height: TAB_BAR_HEIGHT,
-    borderRadius: 30,
-    backgroundColor: "rgba(255,255,255,0.98)",
-    borderWidth: 1,
-    borderColor: "#ffe4ec",
     shadowColor: "#19070d",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.08,
@@ -186,14 +237,14 @@ const styles = StyleSheet.create({
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
     backgroundColor: "#f43f5e",
-    borderWidth: 5,
-    borderColor: "#fff9fb",
+    borderWidth: 6,
+    borderColor: FAB_RING_COLOR,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#f43f5e",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.24,
+    shadowRadius: 20,
     elevation: 16,
   },
 });

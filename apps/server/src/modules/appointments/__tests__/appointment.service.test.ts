@@ -3,8 +3,8 @@ import { Errors } from "../../../shared/constants/errors";
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
-async function expectElysiaError(
-  promise: Promise<unknown>,
+async function expectElysiaError<T>(
+  promise: Promise<T>,
   expectedMessage: string,
   expectedCode: number,
 ) {
@@ -14,6 +14,10 @@ async function expectElysiaError(
   } catch (err) {
     expect(err).toMatchObject({ response: expectedMessage, code: expectedCode });
   }
+}
+
+function loadAppointmentService() {
+  return import(`../appointment.service?test=${Date.now()}-${Math.random()}`);
 }
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -68,7 +72,41 @@ const mockClientHistory = {
 
 beforeEach(() => {
   mock.restore();
+  mock.module("../../clients/client.repository", () => ({
+    ClientRepository: {
+      findById: mock(() => Promise.resolve(null)),
+    },
+  }));
 });
+
+function mockUploadInfra(deleteSucceeds = true) {
+  const sendMock = mock(() =>
+    deleteSucceeds
+      ? Promise.resolve({})
+      : Promise.reject(new Error("R2 falhou")),
+  );
+
+  mock.module("@agenda-genz/env/server", () => ({
+    env: { CLOUDFLARE_BUCKET: "appointmentsimages" },
+  }));
+  mock.module("../../../../shared/lib/cloudeflare", () => ({
+    cloudflareR2: {
+      send: sendMock,
+    },
+  }));
+  mock.module("@aws-sdk/client-s3", () => ({
+    DeleteObjectCommand: mock(function () {}),
+    DeleteObjectsCommand: mock(function () {}),
+    GetObjectCommand: mock(function () {}),
+    ListObjectsV2Command: mock(function () {}),
+    PutObjectCommand: mock(function () {}),
+  }));
+  mock.module("@aws-sdk/s3-request-presigner", () => ({
+    getSignedUrl: mock(() => Promise.resolve("https://example.com")),
+  }));
+
+  return { sendMock };
+}
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
@@ -95,7 +133,7 @@ describe("AppointmentService.create", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.create("user-1", {
       clientId: "client-1",
       serviceId: "service-1",
@@ -127,7 +165,7 @@ describe("AppointmentService.create", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.create("user-1", {
@@ -142,7 +180,7 @@ describe("AppointmentService.create", () => {
   });
 
   it("deve lançar erro para data inválida", async () => {
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.create("user-1", {
@@ -183,7 +221,7 @@ describe("AppointmentService.create", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     // Slot reservado nesta segunda
     await expectElysiaError(
@@ -224,7 +262,7 @@ describe("AppointmentService.create", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.create("user-1", {
@@ -247,7 +285,7 @@ describe("AppointmentService.getById", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.getById("apt-1", "user-1");
 
     expect(result).toEqual(mockAppointment);
@@ -260,7 +298,7 @@ describe("AppointmentService.getById", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.getById("nao-existe", "user-1"),
@@ -302,7 +340,7 @@ describe("AppointmentService.listByClient", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.listByClient("user-1", "client-1", 1, 20);
 
     expect(findByIdMock).toHaveBeenCalledWith("client-1", "user-1");
@@ -317,7 +355,7 @@ describe("AppointmentService.listByClient", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.listByClient("user-1", "nao-existe", 1, 20),
@@ -327,33 +365,67 @@ describe("AppointmentService.listByClient", () => {
   });
 });
 
-describe("AppointmentService.cancel", () => {
-  it("deve cancelar com sucesso", async () => {
+describe("AppointmentService.deleteById", () => {
+  it("deve deletar com sucesso", async () => {
+    mockUploadInfra(true);
     mock.module("../appointment.repository", () => ({
       AppointmentRepository: {
-        delete: mock(() => Promise.resolve(true)),
+        findById: mock(() => Promise.resolve(mockAppointment)),
+        deleteById: mock(() => Promise.resolve(true)),
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
-    await expect(AS.cancel("apt-1", "user-1")).resolves.toBeUndefined();
+    await expect(AS.deleteById("apt-1", "user-1")).resolves.toBeUndefined();
   });
 
   it("deve lançar 404 quando agendamento não encontrado", async () => {
+    mockUploadInfra(true);
     mock.module("../appointment.repository", () => ({
       AppointmentRepository: {
-        delete: mock(() => Promise.resolve(false)),
+        findById: mock(() => Promise.resolve(null)),
+        deleteById: mock(() => Promise.resolve(false)),
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
-      AS.cancel("nao-existe", "user-1"),
+      AS.deleteById("nao-existe", "user-1"),
       Errors.APPOINTMENT.NOT_FOUND.message,
       Errors.APPOINTMENT.NOT_FOUND.httpStatus,
     );
+  });
+
+  it("deve remover as imagens vinculadas ao deletar o agendamento", async () => {
+    const withImages = {
+      ...mockAppointment,
+      beforeImageKey: "services/user-1/antes.jpg",
+      afterImageKey: "services/user-1/depois.jpg",
+    };
+
+    const deleteObjectMock = mock(() => Promise.resolve());
+    mock.module("../../uploads/upload.service", () => ({
+      UploadService: {
+        deleteObject: deleteObjectMock,
+      },
+    }));
+    const deleteByIdMock = mock(() => Promise.resolve(true));
+    mock.module("../appointment.repository", () => ({
+      AppointmentRepository: {
+        findById: mock(() => Promise.resolve(withImages)),
+        deleteById: deleteByIdMock,
+      },
+    }));
+
+    const { AppointmentService: AS } = await loadAppointmentService();
+
+    await expect(AS.deleteById("apt-1", "user-1")).resolves.toBeUndefined();
+    expect(deleteByIdMock).toHaveBeenCalledWith("apt-1", "user-1");
+    expect(deleteObjectMock).toHaveBeenCalledTimes(2);
+    expect(deleteObjectMock).toHaveBeenCalledWith("user-1", "services/user-1/antes.jpg");
+    expect(deleteObjectMock).toHaveBeenCalledWith("user-1", "services/user-1/depois.jpg");
   });
 });
 
@@ -370,7 +442,7 @@ describe("AppointmentService.getCalendarDots", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.getCalendarDots("user-1", 2026, 3);
 
     expect(result).toHaveLength(2);
@@ -388,7 +460,7 @@ describe("AppointmentService.updatePayment", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.updatePayment("apt-1", "user-1", { paymentStatus: "PAID" });
 
     expect(result).toMatchObject({ paymentStatus: "PAID" });
@@ -401,7 +473,7 @@ describe("AppointmentService.updatePayment", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.updatePayment("nao-existe", "user-1", { paymentStatus: "PAID" }),
@@ -425,7 +497,7 @@ describe("AppointmentService.updateImages", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.updateImages("apt-1", "user-1", {
       beforeImageKey: "services/user-1/abc-foto.jpg",
     });
@@ -446,7 +518,7 @@ describe("AppointmentService.updateImages", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.updateImages("apt-1", "user-1", {
       beforeImageKey: "services/user-1/before.jpg",
       afterImageKey: "services/user-1/after.jpg",
@@ -463,7 +535,7 @@ describe("AppointmentService.updateImages", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.updateImages("nao-existe", "user-1", {
@@ -476,29 +548,6 @@ describe("AppointmentService.updateImages", () => {
 });
 
 describe("AppointmentService.deleteImage", () => {
-  // Mocks de infra necessários porque AppointmentService importa UploadService
-  // que por sua vez importa env e cloudflareR2. Mockamos na camada de infra
-  // para não conflitar com upload.service.test.ts (que testa o mesmo módulo).
-  function mockUploadInfra(deleteSucceeds = true) {
-    mock.module("@agenda-genz/env/server", () => ({
-      env: { CLOUDFLARE_BUCKET: "appointmentsimages" },
-    }));
-    mock.module("../../../../shared/lib/cloudeflare", () => ({
-      cloudflareR2: {
-        send: mock(() =>
-          deleteSucceeds
-            ? Promise.resolve({})
-            : Promise.reject(new Error("R2 falhou")),
-        ),
-      },
-    }));
-    mock.module("@aws-sdk/client-s3", () => ({
-      DeleteObjectCommand: mock(function (this: unknown) { }),
-      GetObjectCommand: mock(function (this: unknown) { }),
-      PutObjectCommand: mock(function (this: unknown) { }),
-    }));
-  }
-
   it("deve deletar beforeImageKey e limpar no banco", async () => {
     const withImage = { ...mockAppointment, beforeImageKey: "services/user-1/abc-antes.jpg" };
     const afterDeletion = { ...mockAppointment, beforeImageKey: null };
@@ -511,7 +560,7 @@ describe("AppointmentService.deleteImage", () => {
     }));
     mockUploadInfra(true);
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.deleteImage("apt-1", "user-1", "before");
 
     expect(result.beforeImageKey).toBeNull();
@@ -529,7 +578,7 @@ describe("AppointmentService.deleteImage", () => {
     }));
     mockUploadInfra(true);
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.deleteImage("apt-1", "user-1", "after");
 
     expect(result.afterImageKey).toBeNull();
@@ -542,7 +591,7 @@ describe("AppointmentService.deleteImage", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.deleteImage("nao-existe", "user-1", "before"),
@@ -558,7 +607,7 @@ describe("AppointmentService.deleteImage", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.deleteImage("apt-1", "user-1", "before"),
@@ -579,7 +628,7 @@ describe("AppointmentService.deleteImage", () => {
     }));
     mockUploadInfra(false); // R2 vai falhar
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     // Não deve propagar o erro do R2
     const result = await AS.deleteImage("apt-1", "user-1", "before");
     expect(result.beforeImageKey).toBeNull();
@@ -610,7 +659,7 @@ describe("AppointmentService.getAvailableSlotsByDateRange", () => {
       },
     }));
 
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
     const result = await AS.getAvailableSlotsByDateRange(
       "user-1",
       "2026-03-09",
@@ -623,7 +672,7 @@ describe("AppointmentService.getAvailableSlotsByDateRange", () => {
   });
 
   it("deve lançar erro para datas inválidas", async () => {
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.getAvailableSlotsByDateRange("user-1", "invalido", "2026-03-10"),
@@ -633,7 +682,7 @@ describe("AppointmentService.getAvailableSlotsByDateRange", () => {
   });
 
   it("deve lançar erro quando o range passa de 7 dias", async () => {
-    const { AppointmentService: AS } = await import("../appointment.service");
+    const { AppointmentService: AS } = await loadAppointmentService();
 
     await expectElysiaError(
       AS.getAvailableSlotsByDateRange("user-1", "2026-03-09", "2026-03-17"),

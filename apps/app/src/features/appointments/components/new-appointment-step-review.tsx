@@ -48,7 +48,7 @@ export function StepReview({ onClose }: Props) {
 
     setLoading(true);
     try {
-      await createAppointment({
+      const appointment = await createAppointment({
         clientId: client.id,
         serviceId: service.id,
         timeSlotId: timeSlot.id,
@@ -56,13 +56,25 @@ export function StepReview({ onClose }: Props) {
         notes: notes || undefined,
       });
 
-      void scheduleAppointmentReminders(
-        date,
-        timeSlot.time,
-        `${date}-${timeSlot.id}`,
-      );
+      try {
+        const reminderResult = await scheduleAppointmentReminders(
+          appointment.date,
+          appointment.timeSlot.time,
+          appointment.id,
+        );
 
-      toast.success("Agendamento criado com sucesso!");
+        if (reminderResult.permissionGranted && reminderResult.scheduledCount > 0) {
+          toast.success("Agendamento criado e lembretes ativados!");
+        } else if (!reminderResult.permissionGranted) {
+          toast.success("Agendamento criado com sucesso!");
+          toast.error("Ative as notificações para receber os lembretes.");
+        } else {
+          toast.success("Agendamento criado com sucesso!");
+        }
+      } catch {
+        toast.success("Agendamento criado com sucesso!");
+        toast.error("Nao foi possivel ativar os lembretes deste agendamento.");
+      }
       await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
       await queryClient.invalidateQueries({ queryKey: timeSlotKeys.all });
       reset();

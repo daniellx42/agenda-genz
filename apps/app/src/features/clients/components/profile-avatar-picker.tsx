@@ -15,6 +15,8 @@ export function ProfileAvatarPicker({
   onPick,
   onClear,
 }: ProfileAvatarPickerProps) {
+  const initial = name && name.length >= 1 ? getInitial(name) : null;
+
   if (uri) {
     return (
       <View style={{ position: "relative", width: 80, height: 80 }}>
@@ -37,12 +39,17 @@ export function ProfileAvatarPicker({
   return (
     <Pressable onPress={onPick} className="active:opacity-70">
       <View className="h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-rose-200 bg-rose-50">
-        {name && name.length >= 1 ? (
-          <Text style={{ fontSize: 32, fontWeight: "700", color: "#f43f5e" }}>
-            {getInitial(name)}
+        {initial ? (
+          <Text
+            key="profile-avatar-initial"
+            style={{ fontSize: 32, fontWeight: "700", color: "#f43f5e" }}
+          >
+            {initial}
           </Text>
         ) : (
-          <Text className="text-2xl">📷</Text>
+          <Text key="profile-avatar-placeholder" className="text-2xl">
+            📷
+          </Text>
         )}
       </View>
       <View

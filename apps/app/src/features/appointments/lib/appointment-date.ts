@@ -1,4 +1,6 @@
-function normalizeDateInput(value: unknown): string | null {
+import type { DateLikeInput } from "@/lib/types/date-like";
+
+function normalizeDateInput(value: DateLikeInput): string | null {
   if (typeof value === "string") {
     return value;
   }
@@ -8,14 +10,13 @@ function normalizeDateInput(value: unknown): string | null {
   }
 
   if (typeof value === "object" && value !== null && "date" in value) {
-    const nestedDate = (value as { date?: unknown }).date;
-    return normalizeDateInput(nestedDate);
+    return normalizeDateInput(value.date);
   }
 
   return null;
 }
 
-function parseAppointmentDate(dateInput: unknown): Date | null {
+function parseAppointmentDate(dateInput: DateLikeInput): Date | null {
   const normalizedInput = normalizeDateInput(dateInput);
 
   if (!normalizedInput) {
@@ -65,7 +66,7 @@ function parseAppointmentDate(dateInput: unknown): Date | null {
   return date;
 }
 
-export function formatAppointmentDate(dateInput: unknown): string {
+export function formatAppointmentDate(dateInput: DateLikeInput): string {
   const date = parseAppointmentDate(dateInput);
 
   if (!date) {
@@ -80,7 +81,7 @@ export function formatAppointmentDate(dateInput: unknown): string {
   });
 }
 
-export function formatAppointmentShortDate(dateInput: unknown): string {
+export function formatAppointmentShortDate(dateInput: DateLikeInput): string {
   const date = parseAppointmentDate(dateInput);
 
   if (!date) {

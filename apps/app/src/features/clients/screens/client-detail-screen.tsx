@@ -5,6 +5,7 @@ import {
   formatInstagramHandle,
   openInstagramProfile,
 } from "../lib/client-instagram";
+import { openWhatsApp } from "../lib/client-whatsapp";
 import { imageUrlQueryOptions } from "@/lib/api/upload-query-options";
 import { useApiError } from "@/hooks/use-api-error";
 import { formatCpf, formatPhone } from "@/lib/formatters";
@@ -19,11 +20,15 @@ function DetailCard({
   label,
   value,
   onPress,
+  accentColor = "rose",
 }: {
   label: string;
   value: string;
   onPress?: () => void;
+  accentColor?: "rose" | "green";
 }) {
+  const hintColor = accentColor === "green" ? "text-emerald-600" : "text-rose-500";
+
   return (
     <Pressable
       onPress={onPress}
@@ -36,7 +41,7 @@ function DetailCard({
       </Text>
       <Text className="mt-2 text-sm font-medium text-zinc-900">{value}</Text>
       {onPress ? (
-        <Text className="mt-2 text-xs font-semibold text-rose-500">
+        <Text className={`mt-2 text-xs font-semibold ${hintColor}`}>
           Toque para abrir
         </Text>
       ) : null}
@@ -150,7 +155,12 @@ export default function ClientDetailScreen() {
         </View>
 
         <Pressable
-          onPress={() => router.push(`/client/${client.id}/appointments` as never)}
+          onPress={() =>
+            router.push({
+              pathname: "/client/[id]/appointments",
+              params: { id: client.id },
+            })
+          }
           className="mt-4 rounded-[32px] bg-rose-500 p-5 active:opacity-90"
         >
           <View className="flex-row items-center justify-between gap-4">
@@ -174,7 +184,12 @@ export default function ClientDetailScreen() {
         </Pressable>
 
         <View className="mt-4 gap-3">
-          <DetailCard label="Telefone" value={formatPhone(client.phone)} />
+          <DetailCard
+            label="Telefone"
+            value={formatPhone(client.phone)}
+            onPress={() => void openWhatsApp(client.phone)}
+            accentColor="green"
+          />
 
           {client.email ? (
             <DetailCard label="Email" value={client.email} />

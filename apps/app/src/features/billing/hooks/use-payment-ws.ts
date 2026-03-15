@@ -12,16 +12,43 @@ interface UsePaymentWsOptions {
   onPaymentApproved: (data: PaymentApprovedData) => void;
 }
 
+interface ReactNativeWebSocketOptions {
+  headers?: Record<string, string>;
+  origin?: string;
+  [optionName: string]:
+    | string
+    | number
+    | boolean
+    | Record<string, string>
+    | undefined;
+}
+
 type ReactNativeWebSocketConstructor = {
   new(
     url: string,
-    protocols?: string | string[] | null,
-    options?: {
-      headers?: Record<string, string>;
-      [optionName: string]: unknown;
-    } | null,
+    protocols?: string | string[],
+    options?: ReactNativeWebSocketOptions | null,
   ): WebSocket;
 };
+
+interface PaymentApprovedMessage extends PaymentApprovedData {
+  type: "payment_approved";
+}
+
+function isPaymentApprovedMessage(
+  value: string | PaymentApprovedData | Record<string, string>,
+): value is PaymentApprovedMessage {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    value.type === "payment_approved" &&
+    "paymentId" in value &&
+    typeof value.paymentId === "string" &&
+    "planExpiresAt" in value &&
+    typeof value.planExpiresAt === "string"
+  );
+}
 
 export function usePaymentWs({ onPaymentApproved }: UsePaymentWsOptions) {
   const wsRef = useRef<WebSocket | null>(null);
@@ -33,8 +60,7 @@ export function usePaymentWs({ onPaymentApproved }: UsePaymentWsOptions) {
     const wsUrl =
       env.EXPO_PUBLIC_SERVER_URL.replace(/^http/, "ws") + "/ws/billing";
     // This is only a TypeScript assertion for React Native's extended constructor.
-    const ReactNativeWebSocket =
-      WebSocket as unknown as ReactNativeWebSocketConstructor;
+    const ReactNativeWebSocket: ReactNativeWebSocketConstructor = WebSocket;
 
     const ws =
       Platform.OS === "web"
@@ -47,9 +73,11 @@ export function usePaymentWs({ onPaymentApproved }: UsePaymentWsOptions) {
 
     ws.onmessage = (event) => {
       try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "payment_approved") {
-          onPaymentApprovedRef.current(msg);
+        const parsedMessage: string | PaymentApprovedData | Record<string, string> =
+          JSON.parse(event.data);
+
+        if (isPaymentApprovedMessage(parsedMessage)) {
+          onPaymentApprovedRef.current(parsedMessage);
         }
       } catch {
         // Ignore invalid messages

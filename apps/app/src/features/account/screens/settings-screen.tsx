@@ -249,29 +249,6 @@ export default function SettingsScreen() {
           <View className="my-4 h-px bg-rose-100" />
 
           <Pressable
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onPress={() => router.push("/notification-test" as any)}
-            className="flex-row items-center gap-4 rounded-3xl bg-[#fff9fb] px-4 py-4 active:opacity-80"
-          >
-            <View className="h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100">
-              <Feather name="bell" size={18} color="#18181b" />
-            </View>
-
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-zinc-900">
-                Testar notificacoes
-              </Text>
-              <Text className="mt-1 text-sm leading-5 text-zinc-500">
-                Dispara notificacoes de teste manualmente.
-              </Text>
-            </View>
-
-            <Feather name="chevron-right" size={18} color="#a1a1aa" />
-          </Pressable>
-
-          <View className="my-4 h-px bg-rose-100" />
-
-          <Pressable
             onPress={openDeleteAccountSheet}
             disabled={signOutMutation.isPending || deleteAccountMutation.isPending}
             className="flex-row items-center gap-4 rounded-3xl bg-red-50 px-4 py-4 active:opacity-80"

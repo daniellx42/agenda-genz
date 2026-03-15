@@ -3,8 +3,12 @@ import { Errors } from "../../../shared/constants/errors";
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
-async function expectElysiaError(
-  promise: Promise<unknown>,
+function loadUploadService() {
+  return import(`../upload.service?test=${Date.now()}-${Math.random()}`);
+}
+
+async function expectElysiaError<T>(
+  promise: Promise<T>,
   expectedMessage: string,
   expectedCode: number,
 ) {
@@ -26,6 +30,13 @@ function mockEnv() {
       CLOUDFLARE_ACCESS_KEY_ID: "test-key",
       CLOUDFLARE_SECRET_ACCESS_KEY: "test-secret",
     },
+  }));
+  mock.module("@aws-sdk/client-s3", () => ({
+    DeleteObjectCommand: mock(function () { }),
+    DeleteObjectsCommand: mock(function () { }),
+    GetObjectCommand: mock(function () { }),
+    ListObjectsV2Command: mock(function () { }),
+    PutObjectCommand: mock(function () { }),
   }));
 }
 
@@ -51,7 +62,7 @@ describe("UploadService.generatePutUrl", () => {
     mockEnv();
     mockS3("https://r2.example.com/signed-put-url");
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     const result = await UploadService.generatePutUrl("user-1", {
       folder: "services",
       filename: "minha-foto.jpg",
@@ -66,7 +77,7 @@ describe("UploadService.generatePutUrl", () => {
     mockEnv();
     mockS3();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     const result = await UploadService.generatePutUrl("user-1", {
       folder: "profile",
       filename: "avatar.png",
@@ -81,7 +92,7 @@ describe("UploadService.generatePutUrl", () => {
     mockEnv();
     mockS3();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     const [r1, r2] = await Promise.all([
       UploadService.generatePutUrl("user-1", {
         folder: "services",
@@ -101,7 +112,7 @@ describe("UploadService.generatePutUrl", () => {
   it("deve lançar 400 para tipo de arquivo não-imagem (application/pdf)", async () => {
     mockEnv();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
 
     await expectElysiaError(
       UploadService.generatePutUrl("user-1", {
@@ -117,7 +128,7 @@ describe("UploadService.generatePutUrl", () => {
   it("deve lançar 400 para tipo text/plain", async () => {
     mockEnv();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
 
     await expectElysiaError(
       UploadService.generatePutUrl("user-1", {
@@ -134,7 +145,7 @@ describe("UploadService.generatePutUrl", () => {
     mockEnv();
     mockS3();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     const result = await UploadService.generatePutUrl("user-1", {
       folder: "services",
       filename: "minha foto bonita!@#$.jpg",
@@ -150,7 +161,7 @@ describe("UploadService.generatePutUrl", () => {
     mockEnv();
     mockS3();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     const result = await UploadService.generatePutUrl("user-1", {
       folder: "services",
       filename: "foto.heic",
@@ -169,7 +180,7 @@ describe("UploadService.deleteObject", () => {
       cloudflareR2: { send: sendMock },
     }));
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     await UploadService.deleteObject("user-1", "services/user-1/abc123-foto.jpg");
 
     expect(sendMock).toHaveBeenCalledTimes(1);
@@ -182,7 +193,7 @@ describe("UploadService.deleteObject", () => {
       cloudflareR2: { send: sendMock },
     }));
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     await UploadService.deleteObject("user-1", "profile/user-1/abc123-avatar.jpg");
 
     expect(sendMock).toHaveBeenCalledTimes(1);
@@ -191,7 +202,7 @@ describe("UploadService.deleteObject", () => {
   it("deve lançar 403 para key de outro usuário", async () => {
     mockEnv();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
 
     await expectElysiaError(
       UploadService.deleteObject("user-1", "services/user-2/abc-foto.jpg"),
@@ -206,7 +217,7 @@ describe("UploadService.generateGetUrl", () => {
     mockEnv();
     mockS3("https://r2.example.com/signed-get-url");
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     const result = await UploadService.generateGetUrl(
       "user-1",
       "services/user-1/abc123-foto.jpg",
@@ -219,7 +230,7 @@ describe("UploadService.generateGetUrl", () => {
     mockEnv();
     mockS3("https://r2.example.com/get-url");
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
     const result = await UploadService.generateGetUrl(
       "user-1",
       "profile/user-1/abc123-avatar.jpg",
@@ -231,7 +242,7 @@ describe("UploadService.generateGetUrl", () => {
   it("deve lançar 403 para key de outro usuário", async () => {
     mockEnv();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
 
     await expectElysiaError(
       UploadService.generateGetUrl("user-1", "services/user-2/abc123-foto.jpg"),
@@ -243,7 +254,7 @@ describe("UploadService.generateGetUrl", () => {
   it("deve lançar 403 para key com formato inválido", async () => {
     mockEnv();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
 
     await expectElysiaError(
       UploadService.generateGetUrl("user-1", "../../etc/passwd"),
@@ -255,7 +266,7 @@ describe("UploadService.generateGetUrl", () => {
   it("deve lançar 403 para key que começa com prefixo correto mas pertence a outro usuário", async () => {
     mockEnv();
 
-    const { UploadService } = await import("../upload.service");
+    const { UploadService } = await loadUploadService();
 
     // services/user-1extra/... não pertence a user-1
     await expectElysiaError(

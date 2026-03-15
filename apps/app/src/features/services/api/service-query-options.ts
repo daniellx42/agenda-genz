@@ -48,6 +48,11 @@ function buildServicesInfiniteQueryOptions(
   });
 }
 
+async function fetchActiveServices(handleError?: ApiErrorHandler) {
+  const result = await api.api.services.export.get();
+  return getDataOrThrow(result, handleError) ?? [];
+}
+
 export function servicesInfiniteQueryOptions(
   search: string,
   handleError?: ApiErrorHandler,
@@ -62,12 +67,16 @@ export function activeServicesInfiniteQueryOptions(
   return buildServicesInfiniteQueryOptions("active", search, true, handleError);
 }
 
+export function activeServicesQueryOptions(handleError?: ApiErrorHandler) {
+  return queryOptions({
+    queryKey: serviceKeys.list("active"),
+    queryFn: (): Promise<ServiceItem[]> => fetchActiveServices(handleError),
+  });
+}
+
 export function serviceExportQueryOptions(handleError?: ApiErrorHandler) {
   return queryOptions({
     queryKey: serviceKeys.export(),
-    queryFn: async (): Promise<ServiceItem[]> => {
-      const result = await api.api.services.export.get();
-      return getDataOrThrow(result, handleError) ?? [];
-    },
+    queryFn: (): Promise<ServiceItem[]> => fetchActiveServices(handleError),
   });
 }

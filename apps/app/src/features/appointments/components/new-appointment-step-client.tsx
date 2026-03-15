@@ -1,8 +1,9 @@
-import { clientsInfiniteQueryOptions } from "@/features/clients/api/client-query-options";
-import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
-import { ClientCardSkeleton } from "@/features/clients/components/client-card-skeleton";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
+import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
+import { clientsInfiniteQueryOptions } from "@/features/clients/api/client-query-options";
+import { ClientCardSkeleton } from "@/features/clients/components/client-card-skeleton";
 import { useApiError } from "@/hooks/use-api-error";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatPhone } from "@/lib/formatters";
 import Feather from "@expo/vector-icons/Feather";
 import { useBottomSheetModal } from "@gorhom/bottom-sheet";
@@ -16,7 +17,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 export function StepClient() {
   const { setClient } = useAppointmentDraft();
@@ -24,7 +24,9 @@ export function StepClient() {
   const router = useRouter();
   const { dismissAll } = useBottomSheetModal();
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search, 400);
+  const debouncedSearch = useDebouncedValue(search, 500);
+  const normalizedSearch = debouncedSearch.trim();
+  const hasSearch = normalizedSearch.length > 0;
 
   const {
     data,
@@ -33,7 +35,7 @@ export function StepClient() {
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery(
-    clientsInfiniteQueryOptions(debouncedSearch, showError),
+    clientsInfiniteQueryOptions(normalizedSearch, showError, hasSearch),
   );
 
   const clients = useMemo(
@@ -52,7 +54,7 @@ export function StepClient() {
         Selecionar cliente
       </Text>
       <Text className="text-sm text-zinc-400 mb-4">
-        Busque por nome, telefone, CPF, email ou Instagram
+        Digite para buscar por nome, telefone, CPF, email ou Instagram
       </Text>
 
       <SheetTextInput
@@ -64,7 +66,7 @@ export function StepClient() {
         autoCapitalize="none"
       />
 
-      {isLoading && (
+      {hasSearch && isLoading && (
         <View className="mt-1">
           {Array.from({ length: 4 }).map((_, index) => (
             <ClientCardSkeleton key={index} />
@@ -73,6 +75,25 @@ export function StepClient() {
       )}
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+        {!hasSearch ? (
+          <View className="items-center py-8">
+            <Text className="mb-4 text-center text-sm text-zinc-400">
+              Digite pelo menos um termo para buscar clientes
+            </Text>
+            <Pressable
+              onPress={() => {
+                dismissAll();
+                router.navigate("/clients");
+              }}
+              className="bg-rose-50 border border-rose-200 rounded-2xl px-5 py-3"
+            >
+              <Text className="text-rose-500 font-semibold text-sm">
+                Novo cliente +
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {clients.map((client) => (
           <Pressable
             key={client.id}
@@ -98,7 +119,7 @@ export function StepClient() {
           </Pressable>
         ))}
 
-        {hasNextPage ? (
+        {hasSearch && hasNextPage ? (
           <Pressable
             onPress={() => {
               void fetchNextPage();
@@ -117,7 +138,7 @@ export function StepClient() {
           </Pressable>
         ) : null}
 
-        {clients.length === 0 && !isLoading && (
+        {hasSearch && clients.length === 0 && !isLoading && (
           <View className="items-center py-8">
             <Text className="text-zinc-400 text-sm mb-4">
               Nenhum cliente encontrado
@@ -125,12 +146,12 @@ export function StepClient() {
             <Pressable
               onPress={() => {
                 dismissAll();
-                router.navigate("/clients" as never);
+                router.navigate("/clients");
               }}
               className="bg-rose-50 border border-rose-200 rounded-2xl px-5 py-3"
             >
               <Text className="text-rose-500 font-semibold text-sm">
-                Novo cliente
+                Novo cliente +
               </Text>
             </Pressable>
           </View>

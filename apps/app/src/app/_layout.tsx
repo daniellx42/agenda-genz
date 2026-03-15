@@ -25,7 +25,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const { data: session, isPending } = authClient.useSession();
   const previousUserIdRef = useRef<string | null | undefined>(undefined);
-  const { setPlanExpiresAt, isExpired } = useSubscriptionStore();
+  const { setPlanExpiresAt } = useSubscriptionStore();
 
   useEffect(() => {
     if (isPending) return;
@@ -76,26 +76,16 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <BottomSheetModalProvider>
             <AuthSessionProvider session={session} isPending={isPending}>
-              {!isPending ? (
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Protected guard={!session}>
-                    <Stack.Screen name="(auth)" />
-                  </Stack.Protected>
-
-                  <Stack.Protected guard={!!session && isExpired}>
-                    <Stack.Screen name="(paywall)" />
-                  </Stack.Protected>
-
-                  <Stack.Protected guard={!!session && !isExpired}>
-                    <Stack.Screen name="(app)" />
-                    <Stack.Screen name="appointment/[id]" />
-                    <Stack.Screen name="client/[id]" />
-                    <Stack.Screen name="client/[id]/appointments" />
-                    <Stack.Screen name="settings" />
-                    <Stack.Screen name="notification-test" />
-                  </Stack.Protected>
-                </Stack>
-              ) : null}
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(paywall)" />
+                <Stack.Screen name="(app)" />
+                <Stack.Screen name="appointment/[id]" />
+                <Stack.Screen name="client/[id]" />
+                <Stack.Screen name="client/[id]/appointments" />
+                <Stack.Screen name="settings" />
+                <Stack.Screen name="index" options={{ animation: "none" }} />
+              </Stack>
             </AuthSessionProvider>
             <StatusBar backgroundColor="#ffccd3" barStyle="dark-content" />
             <Toaster />

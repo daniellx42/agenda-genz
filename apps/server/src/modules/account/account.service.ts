@@ -17,18 +17,12 @@ export abstract class AccountService {
       );
     }
 
-    // Remove user media first so we don't leave orphaned files behind if the
-    // account deletion succeeds.
+    // Remove user media first so we don't leave orphaned files behind.
     await UploadService.deleteAllUserObjects(userId);
 
-    await prisma.$transaction([
-      prisma.appointment.deleteMany({ where: { userId } }),
-      prisma.timeSlotException.deleteMany({ where: { userId } }),
-      prisma.client.deleteMany({ where: { userId } }),
-      prisma.service.deleteMany({ where: { userId } }),
-      prisma.timeSlot.deleteMany({ where: { userId } }),
-      prisma.verification.deleteMany({ where: { identifier: user.email } }),
-      prisma.user.delete({ where: { id: userId } }),
-    ]);
+    await prisma.verification.deleteMany({ where: { identifier: user.email } });
+    await prisma.user.delete({ where: { id: userId } });
+    // Client, Service, TimeSlot, Appointment are cascade-deleted by the DB.
+    // BillingPayment.userId is set to null (SetNull) for dashboard history.
   }
 }

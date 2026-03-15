@@ -3,8 +3,8 @@ import { Errors } from "../../../shared/constants/errors";
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
-async function expectElysiaError(
-  promise: Promise<unknown>,
+async function expectElysiaError<T>(
+  promise: Promise<T>,
   expectedMessage: string,
   expectedCode: number,
 ) {

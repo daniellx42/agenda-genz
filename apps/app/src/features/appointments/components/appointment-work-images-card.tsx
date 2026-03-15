@@ -1,6 +1,6 @@
-import { AppointmentImageUploadCard } from "./appointment-image-upload-card";
 import { Text, View } from "react-native";
 import type { ImageSlot } from "../lib/appointment-images";
+import { AppointmentImageUploadCard } from "./appointment-image-upload-card";
 
 interface AppointmentWorkImagesCardProps {
   beforeImageUrl: string | null;
@@ -23,8 +23,8 @@ export function AppointmentWorkImagesCard({
 }: AppointmentWorkImagesCardProps) {
   return (
     <View className="mb-4 rounded-2xl border border-rose-100 bg-white p-4">
-      <Text className="mb-4 text-sm font-semibold text-zinc-900">
-        Antes e Depois
+      <Text className="mb-4 text-sm font-semibold text-zinc-500">
+        Imagens de Antes e Depois do serviço
       </Text>
 
       <View className="flex-row gap-3">

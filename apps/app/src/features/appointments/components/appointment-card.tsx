@@ -78,7 +78,12 @@ export function AppointmentCard({ appointment }: AppointmentCardProps) {
   return (
     <View className="mb-3 overflow-hidden rounded-2xl border border-rose-100 bg-white">
       <Pressable
-        onPress={() => router.push(`/appointment/${appointment.id}` as never)}
+        onPress={() =>
+          router.push({
+            pathname: "/appointment/[id]",
+            params: { id: appointment.id },
+          })
+        }
         className="p-4 active:opacity-80"
       >
         <View className="flex-row items-start justify-between">

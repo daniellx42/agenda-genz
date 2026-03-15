@@ -19,23 +19,23 @@ const plans = [
   {
     interval: "QUARTERLY" as const,
     name: "Trimestral",
-    priceInCents: 2499,
+    priceInCents: 2890,
     durationDays: 90,
-    discountLabel: "17% off",
+    discountLabel: "5% off",
   },
   {
     interval: "SEMIANNUAL" as const,
     name: "Semestral",
-    priceInCents: 4499,
+    priceInCents: 5390,
     durationDays: 180,
-    discountLabel: "25% off",
+    discountLabel: "10% off",
   },
   {
     interval: "ANNUAL" as const,
     name: "Anual",
-    priceInCents: 7199,
+    priceInCents: 9590,
     durationDays: 365,
-    discountLabel: "40% off",
+    discountLabel: "20% off",
   },
 ];
 

@@ -21,7 +21,7 @@ import {
   formatSelectedDay,
 } from "../lib/appointment-calendar";
 
-const CALENDAR_HEIGHT = 340;
+const CALENDAR_HEIGHT = 350;
 const COLLAPSE_SCROLL = 180;
 
 export default function AppointmentsScreen() {

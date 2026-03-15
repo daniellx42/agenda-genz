@@ -12,6 +12,10 @@ model User {
   sessions      Session[]
   accounts      Account[]
   payments      BillingPayment[]
+  clients       Client[]
+  services      Service[]
+  timeSlots     TimeSlot[]
+  appointments  Appointment[]
 
   @@unique([email])
   @@map("user")

@@ -14,6 +14,7 @@ import {
   imageUrlQueryOptions,
 } from "@/lib/api/upload-query-options";
 import { uploadImageAsset } from "@/lib/api/image-upload";
+import type { ApiErrorHandler } from "@/lib/api/query-utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { toast } from "sonner-native";
@@ -33,7 +34,7 @@ interface AppointmentDetailMediaParams {
       }
     | null
     | undefined;
-  showError: (error: unknown) => void;
+  showError: ApiErrorHandler;
 }
 
 export function useAppointmentDetailMedia({

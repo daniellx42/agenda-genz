@@ -10,6 +10,7 @@ import {
   formatInstagramHandle,
   openInstagramProfile,
 } from "../lib/client-instagram";
+import { openWhatsApp } from "../lib/client-whatsapp";
 import type { ClientItem } from "../types";
 
 interface ClientCardProps {
@@ -29,33 +30,44 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
     <View className="mb-2 flex-row items-center gap-3 rounded-2xl border border-rose-100 bg-white p-4">
       <View className="flex-1">
         <Pressable
-          onPress={() => router.push(`/client/${client.id}` as never)}
+          onPress={() =>
+            router.push({
+              pathname: "/client/[id]",
+              params: { id: client.id },
+            })
+          }
           className="flex-row items-center gap-3 active:opacity-80"
         >
           <ClientAvatar name={client.name} imageUrl={profileImageUrl} />
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-zinc-900">
-              {client.name}
-            </Text>
-            <Text className="mt-0.5 text-xs text-zinc-400">
-              {formatPhone(client.phone)}
-            </Text>
-          </View>
+          <Text className="text-sm font-semibold text-zinc-900">
+            {client.name}
+          </Text>
         </Pressable>
 
-        {client.instagram ? (
+        <View className="mt-2 flex-row flex-wrap gap-2">
           <Pressable
-            onPress={() => {
-              if (!client.instagram) return;
-              void openInstagramProfile(client.instagram);
-            }}
-            className="mt-2 self-start rounded-full bg-rose-50 px-3 py-1.5 active:opacity-80"
+            onPress={() => void openWhatsApp(client.phone)}
+            className="self-start rounded-full bg-emerald-50 px-3 py-1.5 active:opacity-80"
           >
-            <Text className="text-xs font-semibold text-rose-500">
-              {formatInstagramHandle(client.instagram)}
+            <Text className="text-xs font-semibold text-emerald-600">
+              {formatPhone(client.phone)}
             </Text>
           </Pressable>
-        ) : null}
+
+          {client.instagram ? (
+            <Pressable
+              onPress={() => {
+                if (!client.instagram) return;
+                void openInstagramProfile(client.instagram);
+              }}
+              className="self-start rounded-full bg-rose-50 px-3 py-1.5 active:opacity-80"
+            >
+              <Text className="text-xs font-semibold text-rose-500">
+                {formatInstagramHandle(client.instagram)}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
       <View className="flex-row gap-2">
         <Pressable

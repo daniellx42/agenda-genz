@@ -33,15 +33,17 @@ const GENDER_OPTIONS: Array<{
 function renderFieldErrors(field: {
   state: {
     meta: {
-      errors: unknown[];
+      errors: Array<string | undefined>;
     };
   };
 }) {
-  return field.state.meta.errors.map((error, index) => (
-    <Text key={index} className="mt-1 text-xs text-red-400">
-      {String(error)}
-    </Text>
-  ));
+  return field.state.meta.errors
+    .filter((error): error is string => typeof error === "string")
+    .map((error, index) => (
+      <Text key={index} className="mt-1 text-xs text-red-400">
+        {error}
+      </Text>
+    ));
 }
 
 export function ClientFormFields({

@@ -135,50 +135,72 @@ function buildSummaryMetrics(summary: AppointmentHistorySummary) {
 function ClientAppointmentsLoadingScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
+      {/* Header */}
       <View className="flex-row items-center gap-3 px-5 pb-3 pt-3">
         <SkeletonBox style={{ width: 40, height: 40, borderRadius: 20 }} />
-        <SkeletonBox style={{ width: 200, height: 18 }} />
+        <View className="flex-1">
+          <SkeletonBox style={{ width: 180, height: 18 }} />
+          <SkeletonBox style={{ marginTop: 6, width: 220, height: 12 }} />
+        </View>
       </View>
 
       <View className="px-5">
-        <View className="mb-4 rounded-[28px] bg-rose-200 p-5">
-          <SkeletonBox style={{ width: 120, height: 12 }} />
-          <SkeletonBox style={{ marginTop: 12, width: 180, height: 30 }} />
-          <SkeletonBox style={{ marginTop: 16, width: "100%", height: 68 }} />
-        </View>
-
-        <View className="mb-4 rounded-2xl border border-rose-100 bg-white p-4">
-          <View className="flex-row items-center gap-3">
-            <SkeletonBox style={{ width: 56, height: 56, borderRadius: 28 }} />
-            <View className="flex-1">
-              <SkeletonBox style={{ width: "58%", height: 18 }} />
-              <SkeletonBox style={{ marginTop: 8, width: "42%", height: 12 }} />
-            </View>
+        {/* Card do cliente */}
+        <View className="mb-4 flex-row items-center gap-4 rounded-2xl border border-rose-100 bg-white p-4">
+          <SkeletonBox style={{ width: 56, height: 56, borderRadius: 28 }} />
+          <View className="flex-1">
+            <SkeletonBox style={{ width: "55%", height: 16 }} />
+            <SkeletonBox style={{ marginTop: 8, width: "40%", height: 13 }} />
           </View>
+          <SkeletonBox style={{ width: 88, height: 28, borderRadius: 20 }} />
         </View>
 
+        {/* FinancialSummaryCard — recebido */}
+        <View className="mb-4 rounded-[28px] border border-emerald-100 bg-emerald-50 p-5">
+          <SkeletonBox style={{ width: 140, height: 16 }} />
+          <SkeletonBox style={{ marginTop: 12, width: 160, height: 36 }} />
+          <SkeletonBox style={{ marginTop: 16, width: "100%", height: 56 }} />
+        </View>
+
+        {/* FinancialSummaryCard — pendente */}
+        <View className="mb-4 rounded-[28px] border border-amber-100 bg-amber-50 p-5">
+          <SkeletonBox style={{ width: 160, height: 16 }} />
+          <SkeletonBox style={{ marginTop: 12, width: 140, height: 36 }} />
+          <SkeletonBox style={{ marginTop: 16, width: "100%", height: 56 }} />
+        </View>
+
+        {/* Card de datas úteis */}
         <View className="mb-4 rounded-2xl border border-rose-100 bg-white p-4">
           <SkeletonBox style={{ width: 100, height: 12 }} />
-          <SkeletonBox style={{ marginTop: 12, width: "100%", height: 14 }} />
-          <SkeletonBox style={{ marginTop: 10, width: "100%", height: 14 }} />
-          <SkeletonBox style={{ marginTop: 10, width: "80%", height: 14 }} />
-        </View>
-
-        <View className="mb-4 flex-row flex-wrap gap-3">
-          {Array.from({ length: 4 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <View
-              key={index}
-              className="rounded-2xl border border-rose-100 bg-white p-4"
-              style={{ width: "48%" }}
+              key={i}
+              className="flex-row items-center justify-between py-3"
+              style={{ borderBottomWidth: i < 3 ? 1 : 0, borderBottomColor: "#f4f4f5" }}
             >
-              <SkeletonBox style={{ width: 92, height: 12 }} />
-              <SkeletonBox style={{ marginTop: 12, width: 48, height: 24 }} />
+              <SkeletonBox style={{ width: 140, height: 13 }} />
+              <SkeletonBox style={{ width: 90, height: 13 }} />
             </View>
           ))}
         </View>
 
-        {Array.from({ length: 3 }).map((_, index) => (
-          <AppointmentCardSkeleton key={index} />
+        {/* Grid de métricas */}
+        <View className="mb-4 flex-row flex-wrap gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <View
+              key={i}
+              className="rounded-2xl border border-rose-100 bg-white p-4"
+              style={{ width: "48%" }}
+            >
+              <SkeletonBox style={{ width: 80, height: 12 }} />
+              <SkeletonBox style={{ marginTop: 12, width: 48, height: 28 }} />
+            </View>
+          ))}
+        </View>
+
+        {/* Lista de agendamentos */}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <AppointmentCardSkeleton key={i} />
         ))}
       </View>
     </SafeAreaView>

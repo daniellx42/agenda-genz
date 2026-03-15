@@ -1,5 +1,3 @@
-import { billingPlansQueryOptions } from "../api/billing-query-options";
-import { PlanCard } from "../components/plan-card";
 import { useApiError } from "@/hooks/use-api-error";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -12,20 +10,22 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { billingPlansQueryOptions } from "../api/billing-query-options";
+import { PlanCard } from "../components/plan-card";
 
 export default function PlansScreen() {
   const { showError } = useApiError();
   const router = useRouter();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-  const { data: plans, isLoading } = useQuery(
+  const { data: plans, isLoading, isError, refetch } = useQuery(
     billingPlansQueryOptions(showError),
   );
 
   const handleContinue = () => {
     if (!selectedPlanId) return;
     router.push({
-      pathname: "/(paywall)/checkout" as any,
+      pathname: "/(paywall)/checkout",
       params: { planId: selectedPlanId },
     });
   };
@@ -33,7 +33,6 @@ export default function PlansScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView
-        className="flex-1"
         contentContainerClassName="px-6 py-8"
         showsVerticalScrollIndicator={false}
       >
@@ -53,6 +52,18 @@ export default function PlansScreen() {
         {/* Plans */}
         {isLoading ? (
           <ActivityIndicator size="large" color="#fb7185" className="mt-8" />
+        ) : isError ? (
+          <View className="items-center mt-8">
+            <Text className="text-base text-gray-500 text-center mb-4">
+              Não foi possível carregar os planos.
+            </Text>
+            <Pressable
+              onPress={() => refetch()}
+              className="bg-rose-400 rounded-2xl px-6 py-3"
+            >
+              <Text className="text-white font-semibold">Tentar novamente</Text>
+            </Pressable>
+          </View>
         ) : (
           <View>
             {plans?.map((plan) => (
@@ -77,14 +88,12 @@ export default function PlansScreen() {
         <Pressable
           onPress={handleContinue}
           disabled={!selectedPlanId}
-          className={`rounded-2xl py-4 items-center ${
-            selectedPlanId ? "bg-rose-400" : "bg-gray-200"
-          }`}
+          className={`rounded-2xl py-4 items-center ${selectedPlanId ? "bg-rose-400" : "bg-gray-200"
+            }`}
         >
           <Text
-            className={`text-lg font-semibold ${
-              selectedPlanId ? "text-white" : "text-gray-400"
-            }`}
+            className={`text-lg font-semibold ${selectedPlanId ? "text-white" : "text-gray-400"
+              }`}
           >
             Continuar
           </Text>

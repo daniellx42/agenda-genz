@@ -1,16 +1,14 @@
-import { activeServicesInfiniteQueryOptions } from "@/features/services/api/service-query-options";
-import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
-import { ServiceCardSkeleton } from "@/features/services/components/service-card-skeleton";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
+import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
+import { activeServicesQueryOptions } from "@/features/services/api/service-query-options";
+import { ServiceCardSkeleton } from "@/features/services/components/service-card-skeleton";
 import { useApiError } from "@/hooks/use-api-error";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import Feather from "@expo/vector-icons/Feather";
 import { useBottomSheetModal } from "@gorhom/bottom-sheet";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -27,26 +25,20 @@ export function StepService() {
   const router = useRouter();
   const { dismissAll } = useBottomSheetModal();
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search, 400);
+  const normalizedSearch = search.trim().toLocaleLowerCase();
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery(
-    activeServicesInfiniteQueryOptions(debouncedSearch, showError),
+  const { data: allServices = [], isLoading } = useQuery(
+    activeServicesQueryOptions(showError),
   );
 
   const services = useMemo(
     () =>
-      (data?.pages ?? [])
-        .flatMap((page) => page.data)
-        .filter((service, index, array) => {
-          return array.findIndex((item) => item.id === service.id) === index;
-        }),
-    [data?.pages],
+      allServices.filter((service) => {
+        if (!normalizedSearch) return true;
+
+        return service.name.toLocaleLowerCase().includes(normalizedSearch);
+      }),
+    [allServices, normalizedSearch],
   );
 
   return (
@@ -117,25 +109,6 @@ export function StepService() {
           </Pressable>
         ))}
 
-        {hasNextPage ? (
-          <Pressable
-            onPress={() => {
-              void fetchNextPage();
-            }}
-            disabled={isFetchingNextPage}
-            className="mb-2 mt-2 items-center rounded-2xl border border-rose-200 bg-rose-50 py-3 active:opacity-80"
-            style={{ opacity: isFetchingNextPage ? 0.6 : 1 }}
-          >
-            {isFetchingNextPage ? (
-              <ActivityIndicator color="#f43f5e" size="small" />
-            ) : (
-              <Text className="text-sm font-semibold text-rose-500">
-                Carregar mais serviços
-              </Text>
-            )}
-          </Pressable>
-        ) : null}
-
         {services.length === 0 && !isLoading && (
           <View className="items-center py-8">
             <Text className="text-zinc-400 text-sm mb-4">
@@ -144,12 +117,12 @@ export function StepService() {
             <Pressable
               onPress={() => {
                 dismissAll();
-                router.navigate("/services" as never);
+                router.navigate("/services");
               }}
               className="bg-rose-50 border border-rose-200 rounded-2xl px-5 py-3"
             >
               <Text className="text-rose-500 font-semibold text-sm">
-                Novo serviço
+                Novo serviço +
               </Text>
             </Pressable>
           </View>

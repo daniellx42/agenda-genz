@@ -1,3 +1,4 @@
+import type { AppointmentStatus, PaymentStatus } from "@agenda-genz/db";
 import { prisma } from "../../shared/lib/db";
 import { addUtcDays, formatDateOnly } from "../../shared/lib/date-only";
 import { buildAppointmentHistorySummary } from "./lib/appointment-history-summary";
@@ -31,8 +32,8 @@ const appointmentInclude = {
 type AppointmentRecord = {
   id: string;
   date: Date;
-  status: string;
-  paymentStatus: string;
+  status: AppointmentStatus;
+  paymentStatus: PaymentStatus;
   notes: string | null;
   beforeImageKey: string | null;
   afterImageKey: string | null;
@@ -204,7 +205,7 @@ export abstract class AppointmentRepository {
   static async updateStatus(
     id: string,
     userId: string,
-    status: string,
+    status: AppointmentStatus,
   ): Promise<AppointmentModel.appointmentResponse | null> {
     const existing = await prisma.appointment.findFirst({
       where: { id, userId },
@@ -213,7 +214,7 @@ export abstract class AppointmentRepository {
 
     const appointment = await prisma.appointment.update({
       where: { id },
-      data: { status: status as never },
+      data: { status },
       include: appointmentInclude,
     });
 
@@ -223,7 +224,7 @@ export abstract class AppointmentRepository {
   static async updatePayment(
     id: string,
     userId: string,
-    paymentStatus: string,
+    paymentStatus: PaymentStatus,
   ): Promise<AppointmentModel.appointmentResponse | null> {
     const existing = await prisma.appointment.findFirst({
       where: { id, userId },
@@ -232,7 +233,7 @@ export abstract class AppointmentRepository {
 
     const appointment = await prisma.appointment.update({
       where: { id },
-      data: { paymentStatus: paymentStatus as never },
+      data: { paymentStatus },
       include: appointmentInclude,
     });
 
@@ -261,19 +262,26 @@ export abstract class AppointmentRepository {
     return toResponse(appointment);
   }
 
-  static async delete(id: string, userId: string): Promise<boolean> {
-    const existing = await prisma.appointment.findFirst({
+  static async deleteById(id: string, userId: string): Promise<boolean> {
+    const result = await prisma.appointment.deleteMany({
       where: { id, userId },
     });
-    if (!existing) return false;
 
-    // Soft delete via status CANCELLED em vez de deletar
-    await prisma.appointment.update({
-      where: { id },
-      data: { status: "CANCELLED" },
+    return result.count > 0;
+  }
+
+  /**
+   * Returns before/after image keys for all appointments of a client (for R2 cleanup on client delete).
+   */
+  static async findImageKeysByClientId(
+    clientId: string,
+    userId: string,
+  ): Promise<{ beforeImageKey: string | null; afterImageKey: string | null }[]> {
+    const rows = await prisma.appointment.findMany({
+      where: { clientId, userId },
+      select: { beforeImageKey: true, afterImageKey: true },
     });
-
-    return true;
+    return rows;
   }
 
   /**

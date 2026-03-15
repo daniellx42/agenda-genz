@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import {
+  getDataOrThrow,
   throwIfApiError,
   type ApiErrorHandler,
 } from "@/lib/api/query-utils";
@@ -18,8 +19,8 @@ export async function createAppointment(
   },
   handleError?: ApiErrorHandler,
 ) {
-  const { error } = await api.api.appointments.post(input);
-  throwIfApiError(error, handleError);
+  const result = await api.api.appointments.post(input);
+  return getDataOrThrow(result, handleError)!;
 }
 
 export async function updateAppointmentPayment(
@@ -66,6 +67,15 @@ export async function deleteAppointmentImage(
   const { error } = await api.api.appointments({ id: input.id }).images({
     slot: input.slot,
   }).delete();
+
+  throwIfApiError(error, handleError);
+}
+
+export async function deleteAppointment(
+  id: string,
+  handleError?: ApiErrorHandler,
+) {
+  const { error } = await api.api.appointments({ id }).delete();
 
   throwIfApiError(error, handleError);
 }

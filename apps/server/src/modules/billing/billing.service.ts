@@ -1,14 +1,15 @@
-import { env } from "@agenda-genz/env/server";
 import { status } from "elysia";
 import crypto from "node:crypto";
 import { Errors } from "../../shared/constants/errors";
-import { prisma } from "../../shared/lib/db";
-import { mpPayment } from "../../shared/lib/mercadopago";
 import type { BillingModel } from "./billing.model";
 import { BillingRepository } from "./billing.repository";
-import { notifyPaymentApproved } from "./billing.ws";
 
 const PIX_EXPIRY_MINUTES = 30;
+
+function getWebhookSecret(): string | null {
+  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+  return secret && secret.length > 0 ? secret : null;
+}
 
 export abstract class BillingService {
   static async listPlans(): Promise<BillingModel.listPlansResponse> {
@@ -52,13 +53,17 @@ export abstract class BillingService {
       );
     }
 
-    // Cancel any existing PENDING payments for this user
+    // Cancel all existing PENDING payments for this user
     await BillingRepository.cancelPendingPayments(userId);
 
     const idempotencyKey = crypto.randomUUID();
     const pixExpiresAt = new Date(
       Date.now() + PIX_EXPIRY_MINUTES * 60 * 1000,
     );
+    const [{ env }, { mpPayment }] = await Promise.all([
+      import("@agenda-genz/env/server"),
+      import("../../shared/lib/mercadopago"),
+    ]);
 
     let mpResult: Awaited<ReturnType<typeof mpPayment.create>>;
 
@@ -139,25 +144,37 @@ export abstract class BillingService {
 
     // Idempotent: skip if not found or already processed
     if (!payment || payment.status !== "PENDING") return;
+    const { mpPayment } = await import("../../shared/lib/mercadopago");
 
     // Verify payment status with MercadoPago API
     let mpStatus: string;
     try {
       const mpResult = await mpPayment.get({ id: Number(mpPaymentId) });
-      mpStatus = mpResult.status ?? "unknown";
+      mpStatus = mpResult.status ?? "unmapped";
     } catch {
       return; // Can't verify, will retry on next webhook
     }
 
     if (mpStatus === "approved") {
-      // Calculate new expiry with stacking
+      // userId may be null if user deleted account (SetNull); keep payment history, skip user update
+      if (!payment.userId) {
+        await BillingRepository.updatePaymentStatus(payment.id, {
+          status: "APPROVED",
+          paidAt: new Date(),
+        });
+        return;
+      }
+
       const user = await BillingRepository.findUserById(payment.userId);
       const newExpiresAt = BillingService.calcNewExpiry(
         user?.planExpiresAt ?? null,
         payment.durationDays,
       );
+      const [{ prisma }, { notifyPaymentApproved }] = await Promise.all([
+        import("../../shared/lib/db"),
+        import("./billing.ws"),
+      ]);
 
-      // Update payment + user in a transaction
       await prisma.$transaction([
         prisma.billingPayment.update({
           where: { id: payment.id },
@@ -173,7 +190,6 @@ export abstract class BillingService {
         }),
       ]);
 
-      // Notify via WebSocket
       notifyPaymentApproved(payment.userId, {
         paymentId: payment.id,
         planExpiresAt: newExpiresAt.toISOString(),
@@ -211,6 +227,8 @@ export abstract class BillingService {
     dataId: string | null,
   ): boolean {
     if (!xSignature || !xRequestId || !dataId) return false;
+    const webhookSecret = getWebhookSecret();
+    if (!webhookSecret) return false;
 
     const parts = xSignature.split(",");
     let ts: string | undefined;
@@ -228,7 +246,7 @@ export abstract class BillingService {
 
     const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
     const expectedHash = crypto
-      .createHmac("sha256", env.MERCADO_PAGO_WEBHOOK_SECRET)
+      .createHmac("sha256", webhookSecret)
       .update(manifest)
       .digest("hex");
 

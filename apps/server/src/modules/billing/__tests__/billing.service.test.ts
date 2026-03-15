@@ -3,8 +3,12 @@ import { Errors } from "../../../shared/constants/errors";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async function expectElysiaError(
-  promise: Promise<unknown>,
+function loadBillingService() {
+  return import(`../billing.service?test=${Date.now()}-${Math.random()}`);
+}
+
+async function expectElysiaError<T>(
+  promise: Promise<T>,
   expectedMessage: string,
   expectedCode: number,
 ) {
@@ -58,6 +62,7 @@ const mockUser = {
 
 beforeEach(() => {
   mock.restore();
+  delete process.env.MERCADO_PAGO_WEBHOOK_SECRET;
 });
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -73,7 +78,7 @@ describe("BillingService.listPlans", () => {
       },
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     const result = await BS.listPlans();
 
     expect(result).toEqual(plans);
@@ -126,7 +131,7 @@ describe("BillingService.createPixPayment", () => {
       },
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     const result = await BS.createPixPayment(
       "user-1",
       "user@test.com",
@@ -159,7 +164,7 @@ describe("BillingService.createPixPayment", () => {
       },
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
 
     await expectElysiaError(
       BS.createPixPayment("user-1", "user@test.com", "non-existent"),
@@ -190,7 +195,7 @@ describe("BillingService.createPixPayment", () => {
       },
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
 
     await expectElysiaError(
       BS.createPixPayment("user-1", "user@test.com", "plan-1"),
@@ -228,7 +233,7 @@ describe("BillingService.getPaymentStatus", () => {
       },
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     const result = await BS.getPaymentStatus("payment-1", "user-1");
 
     expect(result.id).toBe("payment-1");
@@ -255,7 +260,7 @@ describe("BillingService.getPaymentStatus", () => {
       },
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
 
     await expectElysiaError(
       BS.getPaymentStatus("non-existent", "user-1"),
@@ -302,7 +307,7 @@ describe("BillingService.processWebhook", () => {
     // Mock prisma transaction
     mock.module("../../../shared/lib/db", () => ({
       prisma: {
-        $transaction: mock((ops: Promise<unknown>[]) =>
+        $transaction: mock(<T>(ops: Promise<T>[]) =>
           Promise.all(ops),
         ),
         billingPayment: {
@@ -318,7 +323,7 @@ describe("BillingService.processWebhook", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     await BS.processWebhook("mp-123");
 
     expect(findByMpMock).toHaveBeenCalledWith("mp-123");
@@ -360,7 +365,7 @@ describe("BillingService.processWebhook", () => {
 
     mock.module("../../../shared/lib/db", () => ({
       prisma: {
-        $transaction: mock((ops: Promise<unknown>[]) =>
+        $transaction: mock(<T>(ops: Promise<T>[]) =>
           Promise.all(ops),
         ),
         billingPayment: {
@@ -376,7 +381,7 @@ describe("BillingService.processWebhook", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
 
     // Test calcNewExpiry directly — should stack from futureDate
     const newExpiry = BS.calcNewExpiry(futureDate, 30);
@@ -422,7 +427,7 @@ describe("BillingService.processWebhook", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     await BS.processWebhook("mp-123"); // Should not throw
 
     // MercadoPago API should not be called since payment is already processed
@@ -463,7 +468,7 @@ describe("BillingService.processWebhook", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     await BS.processWebhook("mp-123");
 
     expect(updateStatusMock).toHaveBeenCalledWith(mockPayment.id, {
@@ -479,6 +484,7 @@ describe("BillingService.validateWebhookSignature", () => {
     const dataId = "999";
     const requestId = "req-123";
     const ts = "1704908010";
+    process.env.MERCADO_PAGO_WEBHOOK_SECRET = secret;
 
     const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
     const hash = crypto
@@ -511,7 +517,7 @@ describe("BillingService.validateWebhookSignature", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     const isValid = BS.validateWebhookSignature(
       xSignature,
       requestId,
@@ -522,6 +528,8 @@ describe("BillingService.validateWebhookSignature", () => {
   });
 
   it("deve retornar false para assinatura inválida", async () => {
+    process.env.MERCADO_PAGO_WEBHOOK_SECRET = "test-secret";
+
     mock.module("../billing.repository", () => ({
       BillingRepository: {},
     }));
@@ -546,7 +554,7 @@ describe("BillingService.validateWebhookSignature", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
     const isValid = BS.validateWebhookSignature(
       "ts=123,v1=invalid-hash",
       "req-123",
@@ -581,7 +589,7 @@ describe("BillingService.validateWebhookSignature", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
 
     expect(BS.validateWebhookSignature(null, null, null)).toBe(false);
     expect(BS.validateWebhookSignature("ts=1,v1=abc", null, "999")).toBe(
@@ -619,7 +627,7 @@ describe("BillingService.calcNewExpiry", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
 
     const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - 10);
@@ -660,7 +668,7 @@ describe("BillingService.calcNewExpiry", () => {
       notifyPaymentApproved: mock(),
     }));
 
-    const { BillingService: BS } = await import("../billing.service");
+    const { BillingService: BS } = await loadBillingService();
 
     const result = BS.calcNewExpiry(null, 90);
     const expected = new Date();

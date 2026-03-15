@@ -171,7 +171,7 @@ export const appointmentController = new Elysia({ prefix: "/appointments" })
   .delete(
     "/:id",
     async ({ userId, params }) => {
-      await AppointmentService.cancel(params.id, userId);
+      await AppointmentService.deleteById(params.id, userId);
       return { success: true } satisfies AppointmentModel.deleteResponse;
     },
     {
