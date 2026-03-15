@@ -1,9 +1,10 @@
+import dotenv from "dotenv";
 import path from "node:path";
-import { defineConfig } from "prisma/config";
+import { defineConfig, env } from "prisma/config";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set");
-}
+dotenv.config({
+  path: "../../apps/server/.env",
+});
 
 export default defineConfig({
   schema: path.join("prisma", "schema"),
@@ -11,6 +12,6 @@ export default defineConfig({
     path: path.join("prisma", "migrations"),
   },
   datasource: {
-    url: process.env.DATABASE_URL,
+    url: env("DATABASE_URL"),
   },
 });
