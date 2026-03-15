@@ -11,6 +11,7 @@ cmds = [
 
 [phases.build]
 cmds = [
+  "printf 'DATABASE_URL=%s\n' \"$DATABASE_URL\" > apps/server/.env",
   "bun run db:generate",
   "bun run db:deploy",
   "cd apps/server && bun run compile",
