@@ -1,10 +1,13 @@
 import dotenv from "dotenv";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { defineConfig, env } from "prisma/config";
 
-dotenv.config({
-  path: "../../apps/server/.env",
-});
+const localEnvPath = path.resolve(process.cwd(), "../../apps/server/.env");
+
+if (!process.env.DATABASE_URL && existsSync(localEnvPath)) {
+  dotenv.config({ path: localEnvPath });
+}
 
 export default defineConfig({
   schema: path.join("prisma", "schema"),
