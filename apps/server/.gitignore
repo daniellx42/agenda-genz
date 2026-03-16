@@ -4,6 +4,7 @@ dist/
 /out/
 /server
 /server.exe
+index.js.map
 
 # dev
 .yarn/
