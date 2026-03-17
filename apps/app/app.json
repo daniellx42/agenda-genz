@@ -8,7 +8,10 @@
     "scheme": "app",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.daniellx42.agendagenz"
+      "bundleIdentifier": "com.daniellx42.agendagenz",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

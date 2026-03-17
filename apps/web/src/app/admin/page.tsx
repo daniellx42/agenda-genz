@@ -11,21 +11,9 @@ export default async function AdminPage() {
     },
   });
 
-  if (!session) {
-    return (
-      <main className="grid w-full gap-6">
-        <p>Usuário não autenticado.</p>
-      </main>
-    );
-  }
+  if (!session) redirect("/");
 
-  if (!isAdminRole(session.user.role)) {
-    return (
-      <main className="grid w-full gap-6">
-        <p>Acesso negado.</p>
-      </main>
-    );
-  }
+  if (!isAdminRole(session.user.role)) redirect("/");
 
   redirect("/admin/utm");
 }

@@ -1,7 +1,7 @@
 import { env } from "@agenda-genz/env/web";
 import type { MetadataRoute } from "next";
 
-const siteUrl = env.NEXT_PUBLIC_FRONTEND_URL ?? "https://agendapro.app";
+const siteUrl = env.NEXT_PUBLIC_FRONTEND_URL;
 
 export default function robots(): MetadataRoute.Robots {
   return {
