@@ -1,0 +1,4 @@
+[phases.build]
+cmds = [
+  "echo \"DATABASE_URL=$DATABASE_URL\" > apps/server/.env"
+]
