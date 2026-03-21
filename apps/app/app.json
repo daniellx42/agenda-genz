@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "app",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.daniellx42.agendagenz",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
