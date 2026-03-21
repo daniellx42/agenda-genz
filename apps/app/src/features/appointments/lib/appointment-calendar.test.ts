@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { buildMarkedDates } from "./appointment-calendar";
+import {
+  buildMarkedDates,
+  getCalendarHeight,
+  getCalendarWeekCount,
+} from "./appointment-calendar";
 
 describe("buildMarkedDates", () => {
   it("mantém os dias com agendamento marcados e preserva o selecionado", () => {
@@ -31,5 +35,17 @@ describe("buildMarkedDates", () => {
       marked: true,
       dotColor: "#f43f5e",
     });
+  });
+
+  it("calcula a quantidade de semanas visiveis do mes atual", () => {
+    expect(getCalendarWeekCount({ year: 2026, month: 2 })).toBe(4);
+    expect(getCalendarWeekCount({ year: 2026, month: 3 })).toBe(5);
+    expect(getCalendarWeekCount({ year: 2026, month: 8 })).toBe(6);
+  });
+
+  it("ajusta a altura do calendario com base no numero de semanas", () => {
+    expect(getCalendarHeight({ year: 2026, month: 2 })).toBe(284);
+    expect(getCalendarHeight({ year: 2026, month: 3 })).toBe(338);
+    expect(getCalendarHeight({ year: 2026, month: 8 })).toBe(392);
   });
 });

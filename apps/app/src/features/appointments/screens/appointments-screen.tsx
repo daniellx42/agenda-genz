@@ -2,13 +2,14 @@ import { CalendarMarkedDay } from "@/components/ui/calendar-marked-day";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { useAuthSession } from "@/features/auth/lib/auth-session-context";
 import { useApiError } from "@/hooks/use-api-error";
+import { ensureCalendarPtBrLocale } from "@/lib/calendar-locale";
 import { toLocalDateString } from "@/lib/formatters";
 import Feather from '@expo/vector-icons/Feather';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, Text, View, useWindowDimensions } from "react-native";
-import { Calendar, DateData } from "react-native-calendars";
+import { CalendarList, DateData } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   appointmentCalendarDotsQueryOptions,
@@ -19,30 +20,62 @@ import { AppointmentCardSkeleton } from "../components/appointment-card-skeleton
 import {
   buildMarkedDates,
   formatSelectedDay,
+  getCalendarHeight,
 } from "../lib/appointment-calendar";
 
-const CALENDAR_HEIGHT = 350;
 const COLLAPSE_SCROLL = 180;
+
+ensureCalendarPtBrLocale();
+
+interface CalendarMonthState {
+  year: number;
+  month: number;
+}
+
+interface CalendarListHandle {
+  scrollToMonth: (date: string) => void;
+}
+
+function toMonthDateString({ year, month }: CalendarMonthState) {
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}
+
+function shiftMonth(
+  { year, month }: CalendarMonthState,
+  delta: number,
+): CalendarMonthState {
+  const shiftedDate = new Date(Date.UTC(year, month - 1 + delta, 1));
+
+  return {
+    year: shiftedDate.getUTCFullYear(),
+    month: shiftedDate.getUTCMonth() + 1,
+  };
+}
 
 export default function AppointmentsScreen() {
   const router = useRouter();
   const { session } = useAuthSession();
   const { showError } = useApiError();
   const { setDate } = useAppointmentDraft();
-  const { height: windowHeight } = useWindowDimensions();
+  const queryClient = useQueryClient();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const calendarRef = useRef<CalendarListHandle | null>(null);
 
   const today = toLocalDateString();
-  const [selectedDate, setSelectedDate] = useState(today);
-  const [currentMonth, setCurrentMonth] = useState({
+  const initialMonth = useRef<CalendarMonthState>({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
-  });
-  const currentMonthDate = `${currentMonth.year}-${String(currentMonth.month).padStart(2, "0")}-01`;
+  }).current;
+  const initialCalendarDate = useRef(toMonthDateString(initialMonth)).current;
+  const visibleMonthRef = useRef<CalendarMonthState>(initialMonth);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [committedMonth, setCommittedMonth] = useState(initialMonth);
+  const calendarHeight = getCalendarHeight(committedMonth);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const calendarTranslateY = scrollY.interpolate({
     inputRange: [0, COLLAPSE_SCROLL],
-    outputRange: [0, -CALENDAR_HEIGHT],
+    outputRange: [0, -calendarHeight],
     extrapolate: "clamp",
   });
   const calendarOpacity = scrollY.interpolate({
@@ -51,9 +84,13 @@ export default function AppointmentsScreen() {
     extrapolate: "clamp",
   });
 
-  const { data: calendarDots, refetch: refetchCalendarDots } = useQuery(
-    appointmentCalendarDotsQueryOptions(currentMonth, showError),
-  );
+  const {
+    data: calendarDots,
+    refetch: refetchCalendarDots,
+  } = useQuery({
+    ...appointmentCalendarDotsQueryOptions(committedMonth, showError),
+    placeholderData: (previousData) => previousData,
+  });
 
   const { data: appointments, isLoading, refetch: refetchAppointments } = useQuery(
     appointmentListQueryOptions(selectedDate, showError),
@@ -66,17 +103,47 @@ export default function AppointmentsScreen() {
     }).current,
   );
 
+  const syncCommittedMonth = (month: CalendarMonthState) => {
+    setCommittedMonth((previousMonth) =>
+      previousMonth.year === month.year && previousMonth.month === month.month
+        ? previousMonth
+        : month,
+    );
+  };
+
+  useEffect(() => {
+    const previousMonth = shiftMonth(committedMonth, -1);
+    const nextMonth = shiftMonth(committedMonth, 1);
+
+    void queryClient
+      .prefetchQuery(appointmentCalendarDotsQueryOptions(previousMonth))
+      .catch(() => undefined);
+    void queryClient
+      .prefetchQuery(appointmentCalendarDotsQueryOptions(nextMonth))
+      .catch(() => undefined);
+  }, [committedMonth, queryClient]);
+
   const handleDayPress = (day: DateData) => {
+    const pressedMonth = { year: day.year, month: day.month };
+    const shouldNavigateToPressedMonth =
+      pressedMonth.year !== visibleMonthRef.current.year
+      || pressedMonth.month !== visibleMonthRef.current.month;
+
     setSelectedDate(day.dateString);
-    setCurrentMonth({ year: day.year, month: day.month });
+    visibleMonthRef.current = pressedMonth;
+    syncCommittedMonth(pressedMonth);
     setDate(day.dateString);
+
+    if (shouldNavigateToPressedMonth) {
+      calendarRef.current?.scrollToMonth(day.dateString);
+    }
   };
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "Professional";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const markedDates = buildMarkedDates(calendarDots ?? [], selectedDate);
-  const scrollContentMinHeight = windowHeight + CALENDAR_HEIGHT + 80;
+  const scrollContentMinHeight = windowHeight + calendarHeight + 80;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
@@ -113,17 +180,28 @@ export default function AppointmentsScreen() {
             top: 0,
             left: 0,
             right: 0,
+            height: calendarHeight,
             zIndex: 1,
+            overflow: "hidden",
             opacity: calendarOpacity,
             transform: [{ translateY: calendarTranslateY }],
           }}
         >
-          <Calendar
-            current={currentMonthDate}
+          <CalendarList
+            ref={calendarRef}
+            current={initialCalendarDate}
+            horizontal
+            pagingEnabled
+            calendarHeight={calendarHeight}
+            calendarWidth={windowWidth}
+            hideExtraDays={false}
             onDayPress={handleDayPress}
-            onMonthChange={(month: DateData) =>
-              setCurrentMonth({ year: month.year, month: month.month })
-            }
+            onMonthChange={(month: DateData) => {
+              const nextMonth = { year: month.year, month: month.month };
+
+              visibleMonthRef.current = nextMonth;
+              syncCommittedMonth(nextMonth);
+            }}
             markedDates={markedDates}
             dayComponent={({ date, state, marking }) => (
               <CalendarMarkedDay
@@ -131,6 +209,7 @@ export default function AppointmentsScreen() {
                 state={state}
                 marking={marking}
                 onPress={handleDayPress}
+                allowDisabledPress
               />
             )}
             theme={{
@@ -163,8 +242,8 @@ export default function AppointmentsScreen() {
           alwaysBounceVertical
           overScrollMode="always"
           contentContainerStyle={{
-            paddingTop: CALENDAR_HEIGHT,
-            paddingBottom: CALENDAR_HEIGHT + 120,
+            paddingTop: calendarHeight,
+            paddingBottom: calendarHeight + 120,
             minHeight: scrollContentMinHeight,
           }}
           stickyHeaderIndices={[0]}

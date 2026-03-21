@@ -6,11 +6,20 @@ import {
   deleteClientProfileImage,
   updateClient,
 } from "../api/client-mutations";
+import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
+import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
 import { imageUrlQueryOptions } from "@/lib/api/upload-query-options";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
-import { formatCpf, formatPhone, normalizeInstagram } from "@/lib/formatters";
+import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
+import {
+  formatCpf,
+  formatPhone,
+  isValidPhone,
+  normalizeInstagram,
+  normalizeWhitespace,
+} from "@/lib/formatters";
 import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,8 +30,9 @@ import { ClientFormFields } from "../components/client-form-fields";
 import { useClientForm } from "../hooks/use-client-form";
 import { ProfileAvatarEdit } from "../components/profile-avatar-edit";
 import { clientSchema } from "../lib/client-form-schema";
-import { pickImageFromSource, uploadImageToR2 } from "../lib/client-image";
+import { uploadImageToR2 } from "../lib/client-image";
 import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
+import type { ImagePickerAsset } from "expo-image-picker";
 import type { ClientDetail } from "../types";
 
 interface ClientEditSheetProps {
@@ -49,11 +59,15 @@ export function ClientEditSheet({
 }: ClientEditSheetProps) {
   const queryClient = useQueryClient();
   const { showError } = useApiError();
-  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const imagePicker = useSquareImagePicker();
+  const [profileImageAsset, setProfileImageAsset] =
+    useState<ImagePickerAsset | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const imageSourceSheetRef = useRef<BottomSheetModal>(null);
+  const nameInputRef = useRef<SheetTextInputRef>(null);
+  const phoneInputRef = useRef<SheetTextInputRef>(null);
   const formSheet = useFormSheet();
 
   const { data: client, isLoading: loadingClient } = useQuery(
@@ -70,8 +84,14 @@ export function ClientEditSheet({
 
   const handleSelectImageSource = async (source: "camera" | "gallery") => {
     imageSourceSheetRef.current?.dismiss();
-    const uri = await pickImageFromSource(source);
-    if (uri) setProfileImageUri(uri);
+    const asset = await imagePicker.pickSquareImage(source, {
+      title: "Ajustar foto de perfil",
+      description:
+        "Enquadre a foto para o perfil do cliente ficar mais bonito e padronizado.",
+      confirmLabel: "Usar foto",
+      quality: 0.8,
+    });
+    if (asset) setProfileImageAsset(asset);
   };
 
   const handleDeleteProfileImage = async () => {
@@ -112,9 +132,17 @@ export function ClientEditSheet({
       if (!parsed.success) return;
 
       let profileImageKey: string | undefined | null;
-      if (profileImageUri) {
+      if (profileImageAsset) {
         setUploadingPhoto(true);
-        const key = await uploadImageToR2(profileImageUri, "profile", showError);
+        const key = await uploadImageToR2(
+          {
+            uri: profileImageAsset.uri,
+            fileName: profileImageAsset.fileName,
+            mimeType: profileImageAsset.mimeType,
+          },
+          "profile",
+          showError,
+        );
         setUploadingPhoto(false);
 
         if (!key) return;
@@ -141,7 +169,7 @@ export function ClientEditSheet({
         await queryClient.invalidateQueries({
           queryKey: clientKeys.detail(clientId),
         });
-        setProfileImageUri(null);
+        setProfileImageAsset(null);
         setShowAdditionalInfo(false);
         onClose();
       } catch (error) {
@@ -180,6 +208,34 @@ export function ClientEditSheet({
     [],
   );
 
+  const focusFirstInvalidField = useCallback(() => {
+    const { name, phone } = form.state.values;
+
+    if (normalizeWhitespace(name).length < 2) {
+      nameInputRef.current?.focus();
+      return true;
+    }
+
+    if (!phone || !isValidPhone(phone)) {
+      phoneInputRef.current?.focus();
+      return true;
+    }
+
+    return false;
+  }, [form.state.values]);
+
+  const handleSubmit = useCallback(() => {
+    const shouldFocusField = focusFirstInvalidField();
+
+    void form.handleSubmit();
+
+    if (shouldFocusField) {
+      requestAnimationFrame(() => {
+        focusFirstInvalidField();
+      });
+    }
+  }, [focusFirstInvalidField, form]);
+
   return (
     <>
       <BottomSheetModal
@@ -194,7 +250,7 @@ export function ClientEditSheet({
         handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
         backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
         onDismiss={() => {
-          setProfileImageUri(null);
+          setProfileImageAsset(null);
           setShowAdditionalInfo(false);
           onClose();
         }}
@@ -204,7 +260,7 @@ export function ClientEditSheet({
       >
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
           keyboardDismissMode="interactive"
         >
           <Text className="mb-5 mt-2 text-lg font-bold text-zinc-900">
@@ -219,11 +275,11 @@ export function ClientEditSheet({
                 <ProfileAvatarEdit
                   name={client?.name ?? ""}
                   existingImageUrl={existingImageUrl ?? null}
-                  localUri={profileImageUri}
+                  localUri={profileImageAsset?.uri ?? null}
                   uploading={uploadingPhoto}
                   deleting={deletingPhoto}
                   onPick={pickProfileImage}
-                  onClearLocal={() => setProfileImageUri(null)}
+                  onClearLocal={() => setProfileImageAsset(null)}
                   onDelete={handleDeleteProfileImage}
                 />
                 <Text className="mt-2 text-xs text-zinc-400">
@@ -238,12 +294,16 @@ export function ClientEditSheet({
                 }
                 showAdditionalInfo={showAdditionalInfo}
                 onToggleAdditionalInfo={setShowAdditionalInfo}
+                inputRefs={{
+                  name: nameInputRef,
+                  phone: phoneInputRef,
+                }}
               />
 
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
                 {([canSubmit, isSubmitting]) => (
                   <Pressable
-                    onPress={() => form.handleSubmit()}
+                    onPress={handleSubmit}
                     disabled={!canSubmit || isSubmitting || uploadingPhoto}
                     className="items-center rounded-2xl bg-rose-500 py-4 active:opacity-80"
                     style={{ opacity: !canSubmit || uploadingPhoto ? 0.6 : 1 }}
@@ -283,6 +343,7 @@ export function ClientEditSheet({
           },
         ]}
       />
+      <SquareImageCropModal {...imagePicker.cropperProps} />
     </>
   );
 }

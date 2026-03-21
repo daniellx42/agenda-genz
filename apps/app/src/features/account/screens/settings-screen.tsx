@@ -3,6 +3,7 @@ import { DeleteAccountSheet } from "../sheets/delete-account-sheet";
 import { EditNameSheet } from "../sheets/edit-name-sheet";
 import { ClientAvatar } from "@/features/clients/components/client-avatar";
 import { useAuthSession } from "@/features/auth/lib/auth-session-context";
+import { useSubscriptionStore } from "@/features/billing/store/subscription-store";
 import { useApiError } from "@/hooks/use-api-error";
 import { authClient } from "@/lib/auth-client";
 import { openPrivacyPolicy, openTermsOfService } from "@/lib/legal-links";
@@ -71,7 +72,8 @@ export default function SettingsScreen() {
       }
     },
     onSuccess: async () => {
-      queryClient.clear();
+      await queryClient.cancelQueries();
+      useSubscriptionStore.getState().setPlanExpiresAt(null);
       await refetchSession();
     },
     onError: showError,
@@ -83,7 +85,8 @@ export default function SettingsScreen() {
       toast.success("Conta deletada com sucesso");
       deleteAccountSheetRef.current?.dismiss();
       setDeleteConfirmation("");
-      queryClient.clear();
+      await queryClient.cancelQueries();
+      useSubscriptionStore.getState().setPlanExpiresAt(null);
       await refetchSession();
     },
     onError: showError,
@@ -110,31 +113,9 @@ export default function SettingsScreen() {
 
   if (!session) {
     return (
-      <>
-        <Stack.Screen
-          options={{
-            headerShown: true,
-            title: "Configurações",
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: "#fff9fb" },
-            headerTintColor: "#18181b",
-            contentStyle: { backgroundColor: "#fff9fb" },
-            headerLeft: () => (
-              <Pressable
-                onPress={handleGoBack}
-                accessibilityRole="button"
-                accessibilityLabel="Voltar"
-                className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
-              >
-                <Feather name="chevron-left" size={20} color="#18181b" />
-              </Pressable>
-            ),
-          }}
-        />
-        <View className="flex-1 items-center justify-center bg-[#fff9fb]">
-          <ActivityIndicator size="small" color="#f43f5e" />
-        </View>
-      </>
+      <View className="flex-1 items-center justify-center bg-[#fff9fb]">
+        <ActivityIndicator size="small" color="#f43f5e" />
+      </View>
     );
   }
 

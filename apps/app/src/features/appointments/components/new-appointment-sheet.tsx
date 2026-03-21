@@ -66,7 +66,7 @@ export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
           keyboardDismissMode="interactive"
         >
           {/* Header */}

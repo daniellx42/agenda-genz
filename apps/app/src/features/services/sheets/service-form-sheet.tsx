@@ -1,11 +1,12 @@
 import { serviceKeys } from "../api/service-query-options";
 import { createService, updateService } from "../api/service-mutations";
 import { ServiceImage } from "../components/service-image";
+import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
-import { pickSquareImage } from "@/features/appointments/lib/appointment-images";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
+import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
 import { uploadImageAsset } from "@/lib/api/image-upload";
 import {
   currencyToCents,
@@ -29,6 +30,32 @@ interface ServiceFormSheetProps {
   service?: ServiceItem | null;
 }
 
+function validateServiceName(value: string) {
+  return normalizeWhitespace(value).length < 2
+    ? "Informe pelo menos 2 caracteres"
+    : undefined;
+}
+
+function validateServicePrice(value: string) {
+  const cents = currencyToCents(value);
+
+  if (cents === null) return "Obrigatório";
+  if (cents <= 0) return "Preço inválido";
+
+  return undefined;
+}
+
+function validateDepositPercentage(value: string) {
+  const pct = parseInt(value, 10);
+
+  if (!value) return "Obrigatório";
+  if (isNaN(pct) || pct < 1 || pct > 100) {
+    return "Insira um valor de 1 a 100";
+  }
+
+  return undefined;
+}
+
 export function ServiceFormSheet({
   sheetRef,
   onClose,
@@ -37,9 +64,12 @@ export function ServiceFormSheet({
   const queryClient = useQueryClient();
   const { showError } = useApiError();
   const formSheet = useFormSheet();
+  const imagePicker = useSquareImagePicker();
   const imageSourceSheetRef = useRef<BottomSheetModal>(null);
   const [serviceImageAsset, setServiceImageAsset] =
     useState<ImagePickerAsset | null>(null);
+  const [didAttemptSubmit, setDidAttemptSubmit] = useState(false);
+  const hasImage = Boolean(serviceImageAsset?.uri || service?.imageKey);
 
   const form = useForm({
     defaultValues: {
@@ -53,23 +83,14 @@ export function ServiceFormSheet({
       const name = normalizeWhitespace(value.name);
       const description = normalizeWhitespace(value.description);
       const priceInCents = currencyToCents(value.price);
-
-      if (!name || !priceInCents) {
-        toast.error("Preencha os campos obrigatórios");
-        return;
-      }
-
       let depositPct: number | undefined | null = undefined;
       if (value.hasDeposit) {
-        const pct = parseInt(value.depositPercentage, 10);
-        if (isNaN(pct) || pct < 1 || pct > 100) {
-          toast.error("Informe uma porcentagem válida (1 a 100)");
-          return;
-        }
-        depositPct = pct;
+        depositPct = parseInt(value.depositPercentage, 10);
       } else {
         depositPct = null;
       }
+
+      if (priceInCents === null) return;
 
       let imageKey = service?.imageKey ?? null;
       if (serviceImageAsset) {
@@ -86,7 +107,6 @@ export function ServiceFormSheet({
       }
 
       if (!imageKey) {
-        toast.error("Adicione a imagem do serviço");
         return;
       }
 
@@ -115,6 +135,7 @@ export function ServiceFormSheet({
         await queryClient.invalidateQueries({ queryKey: serviceKeys.all });
         form.reset();
         setServiceImageAsset(null);
+        setDidAttemptSubmit(false);
         onClose();
       } catch (error) {
         showError(error);
@@ -144,6 +165,7 @@ export function ServiceFormSheet({
       depositPercentage: service?.depositPercentage ? String(service.depositPercentage) : "",
     });
     setServiceImageAsset(null);
+    setDidAttemptSubmit(false);
   }, [form, service]);
 
   const handleOpenImageSourceSheet = useCallback(() => {
@@ -152,13 +174,37 @@ export function ServiceFormSheet({
 
   const handleSelectImageSource = useCallback(async (source: "camera" | "gallery") => {
     imageSourceSheetRef.current?.dismiss();
-    const asset = await pickSquareImage(source, 0.85);
+    const asset = await imagePicker.pickSquareImage(source, {
+      title: "Ajustar foto do servico",
+      description:
+        "Enquadre a imagem para o servico ficar mais bonito na agenda.",
+      confirmLabel: "Usar imagem",
+      quality: 0.85,
+    });
     if (asset) {
       setServiceImageAsset(asset);
     }
-  }, []);
+  }, [imagePicker]);
 
-  const hasImage = Boolean(serviceImageAsset?.uri || service?.imageKey);
+  const showImageError = didAttemptSubmit && !hasImage;
+
+  const handleSubmit = useCallback(() => {
+    setDidAttemptSubmit(true);
+
+    const { name, price, hasDeposit, depositPercentage } = form.state.values;
+    const hasValidationError = Boolean(
+      validateServiceName(name) ||
+        validateServicePrice(price) ||
+        (hasDeposit ? validateDepositPercentage(depositPercentage) : undefined) ||
+        !hasImage,
+    );
+
+    if (hasValidationError) {
+      return;
+    }
+
+    void form.handleSubmit();
+  }, [form, hasImage]);
 
   return (
     <>
@@ -173,6 +219,7 @@ export function ServiceFormSheet({
         backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
         onDismiss={() => {
           setServiceImageAsset(null);
+          setDidAttemptSubmit(false);
           onClose();
         }}
         keyboardBehavior={formSheet.keyboardBehavior}
@@ -181,7 +228,7 @@ export function ServiceFormSheet({
       >
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
           keyboardDismissMode="interactive"
         >
           <Text className="mb-5 mt-2 text-lg font-bold text-zinc-900">
@@ -191,31 +238,38 @@ export function ServiceFormSheet({
           <form.Field
             name="name"
             validators={{
-              onChange: ({ value }) =>
-                normalizeWhitespace(value).length < 2
-                  ? "Informe pelo menos 2 caracteres"
-                  : undefined,
+              onChange: ({ value }) => validateServiceName(value),
             }}
           >
             {(field) => (
               <View className="mb-4">
-                <Text className="mb-1.5 text-xs font-medium text-zinc-500">
-                  Nome *
-                </Text>
-                <SheetTextInput
-                  className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${field.state.meta.errors.length ? "border-red-300" : "border-zinc-200"}`}
-                  placeholder="Ex: Unhas em Gel"
-                  placeholderTextColor="#a1a1aa"
-                  value={field.state.value}
-                  onChangeText={field.handleChange}
-                  maxLength={120}
-                  editable={!form.state.isSubmitting}
-                />
-                {field.state.meta.errors.map((error, index) => (
-                  <Text key={index} className="mt-1 text-xs text-red-400">
-                    {String(error)}
-                  </Text>
-                ))}
+                {(() => {
+                  const error =
+                    field.state.meta.errors.find((value) => Boolean(value)) ??
+                    (didAttemptSubmit ? validateServiceName(field.state.value) : undefined);
+
+                  return (
+                    <>
+                      <Text className="mb-1.5 text-xs font-medium text-zinc-500">
+                        Nome *
+                      </Text>
+                      <SheetTextInput
+                        className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${error ? "border-red-300" : "border-zinc-200"}`}
+                        placeholder="Ex: Unhas em Gel"
+                        placeholderTextColor="#a1a1aa"
+                        value={field.state.value}
+                        onChangeText={field.handleChange}
+                        maxLength={120}
+                        editable={!form.state.isSubmitting}
+                      />
+                      {error ? (
+                        <Text className="mt-1 text-xs text-red-400">
+                          {String(error)}
+                        </Text>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </View>
             )}
           </form.Field>
@@ -256,13 +310,15 @@ export function ServiceFormSheet({
           </form.Field>
 
           <View className="mb-6">
-            <Text className="mb-1.5 text-xs font-medium text-zinc-500">
+            <Text
+              className={`mb-1.5 text-xs font-medium ${showImageError ? "text-red-400" : "text-zinc-500"}`}
+            >
               Imagem do serviço *
             </Text>
             <Pressable
               onPress={handleOpenImageSourceSheet}
               disabled={form.state.isSubmitting}
-              className="flex-row items-center gap-4 rounded-3xl border border-zinc-200 bg-zinc-50 p-4 active:opacity-80"
+              className={`flex-row items-center gap-4 rounded-3xl border p-4 active:opacity-80 ${showImageError ? "border-red-300 bg-red-50" : "border-zinc-200 bg-zinc-50"}`}
               style={{ opacity: form.state.isSubmitting ? 0.65 : 1 }}
             >
               <ServiceImage
@@ -298,41 +354,51 @@ export function ServiceFormSheet({
                 </Text>
               </Pressable>
             ) : null}
+            {showImageError ? (
+              <Text className="mt-2 text-xs text-red-400">
+                Adicione a imagem do serviço para continuar.
+              </Text>
+            ) : null}
           </View>
 
           <form.Field
             name="price"
             validators={{
-              onChange: ({ value }) => {
-                const cents = currencyToCents(value);
-                if (cents === null) return "Obrigatório";
-                if (cents <= 0) return "Preço inválido";
-                return undefined;
-              },
+              onChange: ({ value }) => validateServicePrice(value),
             }}
           >
             {(field) => (
               <View className="mb-4">
-                <Text className="mb-1.5 text-xs font-medium text-zinc-500">
-                  Preço (R$) *
-                </Text>
-                <SheetTextInput
-                  className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${field.state.meta.errors.length ? "border-red-300" : "border-zinc-200"}`}
-                  placeholder="150,00"
-                  placeholderTextColor="#a1a1aa"
-                  keyboardType="decimal-pad"
-                  value={field.state.value}
-                  onChangeText={(value) =>
-                    field.handleChange(formatCurrencyInput(value))
-                  }
-                  maxLength={13}
-                  editable={!form.state.isSubmitting}
-                />
-                {field.state.meta.errors.map((error, index) => (
-                  <Text key={index} className="mt-1 text-xs text-red-400">
-                    {String(error)}
-                  </Text>
-                ))}
+                {(() => {
+                  const error =
+                    field.state.meta.errors.find((value) => Boolean(value)) ??
+                    (didAttemptSubmit ? validateServicePrice(field.state.value) : undefined);
+
+                  return (
+                    <>
+                      <Text className="mb-1.5 text-xs font-medium text-zinc-500">
+                        Preço (R$) *
+                      </Text>
+                      <SheetTextInput
+                        className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${error ? "border-red-300" : "border-zinc-200"}`}
+                        placeholder="150,00"
+                        placeholderTextColor="#a1a1aa"
+                        keyboardType="decimal-pad"
+                        value={field.state.value}
+                        onChangeText={(value) =>
+                          field.handleChange(formatCurrencyInput(value))
+                        }
+                        maxLength={13}
+                        editable={!form.state.isSubmitting}
+                      />
+                      {error ? (
+                        <Text className="mt-1 text-xs text-red-400">
+                          {String(error)}
+                        </Text>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </View>
             )}
           </form.Field>
@@ -368,37 +434,43 @@ export function ServiceFormSheet({
               <form.Field
                 name="depositPercentage"
                 validators={{
-                  onChange: ({ value }) => {
-                    const pct = parseInt(value, 10);
-                    if (!value) return "Obrigatório";
-                    if (isNaN(pct) || pct < 1 || pct > 100)
-                      return "Insira um valor de 1 a 100";
-                    return undefined;
-                  },
+                  onChange: ({ value }) => validateDepositPercentage(value),
                 }}
               >
                 {(field) => (
                   <View className="mb-4">
-                    <Text className="mb-1.5 text-xs font-medium text-zinc-500">
-                      Porcentagem do sinal (%) *
-                    </Text>
-                    <SheetTextInput
-                      className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${field.state.meta.errors.length ? "border-red-300" : "border-zinc-200"}`}
-                      placeholder="30"
-                      placeholderTextColor="#a1a1aa"
-                      keyboardType="numeric"
-                      value={field.state.value}
-                      onChangeText={(v) =>
-                        field.handleChange(v.replace(/[^0-9]/g, "").slice(0, 3))
-                      }
-                      maxLength={3}
-                      editable={!form.state.isSubmitting}
-                    />
-                    {field.state.meta.errors.map((error, index) => (
-                      <Text key={index} className="mt-1 text-xs text-red-400">
-                        {String(error)}
-                      </Text>
-                    ))}
+                    {(() => {
+                      const error =
+                        field.state.meta.errors.find((value) => Boolean(value)) ??
+                        (didAttemptSubmit
+                          ? validateDepositPercentage(field.state.value)
+                          : undefined);
+
+                      return (
+                        <>
+                          <Text className="mb-1.5 text-xs font-medium text-zinc-500">
+                            Porcentagem do sinal (%) *
+                          </Text>
+                          <SheetTextInput
+                            className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${error ? "border-red-300" : "border-zinc-200"}`}
+                            placeholder="30"
+                            placeholderTextColor="#a1a1aa"
+                            keyboardType="numeric"
+                            value={field.state.value}
+                            onChangeText={(v) =>
+                              field.handleChange(v.replace(/[^0-9]/g, "").slice(0, 3))
+                            }
+                            maxLength={3}
+                            editable={!form.state.isSubmitting}
+                          />
+                          {error ? (
+                            <Text className="mt-1 text-xs text-red-400">
+                              {String(error)}
+                            </Text>
+                          ) : null}
+                        </>
+                      );
+                    })()}
                   </View>
                 )}
               </form.Field>
@@ -406,13 +478,13 @@ export function ServiceFormSheet({
           }
         </form.Subscribe>
 
-          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
-            {([canSubmit, isSubmitting]) => (
+          <form.Subscribe selector={(state) => state.isSubmitting}>
+            {(isSubmitting) => (
               <Pressable
-                onPress={() => form.handleSubmit()}
-                disabled={!canSubmit || isSubmitting}
+                onPress={handleSubmit}
+                disabled={isSubmitting}
                 className="items-center rounded-2xl bg-rose-500 py-4 active:opacity-80"
-                style={{ opacity: !canSubmit || isSubmitting ? 0.6 : 1 }}
+                style={{ opacity: isSubmitting ? 0.6 : 1 }}
               >
                 {isSubmitting ? (
                   <ActivityIndicator size="small" color="white" />
@@ -447,6 +519,7 @@ export function ServiceFormSheet({
           },
         ]}
       />
+      <SquareImageCropModal {...imagePicker.cropperProps} />
     </>
   );
 }

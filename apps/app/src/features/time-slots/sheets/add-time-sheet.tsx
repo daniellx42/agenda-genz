@@ -1,3 +1,5 @@
+import { SheetTextInput } from "@/components/ui/sheet-text-input";
+import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
 import { createTimeSlot } from "../api/time-slot-mutations";
 import { timeSlotKeys } from "../api/time-slot-query-options";
 import { useApiError } from "@/hooks/use-api-error";
@@ -7,10 +9,9 @@ import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetScrollView,
-  BottomSheetTextInput,
 } from "@gorhom/bottom-sheet";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { toast } from "sonner-native";
 import type { TimeSlotDaySelection } from "../constants/time-slot-days";
@@ -27,6 +28,7 @@ export function AddTimeSheet({ day, sheetRef, onClose }: AddTimeSheetProps) {
   const [error, setError] = useState("");
   const queryClient = useQueryClient();
   const { showError } = useApiError();
+  const timeInputRef = useRef<SheetTextInputRef>(null);
   const formSheet = useFormSheet({
     horizontalPadding: 24,
     bottomPadding: 24,
@@ -74,12 +76,18 @@ export function AddTimeSheet({ day, sheetRef, onClose }: AddTimeSheetProps) {
   const handleAdd = () => {
     if (!day) {
       setError("Selecione um dia antes de adicionar um horário.");
+      requestAnimationFrame(() => {
+        timeInputRef.current?.focus();
+      });
       return;
     }
 
     const normalizedTime = normalizeTime(time);
     if (!isValidTime(normalizedTime)) {
       setError("Use o formato HH:MM (ex: 09:00)");
+      requestAnimationFrame(() => {
+        timeInputRef.current?.focus();
+      });
       return;
     }
 
@@ -110,7 +118,7 @@ export function AddTimeSheet({ day, sheetRef, onClose }: AddTimeSheetProps) {
       >
       <BottomSheetScrollView
         contentContainerStyle={formSheet.scrollContentContainerStyle}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
         keyboardDismissMode="interactive"
       >
         <Text className="mb-1 text-base font-bold text-zinc-900">
@@ -120,7 +128,8 @@ export function AddTimeSheet({ day, sheetRef, onClose }: AddTimeSheetProps) {
           {day?.label ?? "Selecione um dia"}
         </Text>
 
-        <BottomSheetTextInput
+        <SheetTextInput
+          ref={timeInputRef}
           style={{
             marginBottom: 8,
             borderRadius: 16,

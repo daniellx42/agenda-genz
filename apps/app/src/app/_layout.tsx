@@ -10,7 +10,7 @@ import {
 import { queryClient } from "@/lib/query-client";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef } from "react";
 import { AppState, StatusBar } from "react-native";
@@ -26,6 +26,8 @@ export default function RootLayout() {
   const { data: session, isPending } = authClient.useSession();
   const previousUserIdRef = useRef<string | null | undefined>(undefined);
   const { setPlanExpiresAt } = useSubscriptionStore();
+  const router = useRouter();
+  const segments = useSegments();
 
   useEffect(() => {
     if (isPending) return;
@@ -44,17 +46,36 @@ export default function RootLayout() {
     }
 
     if (previousUserIdRef.current !== userId) {
-      queryClient.clear();
+      if (userId) {
+        queryClient.clear();
+      }
       previousUserIdRef.current = userId;
     }
   }, [isPending, session?.user?.id]);
 
   // Sync planExpiresAt from session to subscription store
   useEffect(() => {
-    if (!isPending && session?.user) {
-      setPlanExpiresAt(session.user.planExpiresAt);
+    if (isPending) return;
+
+    setPlanExpiresAt(session?.user?.planExpiresAt ?? null);
+  }, [isPending, session?.user?.planExpiresAt, setPlanExpiresAt]);
+
+  useEffect(() => {
+    if (isPending) return;
+
+    const rootSegment = segments[0];
+    const isAuthRoute = rootSegment === "(auth)";
+    const isProtectedRoute = rootSegment !== "(auth)";
+
+    if (!session && isProtectedRoute) {
+      router.replace("/login");
+      return;
     }
-  }, [isPending, session?.user?.planExpiresAt]);
+
+    if (session && isAuthRoute) {
+      router.replace("/");
+    }
+  }, [isPending, router, segments, session]);
 
   useEffect(() => {
     void setupAndroidChannels();

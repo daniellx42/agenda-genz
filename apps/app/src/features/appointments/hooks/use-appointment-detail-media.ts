@@ -4,9 +4,6 @@ import {
 } from "../api/appointment-mutations";
 import { appointmentKeys } from "../api/appointment-query-options";
 import {
-  pickSquareImage,
-} from "../lib/appointment-images";
-import {
   deleteClientProfileImage,
   updateClientProfileImage,
 } from "@/features/clients/api/client-mutations";
@@ -89,12 +86,9 @@ export function useAppointmentDetailMedia({
     [showError],
   );
 
-  const uploadWorkImageFromSource = useCallback(
-    async (slot: ImageSlot, source: "camera" | "gallery") => {
+  const uploadWorkImage = useCallback(
+    async (slot: ImageSlot, asset: ImagePickerAsset) => {
       if (!appointmentId) return;
-
-      const asset = await pickSquareImage(source);
-      if (!asset) return;
 
       setUploadingSlot(slot);
       try {
@@ -181,10 +175,9 @@ export function useAppointmentDetailMedia({
     [appointment, invalidateAppointments, showError, uploadAssetToFolder],
   );
 
-  const uploadProfileImageFromSource = useCallback(
-    async (source: "camera" | "gallery") => {
-      const asset = await pickSquareImage(source, 0.8);
-      if (asset) await doUploadProfileImage(asset);
+  const uploadProfileImage = useCallback(
+    async (asset: ImagePickerAsset) => {
+      await doUploadProfileImage(asset);
     },
     [doUploadProfileImage],
   );
@@ -244,11 +237,11 @@ export function useAppointmentDetailMedia({
     pendingDeleteProfileImage,
     viewerImageUrl,
     viewerLabel,
-    uploadWorkImageFromSource,
+    uploadWorkImage,
     requestDeleteImage,
     clearPendingDeleteImage,
     confirmDeleteImage,
-    uploadProfileImageFromSource,
+    uploadProfileImage,
     requestDeleteProfileImage,
     clearPendingDeleteProfileImage,
     confirmDeleteProfileImage,

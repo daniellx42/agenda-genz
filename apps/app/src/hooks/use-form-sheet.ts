@@ -21,6 +21,7 @@ export function useFormSheet({
       keyboardBehavior: "interactive" as const,
       keyboardBlurBehavior: "restore" as const,
       androidKeyboardInputMode: "adjustResize" as const,
+      keyboardShouldPersistTaps: "always" as const,
       contentBottomPadding,
       scrollContentContainerStyle: {
         paddingHorizontal: horizontalPadding,

@@ -11,8 +11,10 @@ interface CalendarMarkedDayProps {
     marked?: boolean;
     dotColor?: string;
     dots?: { color?: string }[];
+    disableTouchEvent?: boolean;
   };
   onPress?: (date: DateData) => void;
+  allowDisabledPress?: boolean;
 }
 
 export function CalendarMarkedDay({
@@ -20,19 +22,24 @@ export function CalendarMarkedDay({
   state,
   marking,
   onPress,
+  allowDisabledPress = false,
 }: CalendarMarkedDayProps) {
   if (!date) {
     return <View style={{ width: 36, height: 36, marginVertical: 2 }} />;
   }
 
-  const isDisabled = state === "disabled";
+  const isOutsideMonth = state === "disabled";
   const isToday = state === "today";
   const isSelected = Boolean(marking?.selected);
+  const isPressDisabled = marking?.disableTouchEvent === true
+    || (isOutsideMonth && !allowDisabledPress);
   const dots = Array.isArray(marking?.dots) ? marking.dots : [];
   const showDot = Boolean(marking?.marked || dots.length > 0);
-  const dotColor = marking?.dotColor ?? dots[0]?.color ?? "#f43f5e";
+  const dotColor = isOutsideMonth && !isSelected
+    ? "#fda4af"
+    : marking?.dotColor ?? dots[0]?.color ?? "#f43f5e";
 
-  const textColor = isDisabled
+  const textColor = isOutsideMonth
     ? "#d4d4d8"
     : isSelected
       ? marking?.textColor ?? "white"
@@ -43,7 +50,7 @@ export function CalendarMarkedDay({
   return (
     <Pressable
       onPress={() => onPress?.(date)}
-      disabled={isDisabled}
+      disabled={isPressDisabled}
       style={{
         width: 36,
         height: 36,

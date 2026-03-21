@@ -1,18 +1,24 @@
 import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button";
 import { signInWithGoogle } from "@/features/auth/lib/google-native-sign-in";
+import { authClient } from "@/lib/auth-client";
 import { openPrivacyPolicy, openTermsOfService } from "@/lib/legal-links";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
 export default function LoginScreen() {
+  const router = useRouter();
+  const { refetch: refetchSession } = authClient.useSession();
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
       await signInWithGoogle();
+      await refetchSession();
+      router.replace("/");
     } catch {
       // error handled by auth client
     } finally {

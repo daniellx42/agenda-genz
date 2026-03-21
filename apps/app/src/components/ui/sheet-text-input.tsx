@@ -1,8 +1,20 @@
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
-import type { ComponentProps } from "react";
+import {
+  forwardRef,
+  type ComponentProps,
+  type ComponentRef,
+} from "react";
+import { NativeViewGestureHandler } from "react-native-gesture-handler";
 
 type SheetTextInputProps = ComponentProps<typeof BottomSheetTextInput>;
+export type SheetTextInputRef = ComponentRef<typeof BottomSheetTextInput>;
 
-export function SheetTextInput(props: SheetTextInputProps) {
-  return <BottomSheetTextInput {...props} />;
-}
+export const SheetTextInput = forwardRef<SheetTextInputRef, SheetTextInputProps>(
+  function SheetTextInput(props, ref) {
+    return (
+      <NativeViewGestureHandler disallowInterruption>
+        <BottomSheetTextInput ref={ref} {...props} />
+      </NativeViewGestureHandler>
+    );
+  },
+);

@@ -31,7 +31,11 @@ async function signInWithBrowserFallback() {
     throw result.error;
   }
 
-  await authClient.getSession();
+  const sessionResult = await authClient.getSession();
+
+  if (sessionResult.error) {
+    throw sessionResult.error;
+  }
 }
 
 function shouldFallbackToBrowser() {
@@ -59,15 +63,23 @@ function configureGoogleSignin() {
 }
 
 export async function signInWithGoogle(): Promise<void> {
-  if (shouldFallbackToBrowser() || !googleSigninModule) {
-    await signInWithBrowserFallback();
-    return;
-  }
-
-  const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } =
-    googleSigninModule;
+  const useBrowserFallback = shouldFallbackToBrowser() || !googleSigninModule;
 
   try {
+    if (useBrowserFallback) {
+      await signInWithBrowserFallback();
+      return;
+    }
+
+    const googleModule = googleSigninModule;
+
+    if (!googleModule) {
+      throw new Error("Google Sign-In nativo nao esta disponivel.");
+    }
+
+    const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } =
+      googleModule;
+
     configureGoogleSignin();
 
     if (Platform.OS === "android") {
@@ -99,8 +111,18 @@ export async function signInWithGoogle(): Promise<void> {
       throw result.error;
     }
 
-    await authClient.getSession();
+    const sessionResult = await authClient.getSession();
+
+    if (sessionResult.error) {
+      throw sessionResult.error;
+    }
   } catch (error) {
+    const { isErrorWithCode, statusCodes } =
+      googleSigninModule ?? {
+        isErrorWithCode: (_error: unknown) => false,
+        statusCodes: {} as Record<string, string>,
+      };
+
     if (isErrorWithCode(error)) {
       if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         toast.error("Atualize os servicos do Google para continuar.");

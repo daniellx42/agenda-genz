@@ -15,11 +15,11 @@ import { uploadController } from "./modules/uploads/upload.controller";
 const corsOrigins = [
   env.FRONTEND_URL,
   "app://",
+  "exp+agenda-genz://",
   /^https?:\/\/localhost(?::\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(?::\d+)?$/,
   /^exp:\/\/.+$/,
 ];
-
 
 export const app = new Elysia()
   .use(

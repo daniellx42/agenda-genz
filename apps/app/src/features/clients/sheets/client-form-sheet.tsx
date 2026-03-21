@@ -1,12 +1,17 @@
+import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
+import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
+import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
+import { isValidPhone, normalizeWhitespace } from "@/lib/formatters";
 import Feather from "@expo/vector-icons/Feather";
 import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import type { ImagePickerAsset } from "expo-image-picker";
 import { toast } from "sonner-native";
 import { createClient } from "../api/client-mutations";
 import { clientKeys } from "../api/client-query-options";
@@ -14,7 +19,7 @@ import { ClientFormFields } from "../components/client-form-fields";
 import { ProfileAvatarPicker } from "../components/profile-avatar-picker";
 import { useClientForm } from "../hooks/use-client-form";
 import { clientSchema } from "../lib/client-form-schema";
-import { pickImageFromSource, uploadImageToR2 } from "../lib/client-image";
+import { uploadImageToR2 } from "../lib/client-image";
 
 interface ClientFormSheetProps {
   sheetRef: React.RefObject<BottomSheetModal | null>;
@@ -27,10 +32,14 @@ export function ClientFormSheet({
 }: ClientFormSheetProps) {
   const queryClient = useQueryClient();
   const { showError } = useApiError();
-  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const imagePicker = useSquareImagePicker();
+  const [profileImageAsset, setProfileImageAsset] =
+    useState<ImagePickerAsset | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const imageSourceSheetRef = useRef<BottomSheetModal>(null);
+  const nameInputRef = useRef<SheetTextInputRef>(null);
+  const phoneInputRef = useRef<SheetTextInputRef>(null);
   const formSheet = useFormSheet();
 
   const pickProfileImage = () => {
@@ -39,8 +48,14 @@ export function ClientFormSheet({
 
   const handleSelectImageSource = async (source: "camera" | "gallery") => {
     imageSourceSheetRef.current?.dismiss();
-    const uri = await pickImageFromSource(source);
-    if (uri) setProfileImageUri(uri);
+    const asset = await imagePicker.pickSquareImage(source, {
+      title: "Ajustar foto de perfil",
+      description:
+        "Enquadre a foto para deixar o perfil do cliente mais bonito no app.",
+      confirmLabel: "Usar foto",
+      quality: 0.8,
+    });
+    if (asset) setProfileImageAsset(asset);
   };
 
   const form = useClientForm({
@@ -60,10 +75,14 @@ export function ClientFormSheet({
       if (!parsed.success) return;
 
       let profileImageKey: string | undefined;
-      if (profileImageUri) {
+      if (profileImageAsset) {
         setUploadingPhoto(true);
         profileImageKey = await uploadImageToR2(
-          profileImageUri,
+          {
+            uri: profileImageAsset.uri,
+            fileName: profileImageAsset.fileName,
+            mimeType: profileImageAsset.mimeType,
+          },
           "profile",
           showError,
         );
@@ -89,7 +108,7 @@ export function ClientFormSheet({
         toast.success("Cliente cadastrado com sucesso!");
         await queryClient.invalidateQueries({ queryKey: clientKeys.all });
         form.reset();
-        setProfileImageUri(null);
+        setProfileImageAsset(null);
         setShowAdditionalInfo(false);
         onClose();
       } catch (error) {
@@ -111,6 +130,34 @@ export function ClientFormSheet({
     [],
   );
 
+  const focusFirstInvalidField = useCallback(() => {
+    const { name, phone } = form.state.values;
+
+    if (normalizeWhitespace(name).length < 2) {
+      nameInputRef.current?.focus();
+      return true;
+    }
+
+    if (!phone || !isValidPhone(phone)) {
+      phoneInputRef.current?.focus();
+      return true;
+    }
+
+    return false;
+  }, [form.state.values]);
+
+  const handleSubmit = useCallback(() => {
+    const shouldFocusField = focusFirstInvalidField();
+
+    void form.handleSubmit();
+
+    if (shouldFocusField) {
+      requestAnimationFrame(() => {
+        focusFirstInvalidField();
+      });
+    }
+  }, [focusFirstInvalidField, form]);
+
   return (
     <>
       <BottomSheetModal
@@ -123,7 +170,7 @@ export function ClientFormSheet({
         handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
         backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
         onDismiss={() => {
-          setProfileImageUri(null);
+          setProfileImageAsset(null);
           setShowAdditionalInfo(false);
           onClose();
         }}
@@ -133,7 +180,7 @@ export function ClientFormSheet({
       >
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
           keyboardDismissMode="interactive"
         >
           <Text className="mb-5 mt-2 text-lg font-bold text-zinc-900">
@@ -145,9 +192,9 @@ export function ClientFormSheet({
               {(name) => (
                 <ProfileAvatarPicker
                   name={name}
-                  uri={profileImageUri}
+                  uri={profileImageAsset?.uri ?? null}
                   onPick={pickProfileImage}
-                  onClear={() => setProfileImageUri(null)}
+                  onClear={() => setProfileImageAsset(null)}
                 />
               )}
             </form.Subscribe>
@@ -161,12 +208,16 @@ export function ClientFormSheet({
             disabled={uploadingPhoto || form.state.isSubmitting}
             showAdditionalInfo={showAdditionalInfo}
             onToggleAdditionalInfo={setShowAdditionalInfo}
+            inputRefs={{
+              name: nameInputRef,
+              phone: phoneInputRef,
+            }}
           />
 
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
             {([canSubmit, isSubmitting]) => (
               <Pressable
-                onPress={() => form.handleSubmit()}
+                onPress={handleSubmit}
                 disabled={!canSubmit || isSubmitting || uploadingPhoto}
                 className="items-center rounded-2xl bg-rose-500 py-4 active:opacity-80"
                 style={{ opacity: !canSubmit || uploadingPhoto ? 0.6 : 1 }}
@@ -204,6 +255,7 @@ export function ClientFormSheet({
           },
         ]}
       />
+      <SquareImageCropModal {...imagePicker.cropperProps} />
     </>
   );
 }

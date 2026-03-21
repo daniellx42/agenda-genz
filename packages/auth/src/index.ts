@@ -28,6 +28,7 @@ const authOptions = {
     serverOrigin,
     frontendOrigin,
     "app://",
+    "exp+agenda-genz://",
     ...(env.NODE_ENV === "development"
       ? ["exp://*.*.*.*:*/**"]
       : []),

@@ -1,46 +1,13 @@
 import { toast } from "sonner-native";
 import * as FileSystem from "expo-file-system/legacy";
-import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
-import type { ImagePickerAsset, ImagePickerResult } from "expo-image-picker";
 export { formatAppointmentDate } from "./appointment-date";
 
 export type ImageSlot = "before" | "after";
 
 export function getInitial(name: string): string {
   return name.trim().charAt(0).toUpperCase();
-}
-
-export async function pickSquareImage(
-  source: "camera" | "gallery",
-  quality = 0.85,
-): Promise<ImagePickerAsset | null> {
-  let result: ImagePickerResult;
-
-  if (source === "camera") {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") return null;
-
-    result = await ImagePicker.launchCameraAsync({
-      mediaTypes: "images",
-      quality,
-      allowsEditing: true,
-      aspect: [1, 1],
-    });
-  } else {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") return null;
-
-    result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      quality,
-      allowsEditing: true,
-      aspect: [1, 1],
-    });
-  }
-
-  return !result.canceled && result.assets[0] ? result.assets[0] : null;
 }
 
 export async function saveImageToGallery(imageUrl: string, label: string) {

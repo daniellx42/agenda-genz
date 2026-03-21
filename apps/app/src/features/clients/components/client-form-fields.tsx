@@ -1,4 +1,5 @@
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
+import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
 import {
   formatCpf,
   formatInstagram,
@@ -19,6 +20,10 @@ interface ClientFormFieldsProps {
   disabled?: boolean;
   showAdditionalInfo: boolean;
   onToggleAdditionalInfo: (value: boolean) => void;
+  inputRefs?: {
+    name?: React.RefObject<SheetTextInputRef | null>;
+    phone?: React.RefObject<SheetTextInputRef | null>;
+  };
 }
 
 const GENDER_OPTIONS: Array<{
@@ -51,6 +56,7 @@ export function ClientFormFields({
   disabled = false,
   showAdditionalInfo,
   onToggleAdditionalInfo,
+  inputRefs,
 }: ClientFormFieldsProps) {
   return (
     <>
@@ -69,6 +75,7 @@ export function ClientFormFields({
               Nome *
             </Text>
             <SheetTextInput
+              ref={inputRefs?.name}
               className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${field.state.meta.errors.length ? "border-red-300" : "border-zinc-200"}`}
               placeholder="Nome completo"
               placeholderTextColor="#a1a1aa"
@@ -98,6 +105,7 @@ export function ClientFormFields({
               Telefone *
             </Text>
             <SheetTextInput
+              ref={inputRefs?.phone}
               className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${field.state.meta.errors.length ? "border-red-300" : "border-zinc-200"}`}
               placeholder="(11) 99999-9999"
               placeholderTextColor="#a1a1aa"

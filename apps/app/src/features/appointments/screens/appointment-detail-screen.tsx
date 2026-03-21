@@ -1,7 +1,9 @@
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
+import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { SkeletonBox } from "@/components/ui/skeleton-box";
 import { useApiError } from "@/hooks/use-api-error";
+import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
 import type { ApiErrorObject } from "@/lib/api/query-utils";
 import { cancelAppointmentReminders } from "@/lib/notifications";
 import Feather from "@expo/vector-icons/Feather";
@@ -89,6 +91,7 @@ export default function AppointmentDetailScreen() {
     appointment,
     showError,
   });
+  const imagePicker = useSquareImagePicker();
   const uploadSourceSheetRef = useRef<BottomSheetModal>(null);
   const deleteAppointmentSheetRef = useRef<BottomSheetModal>(null);
   const deleteWorkImageSheetRef = useRef<BottomSheetModal>(null);
@@ -208,12 +211,35 @@ export default function AppointmentDetailScreen() {
 
     uploadSourceSheetRef.current?.dismiss();
 
-    if (currentTarget.kind === "work") {
-      await media.uploadWorkImageFromSource(currentTarget.slot, source);
+    const asset = await imagePicker.pickSquareImage(source, {
+      title:
+        currentTarget.kind === "profile"
+          ? "Ajustar foto de perfil"
+          : currentTarget.slot === "before"
+            ? "Ajustar foto do antes"
+            : "Ajustar foto do depois",
+      description:
+        currentTarget.kind === "profile"
+          ? "Enquadre a foto para o perfil ficar bonito e consistente no app."
+          : "Ajuste a imagem para destacar melhor o resultado do atendimento.",
+      confirmLabel:
+        currentTarget.kind === "profile" ? "Usar foto" : "Salvar recorte",
+      quality: currentTarget.kind === "profile" ? 0.8 : 0.85,
+    });
+
+    if (!asset) {
+      setUploadTarget(null);
       return;
     }
 
-    await media.uploadProfileImageFromSource(source);
+    if (currentTarget.kind === "work") {
+      await media.uploadWorkImage(currentTarget.slot, asset);
+      setUploadTarget(null);
+      return;
+    }
+
+    await media.uploadProfileImage(asset);
+    setUploadTarget(null);
   };
 
   const uploadSheetTitle =
@@ -405,6 +431,7 @@ export default function AppointmentDetailScreen() {
         label={media.viewerLabel}
         onClose={media.closeViewer}
       />
+      <SquareImageCropModal {...imagePicker.cropperProps} />
     </SafeAreaView>
   );
 }
