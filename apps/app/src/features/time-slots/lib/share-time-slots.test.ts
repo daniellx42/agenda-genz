@@ -50,8 +50,8 @@ describe("buildShareTimeSlotsMessage", () => {
       },
     ]);
 
-    expect(message).toContain("09:00 ✅");
-    expect(message).toContain("12:00 ❌");
+    expect(message).toContain("09:00 (Disponivel)");
+    expect(message).toContain("12:00 (Indisponivel)");
   });
 });
 

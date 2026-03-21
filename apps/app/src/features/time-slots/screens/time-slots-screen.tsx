@@ -19,6 +19,7 @@ import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
 import { useApiError } from "@/hooks/use-api-error";
+import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
@@ -214,7 +215,7 @@ export default function TimeSlotsScreen() {
           title: "Bloquear em uma data",
           description:
             "Mantém a recorrência semanal e bloqueia apenas um dia específico.",
-          icon: "📅",
+          icon: <Feather name="calendar" size={18} color="#f43f5e" />,
           disabled:
             activateMutation.isPending ||
             deactivateMutation.isPending ||
@@ -225,7 +226,7 @@ export default function TimeSlotsScreen() {
           title: "Desativar recorrência",
           description:
             "Remove este horário das próximas semanas, sem mexer nos agendamentos já feitos.",
-          icon: "⏸",
+          icon: <Feather name="pause-circle" size={18} color="#f43f5e" />,
           loading: deactivateMutation.isPending,
           disabled:
             activateMutation.isPending ||
@@ -237,7 +238,7 @@ export default function TimeSlotsScreen() {
           title: "Excluir definitivamente",
           description:
             "Use apenas se este horário nunca foi usado em agendamentos.",
-          icon: "🗑",
+          icon: <Feather name="trash-2" size={18} color="#ef4444" />,
           disabled:
             activateMutation.isPending ||
             deactivateMutation.isPending ||
@@ -250,7 +251,7 @@ export default function TimeSlotsScreen() {
           title: "Ativar recorrência",
           description:
             "Torna este horário disponível novamente nas próximas semanas.",
-          icon: "▶️",
+          icon: <Feather name="play-circle" size={18} color="#16a34a" />,
           loading: activateMutation.isPending,
           disabled:
             deactivateMutation.isPending ||
@@ -262,7 +263,7 @@ export default function TimeSlotsScreen() {
           title: "Excluir definitivamente",
           description:
             "Remove o horário do cadastro caso você não queira mais mantê-lo na agenda.",
-          icon: "🗑",
+          icon: <Feather name="trash-2" size={18} color="#ef4444" />,
           disabled:
             activateMutation.isPending ||
             deactivateMutation.isPending ||

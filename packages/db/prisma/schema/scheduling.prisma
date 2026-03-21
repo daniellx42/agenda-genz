@@ -43,7 +43,7 @@ model Service {
   price              Int  // em centavos
   depositPercentage  Int? // porcentagem do sinal (1-100)
   color              String?
-  emoji       String?
+  imageKey    String
   active      Boolean @default(true)
 
   createdAt DateTime @default(now())

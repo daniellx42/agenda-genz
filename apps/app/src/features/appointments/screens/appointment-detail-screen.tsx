@@ -247,7 +247,8 @@ export default function AppointmentDetailScreen() {
         />
 
         <AppointmentServiceCard
-          emoji={appointment.service.emoji}
+          imageKey={appointment.service.imageKey}
+          color={appointment.service.color}
           name={appointment.service.name}
           price={appointment.service.price}
           depositPercentage={appointment.service.depositPercentage}
@@ -339,13 +340,13 @@ export default function AppointmentDetailScreen() {
             value: "camera",
             title: "Usar camera",
             description: "Tire a foto agora e envie direto para o agendamento.",
-            icon: "📷",
+            icon: <Feather name="camera" size={18} color="#f43f5e" />,
           },
           {
             value: "gallery",
             title: "Escolher da galeria",
             description: "Selecione uma imagem que ja esta no dispositivo.",
-            icon: "🖼",
+            icon: <Feather name="image" size={18} color="#f43f5e" />,
           },
         ]}
       />

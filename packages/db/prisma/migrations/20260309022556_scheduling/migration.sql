@@ -26,7 +26,7 @@ CREATE TABLE "service" (
     "price" INTEGER NOT NULL,
     "duration" INTEGER NOT NULL,
     "color" TEXT,
-    "emoji" TEXT,
+    "imageKey" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

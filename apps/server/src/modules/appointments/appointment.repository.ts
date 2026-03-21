@@ -22,7 +22,7 @@ const appointmentInclude = {
       name: true,
       price: true,
       depositPercentage: true,
-      emoji: true,
+      imageKey: true,
       color: true,
     },
   },
@@ -43,7 +43,7 @@ type AppointmentRecord = {
     name: string;
     price: number;
     depositPercentage: number | null;
-    emoji: string | null;
+    imageKey: string;
     color: string | null;
   };
   timeSlot: { id: string; time: string };

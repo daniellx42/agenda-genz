@@ -1,4 +1,5 @@
 import { SelectionSheet } from "@/components/ui/selection-sheet";
+import Feather from "@expo/vector-icons/Feather";
 import {
   APPOINTMENT_PAYMENT_STATUS_CONFIG,
   APPOINTMENT_PAYMENT_STATUS_OPTIONS,
@@ -9,18 +10,33 @@ import {
 } from "../constants/appointment-status";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
-const SERVICE_STATUS_ICONS: Record<AppointmentServiceStatus, string> = {
-  PENDING: "⏳",
-  CONFIRMED: "✅",
-  COMPLETED: "✨",
-  CANCELLED: "⛔",
-};
+function getServiceStatusIcon(status: AppointmentServiceStatus) {
+  if (status === "CONFIRMED") {
+    return <Feather name="check-circle" size={18} color="#16a34a" />;
+  }
 
-const PAYMENT_STATUS_ICONS: Record<AppointmentPaymentStatus, string> = {
-  PENDING: "🕒",
-  DEPOSIT_PAID: "💰",
-  PAID: "💳",
-};
+  if (status === "COMPLETED") {
+    return <Feather name="star" size={18} color="#f59e0b" />;
+  }
+
+  if (status === "CANCELLED") {
+    return <Feather name="slash" size={18} color="#ef4444" />;
+  }
+
+  return <Feather name="clock" size={18} color="#f97316" />;
+}
+
+function getPaymentStatusIcon(status: AppointmentPaymentStatus) {
+  if (status === "DEPOSIT_PAID") {
+    return <Feather name="credit-card" size={18} color="#2563eb" />;
+  }
+
+  if (status === "PAID") {
+    return <Feather name="dollar-sign" size={18} color="#16a34a" />;
+  }
+
+  return <Feather name="clock" size={18} color="#f97316" />;
+}
 
 interface AppointmentServiceStatusSelectionSheetProps {
   kind: "service";
@@ -59,7 +75,7 @@ export function AppointmentStatusSelectionSheet(
               : status === "DEPOSIT_PAID"
                 ? "Sinal recebido, restante a pagar no dia."
                 : "Pagamento ainda nao foi concluido.",
-          icon: PAYMENT_STATUS_ICONS[status],
+          icon: getPaymentStatusIcon(status),
           selected: props.currentStatus === status,
           loading: props.updatingStatus === status,
           disabled:
@@ -86,7 +102,7 @@ export function AppointmentStatusSelectionSheet(
               : status === "COMPLETED"
                 ? "Atendimento finalizado com sucesso."
                 : "Atendimento cancelado ou nao realizado.",
-        icon: SERVICE_STATUS_ICONS[status],
+        icon: getServiceStatusIcon(status),
         selected: props.currentStatus === status,
         loading: props.updatingStatus === status,
         disabled: props.updatingStatus !== null && props.updatingStatus !== status,

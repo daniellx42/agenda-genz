@@ -1,6 +1,8 @@
 import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button";
 import { signInWithGoogle } from "@/features/auth/lib/google-native-sign-in";
 import { openPrivacyPolicy, openTermsOfService } from "@/lib/legal-links";
+import Feather from "@expo/vector-icons/Feather";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "expo-image";
 import { useState } from "react";
 import { Text, View } from "react-native";
@@ -80,11 +82,11 @@ export default function LoginScreen() {
       </View>
       {/* Bottom decorative strip */}
       <View className="flex-row justify-center gap-2 pb-8 pt-4">
-        {["💅", "✨", "💄", "🌸", "💎"].map((emoji, i) => (
-          <Text key={i} className="text-lg opacity-40">
-            {emoji}
-          </Text>
-        ))}
+        <MaterialCommunityIcons name="content-cut" size={18} color="#f9a8d4" />
+        <Feather name="star" size={18} color="#f9a8d4" />
+        <MaterialCommunityIcons name="lipstick" size={18} color="#f9a8d4" />
+        <MaterialCommunityIcons name="flower-outline" size={18} color="#f9a8d4" />
+        <Feather name="award" size={18} color="#f9a8d4" />
       </View>
     </View>
   );

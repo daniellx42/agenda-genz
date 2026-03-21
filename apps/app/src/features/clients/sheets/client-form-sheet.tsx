@@ -1,6 +1,7 @@
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
+import Feather from "@expo/vector-icons/Feather";
 import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQueryClient } from "@tanstack/react-query";
@@ -193,13 +194,13 @@ export function ClientFormSheet({
             value: "camera",
             title: "Usar camera",
             description: "Tire uma foto quadrada direto do dispositivo.",
-            icon: "📷",
+            icon: <Feather name="camera" size={18} color="#f43f5e" />,
           },
           {
             value: "gallery",
             title: "Escolher da galeria",
             description: "Selecione uma imagem ja salva no aparelho.",
-            icon: "🖼",
+            icon: <Feather name="image" size={18} color="#f43f5e" />,
           },
         ]}
       />

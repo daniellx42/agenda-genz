@@ -4,7 +4,7 @@ export interface ServiceItem {
   description: string | null;
   price: number;
   depositPercentage: number | null;
-  emoji: string | null;
+  imageKey: string;
   color: string | null;
   active: boolean;
   createdAt: string;

@@ -95,7 +95,9 @@ export function buildShareTimeSlotsMessage(
   return data
     .map((day) =>
       `${day.dayLabel}\n${day.slots
-        .map((slot) => `${slot.time} ${slot.available ? "✅" : "❌"}`)
+        .map((slot) =>
+          `${slot.time} (${slot.available ? "Disponivel" : "Indisponivel"})`,
+        )
         .join("\n")}`,
     )
     .join("\n\n");

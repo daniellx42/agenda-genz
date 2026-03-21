@@ -11,6 +11,7 @@ import { imageUrlQueryOptions } from "@/lib/api/upload-query-options";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import { formatCpf, formatPhone, normalizeInstagram } from "@/lib/formatters";
+import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -272,13 +273,13 @@ export function ClientEditSheet({
             value: "camera",
             title: "Usar camera",
             description: "Tire uma foto quadrada direto do dispositivo.",
-            icon: "📷",
+            icon: <Feather name="camera" size={18} color="#f43f5e" />,
           },
           {
             value: "gallery",
             title: "Escolher da galeria",
             description: "Selecione uma imagem ja salva no aparelho.",
-            icon: "🖼",
+            icon: <Feather name="image" size={18} color="#f43f5e" />,
           },
         ]}
       />

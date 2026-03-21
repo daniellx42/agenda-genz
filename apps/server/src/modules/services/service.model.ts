@@ -29,7 +29,7 @@ export namespace ServiceModel {
     price: t.Integer({ minimum: 1 }), // centavos
     depositPercentage: t.Optional(t.Integer({ minimum: 1, maximum: 100 })),
     color: t.Optional(t.String()),
-    emoji: t.Optional(t.String({ maxLength: 8 })),
+    imageKey: t.String({ minLength: 1 }),
   });
   export type createBody = typeof createBody.static;
 
@@ -39,7 +39,7 @@ export namespace ServiceModel {
     price: t.Optional(t.Integer({ minimum: 1 })),
     depositPercentage: t.Optional(t.Union([t.Integer({ minimum: 1, maximum: 100 }), t.Null()])),
     color: t.Optional(t.Union([t.String(), t.Null()])),
-    emoji: t.Optional(t.Union([t.String({ maxLength: 8 }), t.Null()])),
+    imageKey: t.Optional(t.String({ minLength: 1 })),
     active: t.Optional(t.Boolean()),
   });
   export type updateBody = typeof updateBody.static;
@@ -53,7 +53,7 @@ export namespace ServiceModel {
     price: t.Number(),
     depositPercentage: t.Union([t.Number(), t.Null()]),
     color: t.Union([t.String(), t.Null()]),
-    emoji: t.Union([t.String(), t.Null()]),
+    imageKey: t.String(),
     active: t.Boolean(),
     createdAt: t.String(),
     updatedAt: t.String(),

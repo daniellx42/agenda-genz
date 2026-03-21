@@ -8,7 +8,7 @@ const serviceSelect = {
   price: true,
   depositPercentage: true,
   color: true,
-  emoji: true,
+  imageKey: true,
   active: true,
   createdAt: true,
   updatedAt: true,
@@ -21,7 +21,7 @@ function toResponse(s: {
   price: number;
   depositPercentage: number | null;
   color: string | null;
-  emoji: string | null;
+  imageKey: string;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -1,6 +1,7 @@
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { activeServicesQueryOptions } from "@/features/services/api/service-query-options";
+import { ServiceImage } from "@/features/services/components/service-image";
 import { ServiceCardSkeleton } from "@/features/services/components/service-card-skeleton";
 import { useApiError } from "@/hooks/use-api-error";
 import Feather from "@expo/vector-icons/Feather";
@@ -76,19 +77,20 @@ export function StepService() {
                 name: service.name,
                 price: service.price,
                 depositPercentage: service.depositPercentage,
-                emoji: service.emoji,
+                imageKey: service.imageKey,
                 color: service.color,
               })
             }
             className="bg-white border border-zinc-100 rounded-2xl p-4 mb-2 active:opacity-70"
           >
             <View className="flex-row items-center gap-3">
-              <View
-                className="w-10 h-10 rounded-2xl items-center justify-center"
-                style={{ backgroundColor: service.color ?? "#fce7f3" }}
-              >
-                <Text className="text-lg">{service.emoji ?? "✨"}</Text>
-              </View>
+              <ServiceImage
+                imageKey={service.imageKey}
+                backgroundColor={service.color}
+                size={40}
+                borderRadius={16}
+                iconSize={18}
+              />
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-zinc-900">
                   {service.name}

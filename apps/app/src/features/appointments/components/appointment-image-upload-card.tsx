@@ -1,3 +1,4 @@
+import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
@@ -45,13 +46,13 @@ export function AppointmentImageUploadCard({
             {deleting ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text style={{ color: "white", fontSize: 13 }}>🗑</Text>
+              <Feather name="trash-2" size={13} color="white" />
             )}
           </Pressable>
         </View>
         <View className="flex-row items-center gap-1.5 px-3 py-2">
           <Text className="text-xs font-semibold text-zinc-700">{label}</Text>
-          <Text className="text-xs text-emerald-500">✓</Text>
+          <Feather name="check" size={12} color="#10b981" />
         </View>
       </Pressable>
     );
@@ -68,7 +69,12 @@ export function AppointmentImageUploadCard({
         <ActivityIndicator color="#f43f5e" />
       ) : (
         <>
-          <Text className="mb-2 text-2xl">📷</Text>
+          <Feather
+            name="camera"
+            size={24}
+            color="#f43f5e"
+            style={{ marginBottom: 8 }}
+          />
           <Text className="text-xs font-semibold text-zinc-600">{label}</Text>
           <Text className="mt-1 text-xs text-zinc-400">Toque para enviar</Text>
         </>

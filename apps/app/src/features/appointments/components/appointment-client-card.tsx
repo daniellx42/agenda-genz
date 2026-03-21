@@ -1,4 +1,5 @@
 import { AppointmentClientAvatar } from "./appointment-client-avatar";
+import Feather from "@expo/vector-icons/Feather";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 interface AppointmentClientCardProps {
@@ -35,9 +36,11 @@ export function AppointmentClientCard({
           {deleting || uploading ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Text style={{ color: "white", fontSize: 11 }}>
-              {profileImageUrl ? "🗑" : "✎"}
-            </Text>
+            <Feather
+              name={profileImageUrl ? "trash-2" : "edit-2"}
+              size={11}
+              color="white"
+            />
           )}
         </Pressable>
       </View>

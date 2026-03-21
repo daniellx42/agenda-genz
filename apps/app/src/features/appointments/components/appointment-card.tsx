@@ -1,3 +1,5 @@
+import Feather from "@expo/vector-icons/Feather";
+import { ServiceImage } from "@/features/services/components/service-image";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import {
@@ -20,7 +22,13 @@ export interface AppointmentCardData {
   paymentStatus: string;
   dateLabel?: string;
   client: { name: string; phone: string };
-  service: { name: string; price: number; depositPercentage: number | null; emoji: string | null };
+  service: {
+    name: string;
+    price: number;
+    depositPercentage: number | null;
+    imageKey: string;
+    color?: string | null;
+  };
   timeSlot: { time: string };
 }
 
@@ -88,9 +96,12 @@ export function AppointmentCard({ appointment }: AppointmentCardProps) {
       >
         <View className="flex-row items-start justify-between">
           <View className="flex-1 flex-row items-center gap-3">
-            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-rose-50">
-              <Text className="text-2xl">{appointment.service.emoji ?? "✨"}</Text>
-            </View>
+            <ServiceImage
+              imageKey={appointment.service.imageKey}
+              backgroundColor={appointment.service.color}
+              size={48}
+              borderRadius={16}
+            />
             <View className="flex-1">
               <Text className="text-sm font-semibold text-zinc-900" numberOfLines={1}>
                 {appointment.service.name}
@@ -104,7 +115,7 @@ export function AppointmentCard({ appointment }: AppointmentCardProps) {
             </View>
           </View>
           <View className="h-10 w-10 items-center justify-center rounded-full bg-rose-50">
-            <Text className="text-lg text-rose-500">›</Text>
+            <Feather name="chevron-right" size={18} color="#f43f5e" />
           </View>
         </View>
       </Pressable>
@@ -112,17 +123,29 @@ export function AppointmentCard({ appointment }: AppointmentCardProps) {
       <View className="border-t border-rose-100 px-4 py-3">
         <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
           {appointment.dateLabel ? (
-            <Text className="text-xs text-zinc-500">📅 {appointment.dateLabel}</Text>
+            <View className="flex-row items-center gap-1">
+              <Feather name="calendar" size={12} color="#71717a" />
+              <Text className="text-xs text-zinc-500">{appointment.dateLabel}</Text>
+            </View>
           ) : null}
-          <Text className="text-xs text-zinc-500">🕐 {appointment.timeSlot.time}</Text>
-          <Text className="text-xs text-zinc-500">
-            💵 R$ {(appointment.service.price / 100).toFixed(2)}
-          </Text>
+          <View className="flex-row items-center gap-1">
+            <Feather name="clock" size={12} color="#71717a" />
+            <Text className="text-xs text-zinc-500">{appointment.timeSlot.time}</Text>
+          </View>
+          <View className="flex-row items-center gap-1">
+            <Feather name="dollar-sign" size={12} color="#71717a" />
+            <Text className="text-xs text-zinc-500">
+              R$ {(appointment.service.price / 100).toFixed(2)}
+            </Text>
+          </View>
           {depositAmount !== null && remainingAmount !== null && (
             <>
-              <Text className="text-xs text-blue-500">
-                💰 Sinal: R$ {(depositAmount / 100).toFixed(2)}
-              </Text>
+              <View className="flex-row items-center gap-1">
+                <Feather name="credit-card" size={12} color="#3b82f6" />
+                <Text className="text-xs text-blue-500">
+                  Sinal: R$ {(depositAmount / 100).toFixed(2)}
+                </Text>
+              </View>
               <Text className="text-xs text-zinc-400">
                 Restante: R$ {(remainingAmount / 100).toFixed(2)}
               </Text>

@@ -9,7 +9,7 @@ interface CreateServiceInput {
   description?: string;
   price: number;
   depositPercentage?: number;
-  emoji?: string;
+  imageKey: string;
   color?: string;
 }
 
@@ -27,7 +27,7 @@ interface UpdateServiceInput {
   description?: string | null;
   price?: number;
   depositPercentage?: number | null;
-  emoji?: string | null;
+  imageKey?: string;
   color?: string | null;
   active?: boolean;
 }

@@ -104,7 +104,7 @@ export namespace AppointmentModel {
       name: t.String(),
       price: t.Number(),
       depositPercentage: t.Union([t.Number(), t.Null()]),
-      emoji: t.Union([t.String(), t.Null()]),
+      imageKey: t.String(),
       color: t.Union([t.String(), t.Null()]),
     }),
     timeSlot: t.Object({

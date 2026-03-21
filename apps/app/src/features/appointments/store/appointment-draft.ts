@@ -12,7 +12,7 @@ interface ServiceDraft {
   name: string;
   price: number;
   depositPercentage: number | null;
-  emoji: string | null;
+  imageKey: string;
   color: string | null;
 }
 

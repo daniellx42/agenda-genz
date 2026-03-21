@@ -3,7 +3,8 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import { useCallback, useMemo } from "react";
+import Feather from "@expo/vector-icons/Feather";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 
@@ -11,7 +12,7 @@ export interface SelectionSheetOption<TValue extends string = string> {
   value: TValue;
   title: string;
   description?: string;
-  icon?: string;
+  icon?: ReactNode;
   selected?: boolean;
   disabled?: boolean;
   loading?: boolean;
@@ -96,7 +97,9 @@ export function SelectionSheet<TValue extends string = string>({
                     option.selected ? "bg-white" : "bg-rose-50"
                   }`}
                 >
-                  <Text className="text-lg">{option.icon ?? "•"}</Text>
+                  {option.icon ?? (
+                    <Feather name="circle" size={16} color="#f43f5e" />
+                  )}
                 </View>
 
                 <View className="flex-1">
@@ -114,7 +117,7 @@ export function SelectionSheet<TValue extends string = string>({
                   <ActivityIndicator color="#f43f5e" />
                 ) : option.selected ? (
                   <View className="h-8 w-8 items-center justify-center rounded-full bg-rose-500">
-                    <Text className="text-xs font-bold text-white">✓</Text>
+                    <Feather name="check" size={14} color="white" />
                   </View>
                 ) : (
                   <View className="h-8 w-8 rounded-full border border-zinc-200 bg-zinc-50" />

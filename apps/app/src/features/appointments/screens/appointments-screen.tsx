@@ -86,9 +86,12 @@ export default function AppointmentsScreen() {
             <Text className="text-xs font-medium uppercase tracking-widest text-rose-400">
               {greeting}
             </Text>
-            <Text className="text-xl font-bold text-zinc-900">
-              {firstName} ✨
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-xl font-bold text-zinc-900">
+                {firstName}
+              </Text>
+              <Feather name="star" size={16} color="#f43f5e" />
+            </View>
           </View>
 
           <Pressable
@@ -191,7 +194,12 @@ export default function AppointmentsScreen() {
 
             {!isLoading && (appointments ?? []).length === 0 && (
               <View className="items-center py-12">
-                <Text className="mb-3 text-3xl">📭</Text>
+                <Feather
+                  name="inbox"
+                  size={28}
+                  color="#a1a1aa"
+                  style={{ marginBottom: 12 }}
+                />
                 <Text className="text-sm text-zinc-500">
                   Nenhum agendamento para este dia
                 </Text>

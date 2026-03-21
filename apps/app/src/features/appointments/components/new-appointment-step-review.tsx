@@ -3,6 +3,7 @@ import {
 } from "@/features/appointments/api/appointment-query-options";
 import { createAppointment } from "@/features/appointments/api/appointment-mutations";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
+import { ServiceImage } from "@/features/services/components/service-image";
 import { timeSlotKeys } from "@/features/time-slots/api/time-slot-query-options";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useApiError } from "@/hooks/use-api-error";
@@ -130,9 +131,20 @@ export function StepReview({ onClose }: Props) {
             Serviço
           </Text>
           <View className="items-end">
-            <Text className="text-sm font-semibold text-zinc-800">
-              {service?.emoji} {service?.name}
-            </Text>
+            {service ? (
+              <View className="flex-row items-center gap-2">
+                <ServiceImage
+                  imageKey={service.imageKey}
+                  backgroundColor={service.color}
+                  size={28}
+                  borderRadius={10}
+                  iconSize={14}
+                />
+                <Text className="text-sm font-semibold text-zinc-800">
+                  {service.name}
+                </Text>
+              </View>
+            ) : null}
             <Text className="text-xs text-zinc-400">
               {service ? formatPrice(service.price) : ""}
             </Text>

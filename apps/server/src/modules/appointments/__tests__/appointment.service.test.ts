@@ -36,7 +36,7 @@ const mockAppointment = {
     name: "Unhas em Gel",
     price: 15000,
     depositPercentage: null,
-    emoji: "💅",
+    imageKey: "services/user-1/unhas-em-gel.jpg",
     color: "#ff69b4",
   },
   timeSlot: { id: "slot-1", time: "09:00" },

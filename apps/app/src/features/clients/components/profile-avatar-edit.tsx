@@ -1,4 +1,5 @@
 import { getInitial } from "../lib/client-image";
+import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
@@ -38,7 +39,7 @@ export function ProfileAvatarEdit({
           style={{ position: "absolute", top: -2, right: -2 }}
           className="h-6 w-6 items-center justify-center rounded-full bg-rose-500 active:opacity-70"
         >
-          <Text style={{ color: "white", fontSize: 11 }}>🗑</Text>
+          <Feather name="trash-2" size={11} color="white" />
         </Pressable>
       </View>
     );
@@ -61,7 +62,7 @@ export function ProfileAvatarEdit({
           {busy ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Text style={{ color: "white", fontSize: 11 }}>🗑</Text>
+            <Feather name="trash-2" size={11} color="white" />
           )}
         </Pressable>
       </View>
@@ -84,7 +85,7 @@ export function ProfileAvatarEdit({
           style={{ position: "absolute", bottom: -2, right: -2 }}
           className="h-6 w-6 items-center justify-center rounded-full bg-rose-500"
         >
-          <Text style={{ color: "white", fontSize: 11 }}>✎</Text>
+          <Feather name="edit-2" size={11} color="white" />
         </View>
       )}
     </Pressable>

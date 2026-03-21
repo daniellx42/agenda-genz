@@ -5,6 +5,14 @@ import { ServiceRepository } from "./service.repository";
 import type { ServiceModel } from "./service.model";
 
 export abstract class ServiceService {
+  private static async deleteStoredObject(
+    userId: string,
+    key: string,
+  ): Promise<void> {
+    const { UploadService } = await import("../uploads/upload.service");
+    await UploadService.deleteObject(userId, key);
+  }
+
   static async create(
     userId: string,
     data: ServiceModel.createBody,
@@ -13,7 +21,7 @@ export abstract class ServiceService {
       ...data,
       name: normalizeWhitespace(data.name),
       description: toOptionalString(data.description),
-      emoji: data.emoji?.trim() || undefined,
+      imageKey: data.imageKey.trim(),
     });
   }
 
@@ -38,16 +46,20 @@ export abstract class ServiceService {
     userId: string,
     data: ServiceModel.updateBody,
   ): Promise<ServiceModel.serviceResponse> {
+    const existing = await ServiceRepository.findById(id, userId);
+
+    if (!existing) {
+      throw status(
+        Errors.SERVICE.NOT_FOUND.httpStatus,
+        Errors.SERVICE.NOT_FOUND.message satisfies ServiceModel.errorNotFound,
+      );
+    }
+
     const service = await ServiceRepository.update(id, userId, {
       ...data,
       name: data.name !== undefined ? normalizeWhitespace(data.name) : undefined,
       description: toNullableString(data.description),
-      emoji:
-        data.emoji !== undefined
-          ? data.emoji === null
-            ? null
-            : data.emoji.trim() || null
-          : undefined,
+      imageKey: data.imageKey !== undefined ? data.imageKey.trim() : undefined,
     });
 
     if (!service) {
@@ -57,10 +69,27 @@ export abstract class ServiceService {
       );
     }
 
+    if (existing.imageKey && existing.imageKey !== service.imageKey) {
+      try {
+        await ServiceService.deleteStoredObject(userId, existing.imageKey);
+      } catch {
+        // Arquivo órfão no R2 é aceitável.
+      }
+    }
+
     return service;
   }
 
   static async delete(id: string, userId: string): Promise<void> {
+    const service = await ServiceRepository.findById(id, userId);
+
+    if (!service) {
+      throw status(
+        Errors.SERVICE.NOT_FOUND.httpStatus,
+        Errors.SERVICE.NOT_FOUND.message satisfies ServiceModel.errorNotFound,
+      );
+    }
+
     const inUse = await ServiceRepository.hasAppointments(id);
 
     if (inUse) {
@@ -70,13 +99,14 @@ export abstract class ServiceService {
       );
     }
 
-    const deleted = await ServiceRepository.delete(id, userId);
+    await ServiceRepository.delete(id, userId);
 
-    if (!deleted) {
-      throw status(
-        Errors.SERVICE.NOT_FOUND.httpStatus,
-        Errors.SERVICE.NOT_FOUND.message satisfies ServiceModel.errorNotFound,
-      );
+    if (service.imageKey) {
+      try {
+        await ServiceService.deleteStoredObject(userId, service.imageKey);
+      } catch {
+        // Arquivo órfão no R2 é aceitável.
+      }
     }
   }
 

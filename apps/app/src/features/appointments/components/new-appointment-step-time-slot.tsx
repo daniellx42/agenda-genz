@@ -2,6 +2,7 @@ import { SkeletonBox } from "@/components/ui/skeleton-box";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { availableTimeSlotsQueryOptions } from "@/features/time-slots/api/time-slot-query-options";
 import { useApiError } from "@/hooks/use-api-error";
+import Feather from "@expo/vector-icons/Feather";
 import { useBottomSheetModal } from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -18,6 +19,33 @@ function getUnavailableMessage(reason?: "BOOKED" | "INACTIVE" | "BLOCKED_DATE") 
     default:
       return "Este horário já está agendado nesta data.";
   }
+}
+
+function getUnavailableAppearance(reason?: "BOOKED" | "INACTIVE" | "BLOCKED_DATE") {
+  if (reason === "BLOCKED_DATE") {
+    return {
+      container: "border-amber-200 bg-amber-50",
+      text: "text-amber-700",
+      iconColor: "#b45309",
+      iconName: "calendar" as const,
+    };
+  }
+
+  if (reason === "INACTIVE") {
+    return {
+      container: "border-zinc-200 bg-zinc-50",
+      text: "text-zinc-400",
+      iconColor: "#a1a1aa",
+      iconName: "pause-circle" as const,
+    };
+  }
+
+  return {
+    container: "border-zinc-200 bg-zinc-50",
+    text: "text-zinc-400",
+    iconColor: "#a1a1aa",
+    iconName: "lock" as const,
+  };
 }
 
 export function StepTimeSlot() {
@@ -64,6 +92,8 @@ export function StepTimeSlot() {
           <View className="flex-row flex-wrap gap-3">
             {slots.map((slot) => {
               if (!slot.available) {
+                const appearance = getUnavailableAppearance(slot.unavailableReason);
+
                 return (
                   <Pressable
                     key={slot.id}
@@ -72,13 +102,18 @@ export function StepTimeSlot() {
                         duration: 5000,
                       })
                     }
-                    className="rounded-2xl px-5 py-4 border border-zinc-100 bg-zinc-50 items-center justify-center"
+                    className={`rounded-2xl border px-5 py-4 items-center justify-center ${appearance.container}`}
                     style={{ minWidth: 90 }}
                   >
-                    <Text className="text-zinc-300 text-sm font-semibold">
+                    <Text className={`text-sm font-semibold ${appearance.text}`}>
                       {slot.time}
                     </Text>
-                    <Text className="text-xs text-zinc-300 mt-0.5">🔒</Text>
+                    <Feather
+                      name={appearance.iconName}
+                      size={12}
+                      color={appearance.iconColor}
+                      style={{ marginTop: 4 }}
+                    />
                   </Pressable>
                 );
               }

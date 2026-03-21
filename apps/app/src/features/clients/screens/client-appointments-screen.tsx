@@ -354,7 +354,8 @@ export default function ClientAppointmentsScreen() {
                 name: item.service.name,
                 price: item.service.price,
                 depositPercentage: item.service.depositPercentage,
-                emoji: item.service.emoji,
+                imageKey: item.service.imageKey,
+                color: item.service.color,
               },
               timeSlot: {
                 time: item.timeSlot.time,

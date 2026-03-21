@@ -1,5 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
 import { formatPrice } from "../lib/service-formatters";
+import { ServiceImage } from "./service-image";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { ServiceItem } from "../types";
 
@@ -28,12 +29,12 @@ export function ServiceCard({
       style={{ opacity: service.active ? 1 : 0.6 }}
     >
       <View className="flex-row items-center gap-3">
-        <View
-          className="h-12 w-12 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: service.color ?? "#fce7f3" }}
-        >
-          <Text className="text-2xl">{service.emoji ?? "✨"}</Text>
-        </View>
+        <ServiceImage
+          imageKey={service.imageKey}
+          backgroundColor={service.color}
+          size={48}
+          borderRadius={16}
+        />
         <View className="flex-1">
           <Text className="text-sm font-semibold text-zinc-900">
             {service.name}

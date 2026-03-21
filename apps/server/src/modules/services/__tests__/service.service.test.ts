@@ -25,7 +25,7 @@ const mockService = {
   price: 15000,
   depositPercentage: null,
   color: "#ff69b4",
-  emoji: "💅",
+  imageKey: "services/user-1/unhas-em-gel.jpg",
   active: true,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -49,6 +49,7 @@ describe("ServiceService.create", () => {
     const result = await SS.create("user-1", {
       name: "Unhas em Gel",
       price: 15000,
+      imageKey: "services/user-1/unhas-em-gel.jpg",
     });
 
     expect(result).toEqual(mockService);
@@ -90,6 +91,7 @@ describe("ServiceService.delete", () => {
   it("deve lançar 409 quando serviço tem agendamentos", async () => {
     mock.module("../service.repository", () => ({
       ServiceRepository: {
+        findById: mock(() => Promise.resolve(mockService)),
         hasAppointments: mock(() => Promise.resolve(true)),
         delete: mock(() => Promise.resolve(true)),
       },
@@ -105,23 +107,34 @@ describe("ServiceService.delete", () => {
   });
 
   it("deve deletar com sucesso quando serviço não tem agendamentos", async () => {
+    const deleteObjectMock = mock(() => Promise.resolve());
+
     mock.module("../service.repository", () => ({
       ServiceRepository: {
+        findById: mock(() => Promise.resolve(mockService)),
         hasAppointments: mock(() => Promise.resolve(false)),
         delete: mock(() => Promise.resolve(true)),
+      },
+    }));
+    mock.module("../../uploads/upload.service", () => ({
+      UploadService: {
+        deleteObject: deleteObjectMock,
       },
     }));
 
     const { ServiceService: SS } = await import("../service.service");
 
     await expect(SS.delete("service-1", "user-1")).resolves.toBeUndefined();
+    expect(deleteObjectMock).toHaveBeenCalledWith(
+      "user-1",
+      "services/user-1/unhas-em-gel.jpg",
+    );
   });
 
   it("deve lançar 404 quando serviço não encontrado ao deletar", async () => {
     mock.module("../service.repository", () => ({
       ServiceRepository: {
-        hasAppointments: mock(() => Promise.resolve(false)),
-        delete: mock(() => Promise.resolve(false)),
+        findById: mock(() => Promise.resolve(null)),
       },
     }));
 
