@@ -26,17 +26,17 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "check-types": "turbo check-types",
-    "dev:app": "turbo -F app dev",
-    "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
-    "db:studio": "turbo -F @agenda-genz/db db:studio",
-    "db:generate": "turbo -F @agenda-genz/db db:generate",
-    "db:deploy": "turbo -F @agenda-genz/db db:deploy",
-    "db:migrate": "turbo -F @agenda-genz/db db:migrate --",
-    "db:reset": "turbo -F @agenda-genz/db db:reset"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "dev:app": "turbo run dev --filter=app",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:server": "turbo run dev --filter=server",
+    "db:studio": "turbo run db:studio --filter=@agenda-genz/db",
+    "db:generate": "turbo run db:generate --filter=@agenda-genz/db",
+    "db:deploy": "turbo run db:deploy --filter=@agenda-genz/db",
+    "db:migrate": "turbo run db:migrate --filter=@agenda-genz/db --",
+    "db:reset": "turbo run db:reset --filter=@agenda-genz/db"
   },
   "dependencies": {
     "@agenda-genz/env": "workspace:*",

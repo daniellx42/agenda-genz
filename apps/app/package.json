@@ -5,6 +5,7 @@
   "scripts": {
     "start": "expo start",
     "dev": "expo start --clear",
+    "check-types": "tsc --noEmit",
     "android": "expo run:android",
     "prebuild": "expo prebuild",
     "ios": "expo run:ios",
