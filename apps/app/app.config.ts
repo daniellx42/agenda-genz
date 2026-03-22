@@ -1,5 +1,5 @@
-import { env } from "@agenda-genz/env/native";
 import "dotenv/config";
+import { env } from "@agenda-genz/env/native";
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
 const googleIosUrlScheme = env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
