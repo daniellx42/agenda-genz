@@ -6,7 +6,9 @@ export interface ClientItem {
   phone: string;
   email: string | null;
   instagram: string | null;
+  notes: string | null;
   profileImageKey: string | null;
+  lastCompletedAppointmentDate: string | null;
 }
 
 export interface ClientDetail extends ClientItem {
@@ -14,7 +16,6 @@ export interface ClientDetail extends ClientItem {
   address: string | null;
   age: number | null;
   gender: ClientGender | null;
-  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }

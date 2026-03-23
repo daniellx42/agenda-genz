@@ -6,10 +6,10 @@ import {
   deleteClientProfileImage,
   updateClient,
 } from "../api/client-mutations";
+import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
-import { imageUrlQueryOptions } from "@/lib/api/upload-query-options";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
@@ -20,6 +20,7 @@ import {
   normalizeInstagram,
   normalizeWhitespace,
 } from "@/lib/formatters";
+import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -74,9 +75,10 @@ export function ClientEditSheet({
     clientDetailQueryOptions(clientId, showError),
   );
 
-  const { data: existingImageUrl } = useQuery(
-    imageUrlQueryOptions(client?.profileImageKey, showError),
-  );
+  const { imageUrl: existingImageUrl } = useResolvedImage({
+    imageKey: client?.profileImageKey,
+    handleError: showError,
+  });
 
   const pickProfileImage = () => {
     imageSourceSheetRef.current?.present();
@@ -104,6 +106,7 @@ export function ClientEditSheet({
         queryKey: clientKeys.detail(clientId),
       });
       await queryClient.invalidateQueries({ queryKey: clientKeys.all });
+      await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
       toast.success("Foto removida");
     } catch (error) {
       showError(error);
@@ -169,6 +172,7 @@ export function ClientEditSheet({
         await queryClient.invalidateQueries({
           queryKey: clientKeys.detail(clientId),
         });
+        await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
         setProfileImageAsset(null);
         setShowAdditionalInfo(false);
         onClose();
@@ -275,6 +279,7 @@ export function ClientEditSheet({
                 <ProfileAvatarEdit
                   name={client?.name ?? ""}
                   existingImageUrl={existingImageUrl ?? null}
+                  existingImageCacheKey={client?.profileImageKey ?? null}
                   localUri={profileImageAsset?.uri ?? null}
                   uploading={uploadingPhoto}
                   deleting={deletingPhoto}

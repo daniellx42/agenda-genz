@@ -1,4 +1,6 @@
+import { Prisma } from "@agenda-genz/db";
 import { prisma } from "../../shared/lib/db";
+import { formatDateOnly } from "../../shared/lib/date-only";
 import {
   buildPhoneSearchTerms,
   normalizeCpf,
@@ -8,6 +10,15 @@ import {
 import type { ClientModel } from "./client.model";
 
 const CLIENT_PAGE_LIMIT = 20;
+
+const latestCompletedAppointmentSelect = {
+  where: { status: "COMPLETED" },
+  orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+  take: 1,
+  select: {
+    date: true,
+  },
+} satisfies Prisma.Client$appointmentsArgs;
 
 const clientSelect = {
   id: true,
@@ -21,9 +32,24 @@ const clientSelect = {
   gender: true,
   notes: true,
   profileImageKey: true,
+  appointments: latestCompletedAppointmentSelect,
   createdAt: true,
   updatedAt: true,
-} as const;
+} satisfies Prisma.ClientSelect;
+
+const clientListSelect = {
+  id: true,
+  name: true,
+  phone: true,
+  email: true,
+  instagram: true,
+  notes: true,
+  profileImageKey: true,
+  appointments: latestCompletedAppointmentSelect,
+} satisfies Prisma.ClientSelect;
+
+type ClientRecord = Prisma.ClientGetPayload<{ select: typeof clientSelect }>;
+type ClientListRecord = Prisma.ClientGetPayload<{ select: typeof clientListSelect }>;
 
 function normalizeInstagramValue(value: string | null): string | null {
   return value ? normalizeInstagram(value) : null;
@@ -35,6 +61,36 @@ function normalizeGenderValue(
   return value === "FEMALE" || value === "MALE" || value === "OTHER"
     ? value
     : null;
+}
+
+function getLastCompletedAppointmentDate(
+  appointments: Array<{ date: Date }>,
+): string | null {
+  const latestAppointment = appointments[0];
+  return latestAppointment ? formatDateOnly(latestAppointment.date) : null;
+}
+
+function toClientResponse(client: ClientRecord): ClientModel.clientResponse {
+  const { appointments, ...rest } = client;
+
+  return {
+    ...rest,
+    instagram: normalizeInstagramValue(client.instagram),
+    gender: normalizeGenderValue(client.gender),
+    lastCompletedAppointmentDate: getLastCompletedAppointmentDate(appointments),
+    createdAt: client.createdAt.toISOString(),
+    updatedAt: client.updatedAt.toISOString(),
+  };
+}
+
+function toClientListItem(client: ClientListRecord) {
+  const { appointments, ...rest } = client;
+
+  return {
+    ...rest,
+    instagram: normalizeInstagramValue(client.instagram),
+    lastCompletedAppointmentDate: getLastCompletedAppointmentDate(appointments),
+  };
 }
 
 export abstract class ClientRepository {
@@ -94,13 +150,7 @@ export abstract class ClientRepository {
       select: clientSelect,
     });
 
-    return {
-      ...client,
-      instagram: normalizeInstagramValue(client.instagram),
-      gender: normalizeGenderValue(client.gender),
-      createdAt: client.createdAt.toISOString(),
-      updatedAt: client.updatedAt.toISOString(),
-    };
+    return toClientResponse(client);
   }
 
   static async findById(
@@ -114,13 +164,7 @@ export abstract class ClientRepository {
 
     if (!client) return null;
 
-    return {
-      ...client,
-      instagram: normalizeInstagramValue(client.instagram),
-      gender: normalizeGenderValue(client.gender),
-      createdAt: client.createdAt.toISOString(),
-      updatedAt: client.updatedAt.toISOString(),
-    };
+    return toClientResponse(client);
   }
 
   static async update(
@@ -137,13 +181,7 @@ export abstract class ClientRepository {
       select: clientSelect,
     });
 
-    return {
-      ...client,
-      instagram: normalizeInstagramValue(client.instagram),
-      gender: normalizeGenderValue(client.gender),
-      createdAt: client.createdAt.toISOString(),
-      updatedAt: client.updatedAt.toISOString(),
-    };
+    return toClientResponse(client);
   }
 
   static async delete(id: string, userId: string): Promise<boolean> {
@@ -165,14 +203,7 @@ export abstract class ClientRepository {
     const [data, total] = await Promise.all([
       prisma.client.findMany({
         where,
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          instagram: true,
-          profileImageKey: true,
-        },
+        select: clientListSelect,
         orderBy: { name: "asc" },
         skip: (page - 1) * limit,
         take: limit,
@@ -181,10 +212,7 @@ export abstract class ClientRepository {
     ]);
 
     return {
-      data: data.map((client) => ({
-        ...client,
-        instagram: normalizeInstagramValue(client.instagram),
-      })),
+      data: data.map(toClientListItem),
       pagination: {
         page,
         limit,

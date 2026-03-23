@@ -3,6 +3,7 @@ import { createService, updateService } from "../api/service-mutations";
 import { ServiceImage } from "../components/service-image";
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
+import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
@@ -133,6 +134,7 @@ export function ServiceFormSheet({
         }
 
         await queryClient.invalidateQueries({ queryKey: serviceKeys.all });
+        await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
         form.reset();
         setServiceImageAsset(null);
         setDidAttemptSubmit(false);

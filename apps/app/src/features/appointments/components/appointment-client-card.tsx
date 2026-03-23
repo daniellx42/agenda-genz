@@ -6,6 +6,7 @@ interface AppointmentClientCardProps {
   name: string;
   phone: string;
   profileImageUrl: string | null;
+  profileImageKey: string | null;
   uploading: boolean;
   deleting: boolean;
   onProfileAction: () => void;
@@ -15,6 +16,7 @@ export function AppointmentClientCard({
   name,
   phone,
   profileImageUrl,
+  profileImageKey,
   uploading,
   deleting,
   onProfileAction,
@@ -25,6 +27,7 @@ export function AppointmentClientCard({
         <AppointmentClientAvatar
           name={name}
           profileImageUrl={profileImageUrl}
+          profileImageKey={profileImageKey}
           size={56}
         />
         <Pressable

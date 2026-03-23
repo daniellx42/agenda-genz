@@ -5,6 +5,10 @@ import {
 import { deleteClient } from "../api/client-mutations";
 import { ClientCard } from "../components/client-card";
 import { ClientCardSkeleton } from "../components/client-card-skeleton";
+import { ClientFollowUpShareSheet } from "../components/client-follow-up-share-sheet";
+import { formatClientDate, formatDaysLabel, getDaysSince } from "../lib/client-relative-time";
+import { buildClientFollowUpMessage } from "../lib/client-share-messages";
+import { openWhatsApp } from "../lib/client-whatsapp";
 import { ClientEditSheet } from "../sheets/client-edit-sheet";
 import { ClientFormSheet } from "../sheets/client-form-sheet";
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
@@ -23,6 +27,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  Share,
   Text,
   TextInput,
   View,
@@ -35,6 +40,7 @@ export default function ClientsScreen() {
   const createSheetRef = useRef<BottomSheetModal>(null);
   const editSheetRef = useRef<BottomSheetModal>(null);
   const confirmDeleteSheetRef = useRef<BottomSheetModal>(null);
+  const followUpShareSheetRef = useRef<BottomSheetModal>(null);
   const { showError } = useApiError();
   const queryClient = useQueryClient();
 
@@ -42,6 +48,8 @@ export default function ClientsScreen() {
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [pendingDeleteClient, setPendingDeleteClient] =
     useState<ClientItem | null>(null);
+  const [followUpClient, setFollowUpClient] = useState<ClientItem | null>(null);
+  const [followUpDraftMessage, setFollowUpDraftMessage] = useState("");
   const debouncedSearch = useDebouncedValue(search, 400);
 
   const {
@@ -109,6 +117,59 @@ export default function ClientsScreen() {
     void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
+  const handleDismissFollowUpShareSheet = useCallback(() => {
+    setFollowUpClient(null);
+    setFollowUpDraftMessage("");
+  }, []);
+
+  const openFollowUpShareSheet = useCallback((client: ClientItem) => {
+    if (!client.lastCompletedAppointmentDate) return;
+
+    const daysSinceLastAppointment = getDaysSince(client.lastCompletedAppointmentDate);
+
+    if (daysSinceLastAppointment === null) {
+      return;
+    }
+
+    setFollowUpClient(client);
+    setFollowUpDraftMessage(
+      buildClientFollowUpMessage({
+        clientName: client.name,
+        daysSinceLastAppointment,
+      }),
+    );
+    followUpShareSheetRef.current?.present();
+  }, []);
+
+  const handleShareFollowUpViaWhatsApp = useCallback(async () => {
+    if (!followUpClient) return;
+
+    followUpShareSheetRef.current?.dismiss();
+    await openWhatsApp(followUpClient.phone, followUpDraftMessage);
+  }, [followUpClient, followUpDraftMessage]);
+
+  const handleShareFollowUpNative = useCallback(async () => {
+    followUpShareSheetRef.current?.dismiss();
+
+    try {
+      await Share.share({ message: followUpDraftMessage });
+    } catch (error) {
+      showError(error);
+    }
+  }, [followUpDraftMessage, showError]);
+
+  const followUpDays = followUpClient?.lastCompletedAppointmentDate
+    ? getDaysSince(followUpClient.lastCompletedAppointmentDate)
+    : null;
+  const followUpHighlightLabel =
+    followUpDays !== null
+      ? `Último atendimento há ${formatDaysLabel(followUpDays)}`
+      : "";
+  const followUpLastAppointmentLabel = followUpClient?.lastCompletedAppointmentDate
+    ? formatClientDate(followUpClient.lastCompletedAppointmentDate)
+    : "";
+  const hasFollowUpPhone = (followUpClient?.phone ?? "").trim().length > 0;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
       <View className="flex-row items-center justify-between px-5 pb-3 pt-3">
@@ -151,6 +212,7 @@ export default function ClientsScreen() {
               client={item}
               onEdit={() => openEdit(item.id)}
               onDelete={() => handleDelete(item)}
+              onOpenFollowUpShare={() => openFollowUpShareSheet(item)}
             />
           )}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
@@ -192,6 +254,19 @@ export default function ClientsScreen() {
         sheetRef={editSheetRef}
         clientId={editingClientId}
         onClose={closeEdit}
+      />
+
+      <ClientFollowUpShareSheet
+        sheetRef={followUpShareSheetRef}
+        clientName={followUpClient?.name ?? ""}
+        lastAppointmentLabel={followUpLastAppointmentLabel}
+        highlightLabel={followUpHighlightLabel}
+        message={followUpDraftMessage}
+        onChangeMessage={setFollowUpDraftMessage}
+        disableWhatsApp={!hasFollowUpPhone}
+        onDismiss={handleDismissFollowUpShareSheet}
+        onShareWhatsApp={() => void handleShareFollowUpViaWhatsApp()}
+        onShareMore={() => void handleShareFollowUpNative()}
       />
 
       <ConfirmActionSheet

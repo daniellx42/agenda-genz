@@ -1,22 +1,25 @@
 import { getInitial } from "../lib/appointment-images";
-import { Image } from "expo-image";
+import { RemoteImage } from "@/lib/media/remote-image";
 import { Text, View } from "react-native";
 
 interface AppointmentClientAvatarProps {
   name: string;
   profileImageUrl: string | null;
+  profileImageKey?: string | null;
   size?: number;
 }
 
 export function AppointmentClientAvatar({
   name,
   profileImageUrl,
+  profileImageKey,
   size = 56,
 }: AppointmentClientAvatarProps) {
   if (profileImageUrl) {
     return (
-      <Image
-        source={{ uri: profileImageUrl }}
+      <RemoteImage
+        imageUrl={profileImageUrl}
+        imageCacheKey={profileImageKey}
         style={{ width: size, height: size, borderRadius: size / 2 }}
         contentFit="cover"
       />

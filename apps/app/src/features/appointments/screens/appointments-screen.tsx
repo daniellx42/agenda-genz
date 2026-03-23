@@ -73,6 +73,7 @@ export default function AppointmentsScreen() {
   const initialCalendarDate = useRef(toMonthDateString(initialMonth)).current;
   const visibleMonthRef = useRef<CalendarMonthState>(initialMonth);
   const selectedDateRef = useRef(today);
+  const previousImageKeysRef = useRef<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(today);
   const [committedMonth, setCommittedMonth] = useState(initialMonth);
   const calendarHeight = getCalendarHeight(committedMonth);
@@ -111,6 +112,16 @@ export default function AppointmentsScreen() {
   useEffect(() => {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (!appointments) {
+      return;
+    }
+
+    previousImageKeysRef.current = appointments
+      .map((appointment) => appointment.service.imageKey)
+      .filter((imageKey): imageKey is string => Boolean(imageKey));
+  }, [appointments, selectedDate]);
 
   const syncCommittedMonth = (month: CalendarMonthState) => {
     setCommittedMonth((previousMonth) =>

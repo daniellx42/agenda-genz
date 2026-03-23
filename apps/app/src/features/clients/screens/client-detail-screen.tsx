@@ -5,10 +5,11 @@ import {
   formatInstagramHandle,
   openInstagramProfile,
 } from "../lib/client-instagram";
+import { formatDaysLabel, getDaysSince } from "../lib/client-relative-time";
 import { openWhatsApp } from "../lib/client-whatsapp";
-import { imageUrlQueryOptions } from "@/lib/api/upload-query-options";
 import { useApiError } from "@/hooks/use-api-error";
 import { formatCpf, formatPhone } from "@/lib/formatters";
+import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import Feather from "@expo/vector-icons/Feather";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -72,14 +73,17 @@ export default function ClientDetailScreen() {
     clientDetailQueryOptions(id ?? null, showError),
   );
 
-  const { data: profileImageUrl } = useQuery(
-    imageUrlQueryOptions(client?.profileImageKey, showError),
-  );
+  const { imageUrl: profileImageUrl } = useResolvedImage({
+    imageKey: client?.profileImageKey,
+    handleError: showError,
+  });
 
   const handleOpenInstagram = async () => {
     if (!client?.instagram) return;
     await openInstagramProfile(client.instagram);
   };
+
+  const clientSinceDays = client ? getDaysSince(client.createdAt) : null;
 
   if (isLoading || !client) {
     return (
@@ -143,6 +147,7 @@ export default function ClientDetailScreen() {
               name={client.name}
               size={88}
               imageUrl={profileImageUrl}
+              imageCacheKey={client.profileImageKey}
             />
 
             <Text className="mt-4 text-lg font-bold text-zinc-900">
@@ -237,6 +242,11 @@ export default function ClientDetailScreen() {
             <Text className="mt-2 text-sm text-zinc-700">
               Criado em {formatDate(client.createdAt)}
             </Text>
+            {clientSinceDays !== null ? (
+              <Text className="mt-1 text-sm text-zinc-500">
+                Cliente há {formatDaysLabel(clientSinceDays)}
+              </Text>
+            ) : null}
             <Text className="mt-1 text-sm text-zinc-500">
               Atualizado em {formatDate(client.updatedAt)}
             </Text>

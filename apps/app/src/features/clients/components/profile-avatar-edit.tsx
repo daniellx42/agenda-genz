@@ -1,4 +1,5 @@
 import { getInitial } from "../lib/client-image";
+import { RemoteImage } from "@/lib/media/remote-image";
 import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -6,6 +7,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 interface ProfileAvatarEditProps {
   name: string;
   existingImageUrl: string | null;
+  existingImageCacheKey?: string | null;
   localUri: string | null;
   uploading: boolean;
   deleting: boolean;
@@ -17,6 +19,7 @@ interface ProfileAvatarEditProps {
 export function ProfileAvatarEdit({
   name,
   existingImageUrl,
+  existingImageCacheKey,
   localUri,
   uploading,
   deleting,
@@ -48,8 +51,9 @@ export function ProfileAvatarEdit({
   if (existingImageUrl) {
     return (
       <View style={{ position: "relative", width: 80, height: 80 }}>
-        <Image
-          source={{ uri: existingImageUrl }}
+        <RemoteImage
+          imageUrl={existingImageUrl}
+          imageCacheKey={existingImageCacheKey}
           style={{ width: 80, height: 80, borderRadius: 40 }}
           contentFit="cover"
         />

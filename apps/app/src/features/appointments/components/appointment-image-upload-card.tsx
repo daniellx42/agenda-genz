@@ -1,10 +1,11 @@
 import Feather from "@expo/vector-icons/Feather";
-import { Image } from "expo-image";
+import { RemoteImage } from "@/lib/media/remote-image";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 interface AppointmentImageUploadCardProps {
   label: string;
   imageUrl: string | null;
+  imageCacheKey?: string | null;
   uploading: boolean;
   deleting: boolean;
   onUpload: () => void;
@@ -15,6 +16,7 @@ interface AppointmentImageUploadCardProps {
 export function AppointmentImageUploadCard({
   label,
   imageUrl,
+  imageCacheKey,
   uploading,
   deleting,
   onUpload,
@@ -29,8 +31,9 @@ export function AppointmentImageUploadCard({
         style={{ minHeight: 140 }}
       >
         <View>
-          <Image
-            source={{ uri: imageUrl }}
+          <RemoteImage
+            imageUrl={imageUrl}
+            imageCacheKey={imageCacheKey}
             style={{ width: "100%", height: 120 }}
             contentFit="cover"
           />

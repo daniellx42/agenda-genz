@@ -1,22 +1,25 @@
 import { getInitial } from "../lib/client-image";
-import { Image } from "expo-image";
+import { RemoteImage } from "@/lib/media/remote-image";
 import { View, Text } from "react-native";
 
 interface ClientAvatarProps {
   name: string;
   size?: number;
   imageUrl?: string | null;
+  imageCacheKey?: string | null;
 }
 
 export function ClientAvatar({
   name,
   size = 48,
   imageUrl,
+  imageCacheKey,
 }: ClientAvatarProps) {
   if (imageUrl) {
     return (
-      <Image
-        source={{ uri: imageUrl }}
+      <RemoteImage
+        imageUrl={imageUrl}
+        imageCacheKey={imageCacheKey}
         style={{ width: size, height: size, borderRadius: size / 2 }}
         contentFit="cover"
       />

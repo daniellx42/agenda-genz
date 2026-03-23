@@ -7,12 +7,10 @@ import {
   deleteClientProfileImage,
   updateClientProfileImage,
 } from "@/features/clients/api/client-mutations";
-import {
-  imageUrlQueryOptions,
-} from "@/lib/api/upload-query-options";
 import { uploadImageAsset } from "@/lib/api/image-upload";
+import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import type { ApiErrorHandler } from "@/lib/api/query-utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { toast } from "sonner-native";
 import type { ImagePickerAsset } from "expo-image-picker";
@@ -50,17 +48,21 @@ export function useAppointmentDetailMedia({
   const [pendingDeleteProfileImage, setPendingDeleteProfileImage] =
     useState(false);
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
+  const [viewerImageKey, setViewerImageKey] = useState<string | null>(null);
   const [viewerLabel, setViewerLabel] = useState("");
 
-  const { data: beforeImageUrl } = useQuery(
-    imageUrlQueryOptions(appointment?.beforeImageKey, showError),
-  );
-  const { data: afterImageUrl } = useQuery(
-    imageUrlQueryOptions(appointment?.afterImageKey, showError),
-  );
-  const { data: profileImageUrl } = useQuery(
-    imageUrlQueryOptions(appointment?.client.profileImageKey, showError),
-  );
+  const { imageUrl: beforeImageUrl } = useResolvedImage({
+    imageKey: appointment?.beforeImageKey,
+    handleError: showError,
+  });
+  const { imageUrl: afterImageUrl } = useResolvedImage({
+    imageKey: appointment?.afterImageKey,
+    handleError: showError,
+  });
+  const { imageUrl: profileImageUrl } = useResolvedImage({
+    imageKey: appointment?.client.profileImageKey,
+    handleError: showError,
+  });
 
   const invalidateAppointments = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
@@ -211,10 +213,11 @@ export function useAppointmentDetailMedia({
   }, [appointment, invalidateAppointments, showError]);
 
   const openViewer = useCallback(
-    (url: string | null, label: string) => {
+    (url: string | null, imageKey: string | null, label: string) => {
       if (!url) return;
 
       setViewerImageUrl(url);
+      setViewerImageKey(imageKey);
       setViewerLabel(label);
     },
     [],
@@ -222,6 +225,7 @@ export function useAppointmentDetailMedia({
 
   const closeViewer = useCallback(() => {
     setViewerImageUrl(null);
+    setViewerImageKey(null);
     setViewerLabel("");
   }, []);
 
@@ -236,6 +240,7 @@ export function useAppointmentDetailMedia({
     deletingProfileImage,
     pendingDeleteProfileImage,
     viewerImageUrl,
+    viewerImageKey,
     viewerLabel,
     uploadWorkImage,
     requestDeleteImage,

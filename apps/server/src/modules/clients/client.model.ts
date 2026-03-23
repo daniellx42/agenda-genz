@@ -77,6 +77,7 @@ export namespace ClientModel {
     gender: t.Union([genderSchema, t.Null()]),
     notes: t.Union([t.String(), t.Null()]),
     profileImageKey: t.Union([t.String(), t.Null()]),
+    lastCompletedAppointmentDate: t.Union([t.String(), t.Null()]),
     createdAt: t.String(),
     updatedAt: t.String(),
   });
@@ -102,7 +103,9 @@ export namespace ClientModel {
         phone: t.String(),
         email: t.Union([t.String(), t.Null()]),
         instagram: t.Union([t.String(), t.Null()]),
+        notes: t.Union([t.String(), t.Null()]),
         profileImageKey: t.Union([t.String(), t.Null()]),
+        lastCompletedAppointmentDate: t.Union([t.String(), t.Null()]),
       }),
     ),
     pagination: t.Object({

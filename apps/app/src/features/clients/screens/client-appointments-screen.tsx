@@ -11,8 +11,8 @@ import type {
 import { SkeletonBox } from "@/components/ui/skeleton-box";
 import { formatPrice } from "@/features/services/lib/service-formatters";
 import { useApiError } from "@/hooks/use-api-error";
-import { imageUrlQueryOptions } from "@/lib/api/upload-query-options";
 import { formatPhone } from "@/lib/formatters";
+import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
@@ -234,9 +234,10 @@ export default function ClientAppointmentsScreen() {
     clientDetailQueryOptions(clientId, showError),
   );
 
-  const { data: profileImageUrl } = useQuery(
-    imageUrlQueryOptions(client?.profileImageKey, showError),
-  );
+  const { imageUrl: profileImageUrl } = useResolvedImage({
+    imageKey: client?.profileImageKey,
+    handleError: showError,
+  });
 
   const {
     data,
@@ -381,6 +382,7 @@ export default function ClientAppointmentsScreen() {
               <ClientAvatar
                 name={client.name}
                 imageUrl={profileImageUrl}
+                imageCacheKey={client.profileImageKey}
                 size={56}
               />
               <View className="flex-1">

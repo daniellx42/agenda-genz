@@ -35,6 +35,7 @@ const mockClient = {
   gender: null,
   notes: null,
   profileImageKey: null,
+  lastCompletedAppointmentDate: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -47,7 +48,9 @@ const mockListResult = {
       phone: "11999999999",
       email: null,
       instagram: null,
+      notes: null,
       profileImageKey: null,
+      lastCompletedAppointmentDate: null,
     },
   ],
   pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },

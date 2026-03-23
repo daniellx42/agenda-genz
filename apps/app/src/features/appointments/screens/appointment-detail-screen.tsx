@@ -400,6 +400,7 @@ export default function AppointmentDetailScreen() {
           name={appointment.client.name}
           phone={appointment.client.phone}
           profileImageUrl={media.profileImageUrl}
+          profileImageKey={appointment.client.profileImageKey}
           uploading={media.uploadingProfileImage}
           deleting={media.deletingProfileImage}
           onProfileAction={
@@ -412,6 +413,8 @@ export default function AppointmentDetailScreen() {
         <AppointmentWorkImagesCard
           beforeImageUrl={media.beforeImageUrl}
           afterImageUrl={media.afterImageUrl}
+          beforeImageKey={appointment.beforeImageKey}
+          afterImageKey={appointment.afterImageKey}
           uploadingSlot={media.uploadingSlot}
           deletingSlot={media.deletingSlot}
           onUpload={handleOpenWorkUploadSheet}
@@ -623,6 +626,7 @@ export default function AppointmentDetailScreen() {
       <AppointmentImageViewerModal
         visible={!!media.viewerImageUrl}
         imageUrl={media.viewerImageUrl}
+        imageCacheKey={media.viewerImageKey}
         label={media.viewerLabel}
         onClose={media.closeViewer}
       />

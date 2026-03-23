@@ -1,8 +1,9 @@
 import { useApiError } from "@/hooks/use-api-error";
-import { imageUrlQueryOptions } from "@/lib/api/upload-query-options";
+import { RemoteImage } from "@/lib/media/remote-image";
+import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import Feather from "@expo/vector-icons/Feather";
-import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
+import { Image, type ImageErrorEventData, type ImageLoadEventData } from "expo-image";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 interface ServiceImageProps {
@@ -23,22 +24,79 @@ export function ServiceImage({
   iconSize,
 }: ServiceImageProps) {
   const { showError } = useApiError();
-  const query = imageUrlQueryOptions(imageKey, showError);
-  const { data: remoteImageUrl, isLoading } = useQuery({
-    ...query,
-    enabled: !previewUri && !!imageKey,
+  const lastResolutionSignatureRef = useRef<string | null>(null);
+  const {
+    imageUrl,
+    imageCacheKey,
+    isLoading,
+    fetchStatus,
+    dataUpdatedAt,
+    initialUrlCacheHit,
+  } = useResolvedImage({
+    imageKey,
+    previewUri,
+    handleError: showError,
   });
 
-  const imageUrl = previewUri ?? remoteImageUrl ?? null;
+  const shouldDebugImageCache =
+    !!imageKey
+    && !previewUri;
   const fallbackBackgroundColor = backgroundColor ?? "#fff1f2";
   const resolvedIconSize = iconSize ?? Math.max(18, Math.round(size * 0.42));
 
+  useEffect(() => {
+    if (!shouldDebugImageCache || !imageUrl || !imageCacheKey) {
+      return;
+    }
+
+    const resolutionSignature = `${imageKey ?? ""}:${imageUrl}:${dataUpdatedAt}`;
+
+    if (lastResolutionSignatureRef.current === resolutionSignature) {
+      return;
+    }
+
+    lastResolutionSignatureRef.current = resolutionSignature;
+
+    let didCancel = false;
+
+    void Image.getCachePathAsync(imageCacheKey).then((cachePath) => {
+      if (didCancel) return;
+    });
+
+    return () => {
+      didCancel = true;
+    };
+  }, [
+    dataUpdatedAt,
+    fetchStatus,
+    imageCacheKey,
+    imageKey,
+    imageUrl,
+    initialUrlCacheHit,
+    shouldDebugImageCache,
+  ]);
+
+  function handleLoad(event: ImageLoadEventData) {
+    if (!shouldDebugImageCache || !imageUrl) {
+      return;
+    }
+  }
+
+  function handleError(event: ImageErrorEventData) {
+    if (!shouldDebugImageCache || !imageUrl) {
+      return;
+    }
+  }
+
   if (imageUrl) {
     return (
-      <Image
-        source={{ uri: imageUrl }}
+      <RemoteImage
+        imageUrl={imageUrl}
+        imageCacheKey={imageCacheKey}
         style={{ width: size, height: size, borderRadius }}
         contentFit="cover"
+        onLoad={handleLoad}
+        onError={handleError}
       />
     );
   }

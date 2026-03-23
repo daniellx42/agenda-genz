@@ -1,5 +1,5 @@
-import Feather from "@expo/vector-icons/Feather";
 import { ServiceImage } from "@/features/services/components/service-image";
+import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import {
@@ -8,11 +8,11 @@ import {
   type AppointmentPaymentStatus,
   type AppointmentServiceStatus,
 } from "../constants/appointment-status";
+import { useAppointmentStatusActions } from "../hooks/use-appointment-status-actions";
 import {
   getAppointmentDepositAmountCents,
   getAppointmentRemainingAmountCents,
 } from "../lib/appointment-financials";
-import { useAppointmentStatusActions } from "../hooks/use-appointment-status-actions";
 import { AppointmentStatusActionButton } from "./appointment-status-action-button";
 import { AppointmentStatusSelectionSheet } from "./appointment-status-selection-sheet";
 

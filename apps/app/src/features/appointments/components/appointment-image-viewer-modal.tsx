@@ -2,8 +2,8 @@ import {
   saveImageToGallery,
   shareRemoteImage,
 } from "../lib/appointment-images";
+import { RemoteImage } from "@/lib/media/remote-image";
 import Feather from "@expo/vector-icons/Feather";
-import { Image } from "expo-image";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -18,6 +18,7 @@ import { Text } from "react-native";
 interface AppointmentImageViewerModalProps {
   visible: boolean;
   imageUrl: string | null;
+  imageCacheKey?: string | null;
   label: string;
   onClose: () => void;
 }
@@ -25,6 +26,7 @@ interface AppointmentImageViewerModalProps {
 export function AppointmentImageViewerModal({
   visible,
   imageUrl,
+  imageCacheKey,
   label,
   onClose,
 }: AppointmentImageViewerModalProps) {
@@ -80,8 +82,9 @@ export function AppointmentImageViewerModal({
 
         <View style={{ flex: 1 }} className="items-center justify-center px-4">
           {imageUrl && (
-            <Image
-              source={{ uri: imageUrl }}
+            <RemoteImage
+              imageUrl={imageUrl}
+              imageCacheKey={imageCacheKey}
               style={{ width: "100%", aspectRatio: 1 }}
               contentFit="contain"
             />

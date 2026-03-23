@@ -5,16 +5,20 @@ import { AppointmentImageUploadCard } from "./appointment-image-upload-card";
 interface AppointmentWorkImagesCardProps {
   beforeImageUrl: string | null;
   afterImageUrl: string | null;
+  beforeImageKey: string | null;
+  afterImageKey: string | null;
   uploadingSlot: ImageSlot | null;
   deletingSlot: ImageSlot | null;
   onUpload: (slot: ImageSlot) => void;
-  onOpenViewer: (url: string | null, label: string) => void;
+  onOpenViewer: (url: string | null, imageKey: string | null, label: string) => void;
   onDelete: (slot: ImageSlot) => void;
 }
 
 export function AppointmentWorkImagesCard({
   beforeImageUrl,
   afterImageUrl,
+  beforeImageKey,
+  afterImageKey,
   uploadingSlot,
   deletingSlot,
   onUpload,
@@ -31,19 +35,21 @@ export function AppointmentWorkImagesCard({
         <AppointmentImageUploadCard
           label="Antes"
           imageUrl={beforeImageUrl}
+          imageCacheKey={beforeImageKey}
           uploading={uploadingSlot === "before"}
           deleting={deletingSlot === "before"}
           onUpload={() => onUpload("before")}
-          onPress={() => onOpenViewer(beforeImageUrl, "Antes")}
+          onPress={() => onOpenViewer(beforeImageUrl, beforeImageKey, "Antes")}
           onDelete={() => onDelete("before")}
         />
         <AppointmentImageUploadCard
           label="Depois"
           imageUrl={afterImageUrl}
+          imageCacheKey={afterImageKey}
           uploading={uploadingSlot === "after"}
           deleting={deletingSlot === "after"}
           onUpload={() => onUpload("after")}
-          onPress={() => onOpenViewer(afterImageUrl, "Depois")}
+          onPress={() => onOpenViewer(afterImageUrl, afterImageKey, "Depois")}
           onDelete={() => onDelete("after")}
         />
       </View>
