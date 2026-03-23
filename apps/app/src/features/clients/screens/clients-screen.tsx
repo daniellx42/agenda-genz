@@ -8,6 +8,7 @@ import { ClientCardSkeleton } from "../components/client-card-skeleton";
 import { ClientEditSheet } from "../sheets/client-edit-sheet";
 import { ClientFormSheet } from "../sheets/client-form-sheet";
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
+import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
 import { useApiError } from "@/hooks/use-api-error";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import Feather from "@expo/vector-icons/Feather";
@@ -65,6 +66,13 @@ export default function ClientsScreen() {
   const openCreate = useCallback(() => {
     createSheetRef.current?.present();
   }, []);
+
+  useRegisterTabContextualAction({
+    routeName: "clients",
+    label: "Novo cliente",
+    accessibilityLabel: "Novo cliente",
+    onPress: openCreate,
+  });
 
   const closeCreate = useCallback(() => {
     createSheetRef.current?.dismiss();

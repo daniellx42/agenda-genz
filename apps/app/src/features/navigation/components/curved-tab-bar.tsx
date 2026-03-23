@@ -1,5 +1,7 @@
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from "@expo/vector-icons/Feather";
+import { useTabContextualActionRegistry } from "@/features/navigation/lib/tab-contextual-action-context";
+import type { AppTabRouteName } from "@/features/navigation/types/app-tab-route";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -65,18 +67,20 @@ const TAB_CONFIG = {
 type TabRouteName = keyof typeof TAB_CONFIG;
 
 interface CurvedTabBarProps extends BottomTabBarProps {
-  onPressCenter: (activeRouteName: string) => void;
   width: number;
 }
 
 export function CurvedTabBar({
   state,
   navigation,
-  onPressCenter,
   width,
 }: CurvedTabBarProps) {
+  const { getAction } = useTabContextualActionRegistry();
   const insets = useSafeAreaInsets();
-  const activeRouteName = state.routes[state.index]?.name ?? "appointments";
+  const activeRouteName =
+    (state.routes[state.index]?.name as AppTabRouteName | undefined) ??
+    "appointments";
+  const centerAction = getAction(activeRouteName);
   const bottomOffset = Math.max(insets.bottom, 12);
   const barWidth = Math.min(width - 24, MAX_BAR_WIDTH);
   const barLeft = (width - barWidth) / 2;
@@ -170,10 +174,19 @@ export function CurvedTabBar({
       </View>
 
       <Pressable
-        onPress={() => onPressCenter(activeRouteName)}
-        style={[styles.fab, { bottom: fabBottom }]}
+        onPress={centerAction?.onPress}
+        disabled={!centerAction}
+        style={[
+          styles.fab,
+          { bottom: fabBottom, opacity: centerAction ? 1 : 0.6 },
+        ]}
         accessibilityRole="button"
-        accessibilityLabel="Novo agendamento"
+        accessibilityLabel={
+          centerAction?.accessibilityLabel ??
+          centerAction?.label ??
+          "Abrir acao principal"
+        }
+        accessibilityState={{ disabled: !centerAction }}
       >
         <Feather name="plus" size={24} color="white" />
       </Pressable>

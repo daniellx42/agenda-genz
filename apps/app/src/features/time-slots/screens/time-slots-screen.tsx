@@ -18,6 +18,7 @@ import { AddTimeSheet } from "../sheets/add-time-sheet";
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
+import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
 import { useApiError } from "@/hooks/use-api-error";
 import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -26,19 +27,25 @@ import { useCallback, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
-import type { TimeSlotDaySelection } from "../constants/time-slot-days";
+import { useCreateTimeSlotFlow } from "../hooks/use-create-time-slot-flow";
 import type { BlockTimeSlotTarget } from "../sheets/block-time-slot-date-sheet";
 
 export default function TimeSlotsScreen() {
   const { showError } = useApiError();
   const queryClient = useQueryClient();
-  const addSheetRef = useRef<BottomSheetModal>(null);
   const actionSheetRef = useRef<BottomSheetModal>(null);
   const blockDateSheetRef = useRef<BottomSheetModal>(null);
   const confirmDeleteSheetRef = useRef<BottomSheetModal>(null);
-  const [addSheetDay, setAddSheetDay] = useState<TimeSlotDaySelection | null>(
-    null,
-  );
+  const {
+    addSheetRef,
+    dayPickerSheetRef,
+    selectedDay: addSheetDay,
+    dayOptions,
+    openCreateForDay,
+    openDayPicker,
+    handleSelectDay,
+    handleCloseAddSheet,
+  } = useCreateTimeSlotFlow();
   const [selectedSlot, setSelectedSlot] = useState<BlockTimeSlotTarget | null>(
     null,
   );
@@ -147,14 +154,12 @@ export default function TimeSlotsScreen() {
       .sort((a, b) => a.time.localeCompare(b.time)),
   }));
 
-  const handleOpenAddSheet = useCallback((dayOfWeek: number, label: string) => {
-    setAddSheetDay({ dayOfWeek, label });
-    addSheetRef.current?.present();
-  }, []);
-
-  const handleCloseAddSheet = useCallback(() => {
-    setAddSheetDay(null);
-  }, []);
+  useRegisterTabContextualAction({
+    routeName: "time-slots",
+    label: "Novo horario",
+    accessibilityLabel: "Novo horario",
+    onPress: openDayPicker,
+  });
 
   const handleManageSlot = useCallback((slot: BlockTimeSlotTarget) => {
     setSelectedSlot(slot);
@@ -292,7 +297,12 @@ export default function TimeSlotsScreen() {
               key={day.value}
               day={day}
               slots={daySlots}
-              onAdd={() => handleOpenAddSheet(day.value, day.label)}
+              onAdd={() =>
+                openCreateForDay({
+                  dayOfWeek: day.value,
+                  label: day.label,
+                })
+              }
               busySlotId={busySlotId}
               onManage={handleManageSlot}
             />
@@ -328,6 +338,14 @@ export default function TimeSlotsScreen() {
           {timeSlotsSection}
         </ScrollView>
       )}
+
+      <SelectionSheet
+        sheetRef={dayPickerSheetRef}
+        title="Adicionar horario"
+        description="Escolha o dia da semana para cadastrar um novo horario."
+        onSelect={handleSelectDay}
+        options={dayOptions}
+      />
 
       <AddTimeSheet
         day={addSheetDay}

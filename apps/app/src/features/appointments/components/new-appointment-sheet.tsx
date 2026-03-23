@@ -15,7 +15,8 @@ import { StepService } from "./new-appointment-step-service";
 import { StepTimeSlot } from "./new-appointment-step-time-slot";
 
 interface Props {
-  onClose: () => void;
+  onDismiss: () => void;
+  onRequestClose: () => void;
 }
 
 const SNAP_POINTS = ["75%", "92%"];
@@ -37,7 +38,7 @@ const Backdrop = (props: BottomSheetBackdropProps) => (
 );
 
 export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
-  function NewAppointmentSheet({ onClose }, ref) {
+  function NewAppointmentSheet({ onDismiss, onRequestClose }, ref) {
     const { date, step, goBack } = useAppointmentDraft();
     const formSheet = useFormSheet();
 
@@ -58,7 +59,7 @@ export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
         backdropComponent={renderBackdrop}
         handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
         backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
-        onDismiss={onClose}
+        onDismiss={onDismiss}
         keyboardBehavior={formSheet.keyboardBehavior}
         keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
         android_keyboardInputMode={formSheet.androidKeyboardInputMode}
@@ -103,7 +104,7 @@ export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
           {step === "client" && <StepClient />}
           {step === "service" && <StepService />}
           {step === "slot" && <StepTimeSlot />}
-          {step === "review" && <StepReview onClose={onClose} />}
+          {step === "review" && <StepReview onClose={onRequestClose} />}
         </BottomSheetScrollView>
       </BottomSheetModal>
     );

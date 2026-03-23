@@ -1,13 +1,16 @@
 import { CalendarMarkedDay } from "@/components/ui/calendar-marked-day";
+import { NewAppointmentSheet } from "@/features/appointments/components/new-appointment-sheet";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { useAuthSession } from "@/features/auth/lib/auth-session-context";
+import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
 import { useApiError } from "@/hooks/use-api-error";
 import { ensureCalendarPtBrLocale } from "@/lib/calendar-locale";
 import { toLocalDateString } from "@/lib/formatters";
 import Feather from '@expo/vector-icons/Feather';
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { CalendarList, DateData } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,7 +59,8 @@ export default function AppointmentsScreen() {
   const router = useRouter();
   const { session } = useAuthSession();
   const { showError } = useApiError();
-  const { setDate } = useAppointmentDraft();
+  const sheetRef = useRef<BottomSheetModal>(null);
+  const { setDate, reset } = useAppointmentDraft();
   const queryClient = useQueryClient();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const calendarRef = useRef<CalendarListHandle | null>(null);
@@ -138,6 +142,26 @@ export default function AppointmentsScreen() {
       calendarRef.current?.scrollToMonth(day.dateString);
     }
   };
+
+  const openCreateSheet = useCallback(() => {
+    setDate(selectedDate);
+    sheetRef.current?.present();
+  }, [selectedDate, setDate]);
+
+  const closeCreateSheet = useCallback(() => {
+    sheetRef.current?.dismiss();
+  }, []);
+
+  const handleDismissCreateSheet = useCallback(() => {
+    reset();
+  }, [reset]);
+
+  useRegisterTabContextualAction({
+    routeName: "appointments",
+    label: "Novo agendamento",
+    accessibilityLabel: "Novo agendamento",
+    onPress: openCreateSheet,
+  });
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "Professional";
   const hour = new Date().getHours();
@@ -261,7 +285,6 @@ export default function AppointmentsScreen() {
               </View>
             </View>
           </View>
-
           <View className="px-5 pt-4">
             {isLoading && (
               <View>
@@ -291,6 +314,12 @@ export default function AppointmentsScreen() {
           </View>
         </Animated.ScrollView>
       </View>
+
+      <NewAppointmentSheet
+        ref={sheetRef}
+        onDismiss={handleDismissCreateSheet}
+        onRequestClose={closeCreateSheet}
+      />
     </SafeAreaView>
   );
 }

@@ -13,6 +13,7 @@ import { exportServices } from "../lib/export-services";
 import { ServiceFormSheet } from "../sheets/service-form-sheet";
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
 import { useAuthSession } from "@/features/auth/lib/auth-session-context";
+import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
 import { useApiError } from "@/hooks/use-api-error";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import Feather from "@expo/vector-icons/Feather";
@@ -95,6 +96,13 @@ export default function ServicesScreen() {
     setEditingService(null);
     sheetRef.current?.present();
   }, []);
+
+  useRegisterTabContextualAction({
+    routeName: "services",
+    label: "Novo servico",
+    accessibilityLabel: "Novo servico",
+    onPress: openCreateSheet,
+  });
 
   const openEditSheet = useCallback((service: ServiceItem) => {
     setEditingService(service);
