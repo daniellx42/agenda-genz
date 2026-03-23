@@ -1,7 +1,8 @@
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
-import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { SkeletonBox } from "@/components/ui/skeleton-box";
+import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
+import { openWhatsApp } from "@/features/clients/lib/client-whatsapp";
 import { useApiError } from "@/hooks/use-api-error";
 import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
 import type { ApiErrorObject } from "@/lib/api/query-utils";
@@ -15,6 +16,7 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  Share,
   Text,
   View,
 } from "react-native";
@@ -29,6 +31,8 @@ import { AppointmentCardSkeleton } from "../components/appointment-card-skeleton
 import { AppointmentClientCard } from "../components/appointment-client-card";
 import { AppointmentDetailHeader } from "../components/appointment-detail-header";
 import { AppointmentImageViewerModal } from "../components/appointment-image-viewer-modal";
+import { AppointmentMessageShareCard } from "../components/appointment-message-share-card";
+import { AppointmentMessageShareSheet } from "../components/appointment-message-share-sheet";
 import { AppointmentNotesCard } from "../components/appointment-notes-card";
 import { AppointmentServiceCard } from "../components/appointment-service-card";
 import { AppointmentStatusCard } from "../components/appointment-status-card";
@@ -44,6 +48,12 @@ import { useAppointmentDetailMedia } from "../hooks/use-appointment-detail-media
 import { useAppointmentStatusActions } from "../hooks/use-appointment-status-actions";
 import type { ImageSlot } from "../lib/appointment-images";
 import { formatAppointmentDate } from "../lib/appointment-images";
+import {
+  buildAppointmentConfirmationMessage,
+  buildAppointmentReminderMessage,
+  getAppointmentCountdownLabel,
+} from "../lib/appointment-share-messages";
+import { formatAppointmentTimeWithPeriod } from "../lib/appointment-time";
 
 type UploadSource = "camera" | "gallery";
 type UploadTarget = { kind: "work"; slot: ImageSlot } | { kind: "profile" } | null;
@@ -96,7 +106,11 @@ export default function AppointmentDetailScreen() {
   const deleteAppointmentSheetRef = useRef<BottomSheetModal>(null);
   const deleteWorkImageSheetRef = useRef<BottomSheetModal>(null);
   const deleteProfileImageSheetRef = useRef<BottomSheetModal>(null);
+  const confirmationShareSheetRef = useRef<BottomSheetModal>(null);
+  const reminderShareSheetRef = useRef<BottomSheetModal>(null);
   const [uploadTarget, setUploadTarget] = useState<UploadTarget>(null);
+  const [confirmationDraftMessage, setConfirmationDraftMessage] = useState("");
+  const [reminderDraftMessage, setReminderDraftMessage] = useState("");
 
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (appointmentId: string) => deleteAppointment(appointmentId),
@@ -144,42 +158,6 @@ export default function AppointmentDetailScreen() {
     paymentStatus,
     serviceStatus,
   });
-
-  if (isLoading || !appointment) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
-        <AppointmentDetailHeader onBack={() => router.back()} />
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
-        >
-          <View className="mb-4 rounded-2xl border border-rose-100 bg-white p-4">
-            <View className="flex-row items-center gap-3">
-              <SkeletonBox style={{ width: 56, height: 56, borderRadius: 28 }} />
-              <View className="flex-1">
-                <SkeletonBox style={{ width: "52%", height: 16 }} />
-                <SkeletonBox style={{ marginTop: 8, width: "38%", height: 12 }} />
-              </View>
-            </View>
-          </View>
-
-          <AppointmentCardSkeleton />
-
-          {Array.from({ length: 3 }).map((_, index) => (
-            <View
-              key={index}
-              className="mb-4 rounded-2xl border border-rose-100 bg-white p-4"
-            >
-              <SkeletonBox style={{ width: 120, height: 16 }} />
-              <SkeletonBox style={{ marginTop: 12, width: "82%", height: 14 }} />
-              <SkeletonBox style={{ marginTop: 8, width: "58%", height: 14 }} />
-            </View>
-          ))}
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
 
   const handleOpenWorkUploadSheet = (slot: ImageSlot) => {
     setUploadTarget({ kind: "work", slot });
@@ -251,6 +229,165 @@ export default function AppointmentDetailScreen() {
           ? "Foto do antes"
           : "Foto do depois";
 
+  const appointmentId = appointment?.id ?? null;
+  const appointmentClientName = appointment?.client.name ?? "";
+  const appointmentClientPhone = appointment?.client.phone ?? "";
+  const appointmentServiceName = appointment?.service.name ?? "";
+  const appointmentDate = appointment?.date ?? "";
+  const appointmentTime = appointment?.timeSlot.time ?? "";
+  const appointmentNotes = appointment?.notes ?? null;
+  const formattedAppointmentDate = appointment
+    ? formatAppointmentDate(appointmentDate)
+    : "";
+  const countdownLabel = appointment
+    ? getAppointmentCountdownLabel({
+        date: appointmentDate,
+        time: appointmentTime,
+      })
+    : null;
+  const createConfirmationMessage = useCallback(
+    () => {
+      if (!appointment) return "";
+
+      return buildAppointmentConfirmationMessage({
+        clientName: appointmentClientName,
+        serviceName: appointmentServiceName,
+        date: appointmentDate,
+        time: appointmentTime,
+        serviceStatus,
+        paymentStatus,
+        notes: appointmentNotes,
+      });
+    },
+    [
+      appointment,
+      appointmentClientName,
+      appointmentDate,
+      appointmentNotes,
+      appointmentServiceName,
+      appointmentTime,
+      paymentStatus,
+      serviceStatus,
+    ],
+  );
+  const createReminderMessage = useCallback(
+    () => {
+      if (!appointment) return "";
+
+      return buildAppointmentReminderMessage({
+        clientName: appointmentClientName,
+        serviceName: appointmentServiceName,
+        date: appointmentDate,
+        time: appointmentTime,
+        serviceStatus,
+        paymentStatus,
+        notes: appointmentNotes,
+      });
+    },
+    [
+      appointment,
+      appointmentClientName,
+      appointmentDate,
+      appointmentNotes,
+      appointmentServiceName,
+      appointmentTime,
+      paymentStatus,
+      serviceStatus,
+    ],
+  );
+  const hasClientPhone = appointmentClientPhone.trim().length > 0;
+  const handleDismissConfirmationShareSheet = useCallback(() => {
+    setConfirmationDraftMessage("");
+  }, []);
+  const handleDismissReminderShareSheet = useCallback(() => {
+    setReminderDraftMessage("");
+  }, []);
+
+  useEffect(() => {
+    setConfirmationDraftMessage("");
+    setReminderDraftMessage("");
+    confirmationShareSheetRef.current?.dismiss();
+    reminderShareSheetRef.current?.dismiss();
+  }, [appointmentId]);
+
+  const openConfirmationShareSheet = useCallback(() => {
+    if (!appointment) return;
+    setConfirmationDraftMessage(createConfirmationMessage());
+    confirmationShareSheetRef.current?.present();
+  }, [appointment, createConfirmationMessage]);
+
+  const openReminderShareSheet = useCallback(() => {
+    if (!appointment) return;
+    setReminderDraftMessage(createReminderMessage());
+    reminderShareSheetRef.current?.present();
+  }, [appointment, createReminderMessage]);
+
+  const handleShareViaWhatsApp = useCallback(
+    async (sheet: "confirmation" | "reminder", message: string) => {
+      if (sheet === "confirmation") {
+        confirmationShareSheetRef.current?.dismiss();
+      } else {
+        reminderShareSheetRef.current?.dismiss();
+      }
+
+      await openWhatsApp(appointmentClientPhone, message);
+    },
+    [appointmentClientPhone],
+  );
+
+  const handleShareNative = useCallback(
+    async (sheet: "confirmation" | "reminder", message: string) => {
+      if (sheet === "confirmation") {
+        confirmationShareSheetRef.current?.dismiss();
+      } else {
+        reminderShareSheetRef.current?.dismiss();
+      }
+
+      try {
+        await Share.share({ message });
+      } catch (error) {
+        showError(error);
+      }
+    },
+    [showError],
+  );
+
+  if (isLoading || !appointment) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
+        <AppointmentDetailHeader onBack={() => router.back()} />
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+        >
+          <View className="mb-4 rounded-2xl border border-rose-100 bg-white p-4">
+            <View className="flex-row items-center gap-3">
+              <SkeletonBox style={{ width: 56, height: 56, borderRadius: 28 }} />
+              <View className="flex-1">
+                <SkeletonBox style={{ width: "52%", height: 16 }} />
+                <SkeletonBox style={{ marginTop: 8, width: "38%", height: 12 }} />
+              </View>
+            </View>
+          </View>
+
+          <AppointmentCardSkeleton />
+
+          {Array.from({ length: 5 }).map((_, index) => (
+            <View
+              key={index}
+              className="mb-4 rounded-2xl border border-rose-100 bg-white p-4"
+            >
+              <SkeletonBox style={{ width: 120, height: 16 }} />
+              <SkeletonBox style={{ marginTop: 12, width: "82%", height: 14 }} />
+              <SkeletonBox style={{ marginTop: 8, width: "58%", height: 14 }} />
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
       <AppointmentDetailHeader onBack={() => router.back()} />
@@ -272,36 +409,6 @@ export default function AppointmentDetailScreen() {
           }
         />
 
-        <AppointmentServiceCard
-          imageKey={appointment.service.imageKey}
-          color={appointment.service.color}
-          name={appointment.service.name}
-          price={appointment.service.price}
-          depositPercentage={appointment.service.depositPercentage}
-          formattedDate={formatAppointmentDate(appointment.date)}
-          time={appointment.timeSlot.time}
-        />
-
-        <AppointmentStatusCard
-          title="Status do pagamento"
-          description="Mostra se o valor deste agendamento ja foi recebido."
-          statusConfig={APPOINTMENT_PAYMENT_STATUS_CONFIG[paymentStatus]}
-          loading={isUpdatingPayment}
-          onPress={openPaymentSheet}
-        />
-
-        <AppointmentStatusCard
-          title="Status do serviço"
-          description="Controla o andamento do atendimento para voce e para a agenda."
-          statusConfig={APPOINTMENT_SERVICE_STATUS_CONFIG[serviceStatus]}
-          loading={isUpdatingService}
-          onPress={openServiceSheet}
-        />
-
-        {appointment.notes ? (
-          <AppointmentNotesCard notes={appointment.notes} />
-        ) : null}
-
         <AppointmentWorkImagesCard
           beforeImageUrl={media.beforeImageUrl}
           afterImageUrl={media.afterImageUrl}
@@ -310,6 +417,49 @@ export default function AppointmentDetailScreen() {
           onUpload={handleOpenWorkUploadSheet}
           onOpenViewer={media.openViewer}
           onDelete={handleRequestDeleteWorkImage}
+        />
+
+        <AppointmentServiceCard
+          imageKey={appointment.service.imageKey}
+          color={appointment.service.color}
+          name={appointment.service.name}
+          price={appointment.service.price}
+          depositPercentage={appointment.service.depositPercentage}
+          formattedDate={formattedAppointmentDate}
+          time={appointment.timeSlot.time}
+        />
+
+        <AppointmentMessageShareCard
+          title="Confirmação do agendamento"
+          description="Compartilhe uma mensagem pronta com os dados do agendamento e os status atuais."
+          onPress={openConfirmationShareSheet}
+        />
+
+        <AppointmentMessageShareCard
+          title="Lembrete do atendimento"
+          description="Envie um aviso automático dizendo que o atendimento está próximo e quanto tempo falta."
+          highlightLabel={countdownLabel ? `Faltam ${countdownLabel}` : null}
+          onPress={openReminderShareSheet}
+        />
+
+        {appointment.notes ? (
+          <AppointmentNotesCard notes={appointment.notes} />
+        ) : null}
+
+        <AppointmentStatusCard
+          title="Status do pagamento"
+          description="Mostra se o valor deste agendamento já foi recebido."
+          statusConfig={APPOINTMENT_PAYMENT_STATUS_CONFIG[paymentStatus]}
+          loading={isUpdatingPayment}
+          onPress={openPaymentSheet}
+        />
+
+        <AppointmentStatusCard
+          title="Status do serviço"
+          description="Controla o andamento do atendimento para você e para a agenda."
+          statusConfig={APPOINTMENT_SERVICE_STATUS_CONFIG[serviceStatus]}
+          loading={isUpdatingService}
+          onPress={openServiceSheet}
         />
 
         <Pressable
@@ -355,10 +505,55 @@ export default function AppointmentDetailScreen() {
         onSelect={selectServiceStatus}
       />
 
+      <AppointmentMessageShareSheet
+        key={`confirmation-share-sheet-${appointment.id}`}
+        sheetRef={confirmationShareSheetRef}
+        title="Confirmação do agendamento"
+        description="Compartilhe uma mensagem pronta com os dados do agendamento e os status atuais."
+        clientName={appointment.client.name}
+        message={confirmationDraftMessage}
+        onChangeMessage={setConfirmationDraftMessage}
+        serviceName={appointment.service.name}
+        formattedDate={formattedAppointmentDate}
+        time={appointment.timeSlot.time}
+        paymentStatusConfig={APPOINTMENT_PAYMENT_STATUS_CONFIG[paymentStatus]}
+        serviceStatusConfig={APPOINTMENT_SERVICE_STATUS_CONFIG[serviceStatus]}
+        disableWhatsApp={!hasClientPhone}
+        onDismiss={handleDismissConfirmationShareSheet}
+        onShareWhatsApp={() =>
+          void handleShareViaWhatsApp("confirmation", confirmationDraftMessage)
+        }
+        onShareMore={() =>
+          void handleShareNative("confirmation", confirmationDraftMessage)
+        }
+      />
+
+      <AppointmentMessageShareSheet
+        key={`reminder-share-sheet-${appointment.id}`}
+        sheetRef={reminderShareSheetRef}
+        title="Lembrete do atendimento"
+        description="Envie um aviso automático dizendo que o atendimento está próximo e quanto tempo falta."
+        clientName={appointment.client.name}
+        message={reminderDraftMessage}
+        onChangeMessage={setReminderDraftMessage}
+        serviceName={appointment.service.name}
+        formattedDate={formattedAppointmentDate}
+        time={appointment.timeSlot.time}
+        paymentStatusConfig={APPOINTMENT_PAYMENT_STATUS_CONFIG[paymentStatus]}
+        serviceStatusConfig={APPOINTMENT_SERVICE_STATUS_CONFIG[serviceStatus]}
+        highlightLabel={countdownLabel ? `Faltam ${countdownLabel}` : null}
+        disableWhatsApp={!hasClientPhone}
+        onDismiss={handleDismissReminderShareSheet}
+        onShareWhatsApp={() =>
+          void handleShareViaWhatsApp("reminder", reminderDraftMessage)
+        }
+        onShareMore={() => void handleShareNative("reminder", reminderDraftMessage)}
+      />
+
       <SelectionSheet
         sheetRef={uploadSourceSheetRef}
         title={uploadSheetTitle}
-        description="Escolha a origem da imagem para manter o padrao visual do atendimento."
+        description="Escolha a origem da imagem para manter o padrão visual do atendimento."
         onClose={() => setUploadTarget(null)}
         onSelect={handleSelectUploadSource}
         options={[
@@ -371,7 +566,7 @@ export default function AppointmentDetailScreen() {
           {
             value: "gallery",
             title: "Escolher da galeria",
-            description: "Selecione uma imagem que ja esta no dispositivo.",
+            description: "Selecione uma imagem que já está no dispositivo.",
             icon: <Feather name="image" size={18} color="#f43f5e" />,
           },
         ]}
@@ -380,7 +575,7 @@ export default function AppointmentDetailScreen() {
       <ConfirmActionSheet
         sheetRef={deleteAppointmentSheetRef}
         title="Deletar agendamento"
-        description={`Tem certeza que deseja deletar este agendamento de ${appointment.service.name} em ${formatAppointmentDate(appointment.date)} as ${appointment.timeSlot.time}?`}
+        description={`Tem certeza que deseja deletar este agendamento de ${appointment.service.name} em ${formatAppointmentDate(appointment.date)} às ${formatAppointmentTimeWithPeriod(appointment.timeSlot.time)}?`}
         confirmLabel="Deletar agendamento"
         loading={deleteAppointmentMutation.isPending}
         onConfirm={() => {

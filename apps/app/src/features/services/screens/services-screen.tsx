@@ -77,7 +77,7 @@ export default function ServicesScreen() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (serviceId: string) => deleteService(serviceId, showError),
+    mutationFn: (serviceId: string) => deleteService(serviceId),
     onSuccess: async () => {
       toast.success("Serviço deletado!");
       await queryClient.invalidateQueries({ queryKey: serviceKeys.all });
@@ -99,8 +99,8 @@ export default function ServicesScreen() {
 
   useRegisterTabContextualAction({
     routeName: "services",
-    label: "Novo servico",
-    accessibilityLabel: "Novo servico",
+    label: "Novo serviço",
+    accessibilityLabel: "Novo serviço",
     onPress: openCreateSheet,
   });
 

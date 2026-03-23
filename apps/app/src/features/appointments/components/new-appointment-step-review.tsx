@@ -74,7 +74,7 @@ export function StepReview({ onClose }: Props) {
         }
       } catch {
         toast.success("Agendamento criado com sucesso!");
-        toast.error("Nao foi possivel ativar os lembretes deste agendamento.");
+        toast.error("Não foi possível ativar os lembretes deste agendamento.");
       }
       await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
       await queryClient.invalidateQueries({ queryKey: timeSlotKeys.all });

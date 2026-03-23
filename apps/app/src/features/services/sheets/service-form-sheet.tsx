@@ -175,9 +175,9 @@ export function ServiceFormSheet({
   const handleSelectImageSource = useCallback(async (source: "camera" | "gallery") => {
     imageSourceSheetRef.current?.dismiss();
     const asset = await imagePicker.pickSquareImage(source, {
-      title: "Ajustar foto do servico",
+      title: "Ajustar foto do serviço",
       description:
-        "Enquadre a imagem para o servico ficar mais bonito na agenda.",
+        "Enquadre a imagem para o serviço ficar mais bonito na agenda.",
       confirmLabel: "Usar imagem",
       quality: 0.85,
     });
@@ -420,6 +420,18 @@ export function ServiceFormSheet({
                 disabled={form.state.isSubmitting}
                 onValueChange={(v) => {
                   field.handleChange(v);
+
+                  if (v) {
+                    if (form.getFieldValue("depositPercentage") === undefined) {
+                      form.setFieldValue("depositPercentage", "", {
+                        dontUpdateMeta: true,
+                        dontValidate: true,
+                      });
+                    }
+                    return;
+                  }
+
+                  form.deleteField("depositPercentage");
                 }}
                 trackColor={{ false: "#e4e4e7", true: "#f43f5e" }}
                 thumbColor="white"
@@ -507,14 +519,14 @@ export function ServiceFormSheet({
         options={[
           {
             value: "camera",
-            title: "Usar camera",
+            title: "Usar câmera",
             description: "Tire uma foto quadrada direto do dispositivo.",
             icon: <Feather name="camera" size={18} color="#f43f5e" />,
           },
           {
             value: "gallery",
             title: "Escolher da galeria",
-            description: "Selecione uma imagem que ja esteja salva no aparelho.",
+            description: "Selecione uma imagem que já esteja salva no aparelho.",
             icon: <Feather name="image" size={18} color="#f43f5e" />,
           },
         ]}

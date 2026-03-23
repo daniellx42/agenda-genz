@@ -2,7 +2,10 @@ import { normalizePhone } from "@/lib/formatters";
 import { Linking } from "react-native";
 import { toast } from "sonner-native";
 
-export async function openWhatsApp(phone: string): Promise<void> {
+export async function openWhatsApp(
+  phone: string,
+  message?: string,
+): Promise<void> {
   const digits = normalizePhone(phone);
 
   if (!digits) {
@@ -12,7 +15,10 @@ export async function openWhatsApp(phone: string): Promise<void> {
 
   // Adiciona DDI do Brasil se não tiver
   const number = digits.startsWith("55") ? digits : `55${digits}`;
-  const url = `https://wa.me/${number}`;
+  const encodedMessage = message
+    ? `?text=${encodeURIComponent(message)}`
+    : "";
+  const url = `https://wa.me/${number}${encodedMessage}`;
 
   try {
     await Linking.openURL(url);

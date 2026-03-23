@@ -72,6 +72,7 @@ export default function AppointmentsScreen() {
   }).current;
   const initialCalendarDate = useRef(toMonthDateString(initialMonth)).current;
   const visibleMonthRef = useRef<CalendarMonthState>(initialMonth);
+  const selectedDateRef = useRef(today);
   const [selectedDate, setSelectedDate] = useState(today);
   const [committedMonth, setCommittedMonth] = useState(initialMonth);
   const calendarHeight = getCalendarHeight(committedMonth);
@@ -107,6 +108,10 @@ export default function AppointmentsScreen() {
     }).current,
   );
 
+  useEffect(() => {
+    selectedDateRef.current = selectedDate;
+  }, [selectedDate]);
+
   const syncCommittedMonth = (month: CalendarMonthState) => {
     setCommittedMonth((previousMonth) =>
       previousMonth.year === month.year && previousMonth.month === month.month
@@ -133,6 +138,7 @@ export default function AppointmentsScreen() {
       pressedMonth.year !== visibleMonthRef.current.year
       || pressedMonth.month !== visibleMonthRef.current.month;
 
+    selectedDateRef.current = day.dateString;
     setSelectedDate(day.dateString);
     visibleMonthRef.current = pressedMonth;
     syncCommittedMonth(pressedMonth);
@@ -144,9 +150,9 @@ export default function AppointmentsScreen() {
   };
 
   const openCreateSheet = useCallback(() => {
-    setDate(selectedDate);
+    setDate(selectedDateRef.current);
     sheetRef.current?.present();
-  }, [selectedDate, setDate]);
+  }, [setDate]);
 
   const closeCreateSheet = useCallback(() => {
     sheetRef.current?.dismiss();

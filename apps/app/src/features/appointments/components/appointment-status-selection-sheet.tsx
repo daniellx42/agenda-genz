@@ -74,7 +74,7 @@ export function AppointmentStatusSelectionSheet(
               ? "Valor total recebido."
               : status === "DEPOSIT_PAID"
                 ? "Sinal recebido, restante a pagar no dia."
-                : "Pagamento ainda nao foi concluido.",
+                : "Pagamento ainda não foi concluído.",
           icon: getPaymentStatusIcon(status),
           selected: props.currentStatus === status,
           loading: props.updatingStatus === status,
@@ -96,12 +96,12 @@ export function AppointmentStatusSelectionSheet(
         title: APPOINTMENT_SERVICE_STATUS_CONFIG[status].label,
         description:
           status === "PENDING"
-            ? "Agendamento criado, aguardando confirmacao."
+            ? "Agendamento criado, aguardando confirmação."
             : status === "CONFIRMED"
-              ? "Cliente confirmado para o horario."
+              ? "Cliente confirmado para o horário."
               : status === "COMPLETED"
                 ? "Atendimento finalizado com sucesso."
-                : "Atendimento cancelado ou nao realizado.",
+                : "Atendimento cancelado ou não realizado.",
         icon: getServiceStatusIcon(status),
         selected: props.currentStatus === status,
         loading: props.updatingStatus === status,
