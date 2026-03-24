@@ -36,6 +36,8 @@ async function signInWithBrowserFallback() {
   if (sessionResult.error) {
     throw sessionResult.error;
   }
+
+  return true;
 }
 
 function shouldFallbackToBrowser() {
@@ -62,13 +64,12 @@ function configureGoogleSignin() {
   googleSigninConfigured = true;
 }
 
-export async function signInWithGoogle(): Promise<void> {
+export async function signInWithGoogle(): Promise<boolean> {
   const useBrowserFallback = shouldFallbackToBrowser() || !googleSigninModule;
 
   try {
     if (useBrowserFallback) {
-      await signInWithBrowserFallback();
-      return;
+      return await signInWithBrowserFallback();
     }
 
     const googleModule = googleSigninModule;
@@ -91,12 +92,12 @@ export async function signInWithGoogle(): Promise<void> {
     const response = await GoogleSignin.signIn();
 
     if (!isSuccessResponse(response)) {
-      return;
+      return false;
     }
 
     if (!response.data.idToken) {
       toast.error("Nao foi possivel validar sua conta Google.");
-      return;
+      return false;
     }
 
     const result = await authClient.signIn.social({
@@ -116,6 +117,8 @@ export async function signInWithGoogle(): Promise<void> {
     if (sessionResult.error) {
       throw sessionResult.error;
     }
+
+    return true;
   } catch (error) {
     const { isErrorWithCode, statusCodes } =
       googleSigninModule ?? {
@@ -126,18 +129,19 @@ export async function signInWithGoogle(): Promise<void> {
     if (isErrorWithCode(error)) {
       if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         toast.error("Atualize os servicos do Google para continuar.");
-        return;
+        return false;
       }
 
       if (error.code === statusCodes.IN_PROGRESS) {
-        return;
+        return false;
       }
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        return;
+        return false;
       }
     }
 
     toast.error("Nao foi possivel fazer login. Tente novamente.");
+    return false;
   }
 }

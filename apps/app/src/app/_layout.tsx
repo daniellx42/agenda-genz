@@ -68,7 +68,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (isPending) return;
 
-    const isAuthRoute = pathname === "/login";
+    const isAuthRoute =
+      pathname === "/login" ||
+      pathname === "/email-login" ||
+      pathname === "/email-sign-up";
     const isPaywallPlansRoute = pathname === "/plans";
     const isPaywallRoute =
       pathname === "/plans" ||

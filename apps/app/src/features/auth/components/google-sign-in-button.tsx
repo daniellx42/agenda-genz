@@ -9,10 +9,7 @@ type GoogleSignInButtonProps = {
 
 function GoogleBrandMark() {
   return (
-    <View
-      className="h-11 w-11 items-center justify-center rounded-2xl border border-zinc-200 bg-white"
-      style={{ boxShadow: "0 6px 20px rgba(24, 24, 27, 0.08)" }}
-    >
+    <View className="h-8 w-8 items-center justify-center">
       <Svg width={20} height={20} viewBox="0 0 18 18" fill="none">
         <Path
           fill="#4285F4"
@@ -49,23 +46,27 @@ export function GoogleSignInButton({
       accessibilityRole="button"
       accessibilityLabel="Continuar com Google"
       accessibilityHint="Entrar usando a sua conta Google"
-      className="rounded-2xl border border-zinc-200 bg-white px-2 py-2 active:opacity-90"
+      className="h-14 items-center justify-center border border-zinc-200 bg-white active:opacity-90"
       style={{
         opacity: isDisabled ? 0.7 : 1,
-        boxShadow: "0 20px 40px rgba(24, 24, 27, 0.08)",
+        borderRadius: 18,
       }}
     >
-      <View className="flex-row items-center gap-10">
+      <View className="flex-row items-center justify-center gap-3">
         <GoogleBrandMark />
 
-        <View className="flex-1">
-          <Text className="text-base font-semibold text-zinc-950">
-            Continuar com Google
-          </Text>
-        </View>
-
-        {loading ? <ActivityIndicator size="small" color="#4285F4" /> : null}
+        <Text className="text-[17px] font-medium text-zinc-950">
+          Continuar com Google
+        </Text>
       </View>
+
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color="#4285F4"
+          style={{ position: "absolute", right: 18 }}
+        />
+      ) : null}
     </Pressable>
   );
 }
