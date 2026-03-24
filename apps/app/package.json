@@ -29,6 +29,7 @@
     "better-auth": "^1.5.5",
     "elysia": "^1.4.27",
     "expo": "~55.0.6",
+    "expo-apple-authentication": "~55.0.9",
     "expo-build-properties": "~55.0.9",
     "expo-clipboard": "~55.0.8",
     "expo-constants": "~55.0.7",
@@ -52,6 +53,7 @@
     "expo-symbols": "~55.0.5",
     "expo-system-ui": "~55.0.9",
     "expo-web-browser": "~55.0.9",
+    "jsonwebtoken": "^9.0.3",
     "nativewind": "^5.0.0-preview.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -71,6 +73,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/react": "~19.2.14",
     "babel-preset-expo": "^55.0.11",
     "eslint": "^10.0.3",
