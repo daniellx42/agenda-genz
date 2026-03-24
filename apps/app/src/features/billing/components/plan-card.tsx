@@ -1,8 +1,10 @@
 import {
+  formatDurationLabel,
   formatPerMonth,
   formatPrice,
 } from "../lib/billing-formatters";
 import { PLAN_DISPLAY } from "../constants/plan-intervals";
+import Feather from "@expo/vector-icons/Feather";
 import { Pressable, Text, View } from "react-native";
 
 interface PlanCardProps {
@@ -12,74 +14,91 @@ interface PlanCardProps {
   priceInCents: number;
   durationDays: number;
   discountLabel: string | null;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
+  onPress: (id: string) => void;
 }
 
 export function PlanCard({
   id,
   interval,
+  name,
   priceInCents,
   durationDays,
   discountLabel,
-  isSelected,
-  onSelect,
+  onPress,
 }: PlanCardProps) {
   const display = PLAN_DISPLAY[interval];
   const isHighlight = display?.highlight;
 
   return (
     <Pressable
-      onPress={() => onSelect(id)}
-      className={`rounded-2xl border-2 p-4 mb-3 ${
-        isSelected
-          ? "border-rose-400 bg-rose-50"
-          : "border-gray-200 bg-white"
-      } ${isHighlight && !isSelected ? "border-rose-200" : ""}`}
+      onPress={() => onPress(id)}
+      className={`mb-4 overflow-hidden rounded-[30px] border border-rose-100 bg-white p-5 active:opacity-90 ${
+        isHighlight ? "border-rose-200" : ""
+      }`}
     >
-      <View className="flex-row items-center justify-between">
+      <View className="flex-row items-start justify-between gap-4">
         <View className="flex-1">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-lg font-bold text-gray-900">
-              {display?.label ?? interval}
-            </Text>
-            {discountLabel ? (
-              <View className="rounded-full bg-rose-400 px-2.5 py-0.5">
-                <Text className="text-xs font-semibold text-white">
-                  {discountLabel}
+          <View className="flex-row flex-wrap items-center gap-2">
+            <View className="rounded-full bg-[#fff4f7] px-3 py-1">
+              <Text className="text-[11px] font-semibold uppercase tracking-[1.5px] text-rose-500">
+                {display?.eyebrow ?? name}
+              </Text>
+            </View>
+
+            {isHighlight ? (
+              <View className="rounded-full bg-rose-500 px-3 py-1">
+                <Text className="text-[11px] font-semibold uppercase tracking-[1.5px] text-white">
+                  Mais escolhido
                 </Text>
               </View>
             ) : null}
-            {isHighlight ? (
-              <View className="rounded-full bg-amber-400 px-2.5 py-0.5">
-                <Text className="text-xs font-semibold text-amber-900">
-                  Melhor valor
+
+            {discountLabel || display?.badge ? (
+              <View className="rounded-full bg-amber-100 px-3 py-1">
+                <Text className="text-[11px] font-semibold uppercase tracking-[1.5px] text-amber-700">
+                  {discountLabel ?? display?.badge}
                 </Text>
               </View>
             ) : null}
           </View>
-          <Text className="text-sm text-gray-500 mt-1">
-            {formatPerMonth(priceInCents, durationDays)}
-          </Text>
-        </View>
 
-        <View className="items-end">
-          <Text className="text-xl font-bold text-gray-900">
-            {formatPrice(priceInCents)}
+          <Text className="mt-4 text-2xl font-bold text-zinc-900">
+            {display?.label ?? name}
           </Text>
-        </View>
-      </View>
 
-      {/* Selection indicator */}
-      <View className="absolute top-4 right-4">
-        <View
-          className={`w-5 h-5 rounded-full border-2 items-center justify-center ${
-            isSelected ? "border-rose-400 bg-rose-400" : "border-gray-300"
-          }`}
-        >
-          {isSelected ? (
-            <View className="w-2.5 h-2.5 rounded-full bg-white" />
+          {display?.description ? (
+            <Text className="mt-2 text-sm leading-6 text-zinc-500">
+              {display.description}
+            </Text>
           ) : null}
+
+          <View className="mt-4 rounded-[24px] bg-[#fff7f9] p-4">
+            <Text className="text-[11px] font-semibold uppercase tracking-[1.5px] text-rose-400">
+              Valor total
+            </Text>
+
+            <View className="mt-2 flex-row items-end justify-between gap-3">
+              <Text className="text-3xl font-black text-zinc-900">
+                {formatPrice(priceInCents)}
+              </Text>
+
+              <Text className="pb-1 text-sm font-semibold text-rose-500">
+                {formatPerMonth(priceInCents, durationDays)}
+              </Text>
+            </View>
+          </View>
+
+          <View className="mt-4 flex-row flex-wrap items-center gap-2">
+            <View className="rounded-full bg-white px-3 py-2">
+              <Text className="text-xs font-medium text-zinc-600">
+                {formatDurationLabel(durationDays)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-[#fff4f7]">
+          <Feather name="arrow-right" size={18} color="#f43f5e" />
         </View>
       </View>
     </Pressable>

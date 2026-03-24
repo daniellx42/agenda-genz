@@ -1,14 +1,42 @@
+import type { BillingPaymentStatus } from "@agenda-genz/db";
 import { status } from "elysia";
 import crypto from "node:crypto";
 import { Errors } from "../../shared/constants/errors";
 import type { BillingModel } from "./billing.model";
-import { BillingRepository } from "./billing.repository";
+import {
+  BillingRepository,
+  type BillingPaymentRecord,
+  type BillingPaymentWithPlanDetailsRecord,
+} from "./billing.repository";
 
 const PIX_EXPIRY_MINUTES = 30;
 
 function getWebhookSecret(): string | null {
   const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
   return secret && secret.length > 0 ? secret : null;
+}
+
+type BillingPaymentSyncRecord =
+  | BillingPaymentRecord
+  | BillingPaymentWithPlanDetailsRecord;
+
+function mapMercadoPagoStatusToBillingStatus(
+  mpStatus: string,
+  pixExpiresAt: Date | null,
+  now = new Date(),
+): BillingPaymentStatus {
+  if (mpStatus === "approved") return "APPROVED";
+  if (mpStatus === "rejected") return "REJECTED";
+  if (
+    mpStatus === "cancelled" ||
+    mpStatus === "refunded" ||
+    mpStatus === "charged_back"
+  ) {
+    return "CANCELLED";
+  }
+  if (mpStatus === "expired") return "EXPIRED";
+  if (pixExpiresAt && pixExpiresAt <= now) return "EXPIRED";
+  return "PENDING";
 }
 
 export abstract class BillingService {
@@ -53,8 +81,21 @@ export abstract class BillingService {
       );
     }
 
-    // Cancel all existing PENDING payments for this user
-    await BillingRepository.cancelPendingPayments(userId);
+    const resumablePayment =
+      await BillingRepository.findResumablePendingPayment(userId, planId);
+
+    if (resumablePayment) {
+      return {
+        paymentId: resumablePayment.id,
+        pixQrCode: resumablePayment.pixQrCode,
+        pixQrCodeBase64: resumablePayment.pixQrCodeBase64,
+        pixExpiresAt: resumablePayment.pixExpiresAt!.toISOString(),
+        amount: resumablePayment.amount,
+        planName: resumablePayment.plan.name,
+      };
+    }
+
+    await BillingService.invalidatePendingPaymentsForNewPix(userId);
 
     const idempotencyKey = crypto.randomUUID();
     const pixExpiresAt = new Date(
@@ -128,15 +169,9 @@ export abstract class BillingService {
       );
     }
 
-    return {
-      id: payment.id,
-      status: payment.status,
-      planName: payment.plan.name,
-      amount: payment.amount,
-      paidAt: payment.paidAt?.toISOString() ?? null,
-      expiresAt: payment.expiresAt?.toISOString() ?? null,
-      pixExpiresAt: payment.pixExpiresAt?.toISOString() ?? null,
-    };
+    const reconciledPayment = await BillingService.reconcilePayment(payment);
+
+    return BillingService.toPaymentStatusResponse(reconciledPayment);
   }
 
   static async processWebhook(mpPaymentId: string): Promise<void> {
@@ -144,69 +179,8 @@ export abstract class BillingService {
 
     // Idempotent: skip if not found or already processed
     if (!payment || payment.status !== "PENDING") return;
-    const { mpPayment } = await import("../../shared/lib/mercadopago");
 
-    // Verify payment status with MercadoPago API
-    let mpStatus: string;
-    try {
-      const mpResult = await mpPayment.get({ id: Number(mpPaymentId) });
-      mpStatus = mpResult.status ?? "unmapped";
-    } catch {
-      return; // Can't verify, will retry on next webhook
-    }
-
-    if (mpStatus === "approved") {
-      // userId may be null if user deleted account (SetNull); keep payment history, skip user update
-      if (!payment.userId) {
-        await BillingRepository.updatePaymentStatus(payment.id, {
-          status: "APPROVED",
-          paidAt: new Date(),
-        });
-        return;
-      }
-
-      const user = await BillingRepository.findUserById(payment.userId);
-      const newExpiresAt = BillingService.calcNewExpiry(
-        user?.planExpiresAt ?? null,
-        payment.durationDays,
-      );
-      const [{ prisma }, { notifyPaymentApproved }] = await Promise.all([
-        import("../../shared/lib/db"),
-        import("./billing.ws"),
-      ]);
-
-      await prisma.$transaction([
-        prisma.billingPayment.update({
-          where: { id: payment.id },
-          data: {
-            status: "APPROVED",
-            paidAt: new Date(),
-            expiresAt: newExpiresAt,
-          },
-        }),
-        prisma.user.update({
-          where: { id: payment.userId },
-          data: { planExpiresAt: newExpiresAt },
-        }),
-      ]);
-
-      notifyPaymentApproved(payment.userId, {
-        paymentId: payment.id,
-        planExpiresAt: newExpiresAt.toISOString(),
-      });
-    } else if (
-      mpStatus === "rejected" ||
-      mpStatus === "cancelled" ||
-      mpStatus === "refunded" ||
-      mpStatus === "charged_back"
-    ) {
-      const dbStatus =
-        mpStatus === "rejected" ? "REJECTED" : "CANCELLED";
-      await BillingRepository.updatePaymentStatus(payment.id, {
-        status: dbStatus,
-      });
-    }
-    // For "pending", "in_process", etc. — do nothing, wait for next webhook
+    await BillingService.reconcilePayment(payment);
   }
 
   static calcNewExpiry(
@@ -251,5 +225,212 @@ export abstract class BillingService {
       .digest("hex");
 
     return expectedHash === hash;
+  }
+
+  private static toPaymentStatusResponse(
+    payment: BillingPaymentSyncRecord,
+  ): BillingModel.paymentStatusResponse {
+    return {
+      id: payment.id,
+      status: payment.status,
+      planName: payment.plan.name,
+      amount: payment.amount,
+      paidAt: payment.paidAt?.toISOString() ?? null,
+      expiresAt: payment.expiresAt?.toISOString() ?? null,
+      pixExpiresAt: payment.pixExpiresAt?.toISOString() ?? null,
+    };
+  }
+
+  private static async fetchMercadoPagoPaymentStatus(
+    mpPaymentId: string,
+  ): Promise<string> {
+    const { mpPayment } = await import("../../shared/lib/mercadopago");
+    try {
+      const mpResult = await mpPayment.get({ id: Number(mpPaymentId) });
+      return mpResult.status ?? "unmapped";
+    } catch {
+      throw status(
+        Errors.BILLING.PAYMENT_STATUS_SYNC_FAILED.httpStatus,
+        Errors.BILLING.PAYMENT_STATUS_SYNC_FAILED
+          .message satisfies BillingModel.errorPaymentStatusSyncFailed,
+      );
+    }
+  }
+
+  private static async invalidatePendingPaymentsForNewPix(
+    userId: string,
+  ): Promise<void> {
+    const pendingPayments =
+      await BillingRepository.findPendingPaymentsByUserId(userId);
+
+    if (pendingPayments.length === 0) {
+      return;
+    }
+
+    const { mpPayment } = await import("../../shared/lib/mercadopago");
+
+    for (const pendingPayment of pendingPayments) {
+      if (!pendingPayment.mpPaymentId) {
+        await BillingRepository.updatePaymentStatus(pendingPayment.id, {
+          status: "CANCELLED",
+        });
+        continue;
+      }
+
+      try {
+        await mpPayment.cancel({ id: Number(pendingPayment.mpPaymentId) });
+
+        await BillingRepository.updatePaymentStatus(pendingPayment.id, {
+          status: "CANCELLED",
+        });
+      } catch {
+        let resolvedStatus: BillingPaymentStatus;
+
+        try {
+          const mpStatus = await BillingService.fetchMercadoPagoPaymentStatus(
+            pendingPayment.mpPaymentId,
+          );
+          resolvedStatus = mapMercadoPagoStatusToBillingStatus(
+            mpStatus,
+            pendingPayment.pixExpiresAt,
+          );
+        } catch {
+          throw status(
+            Errors.BILLING.PAYMENT_CANCELLATION_FAILED.httpStatus,
+            Errors.BILLING.PAYMENT_CANCELLATION_FAILED
+              .message satisfies BillingModel.errorPaymentCancellationFailed,
+          );
+        }
+
+        if (resolvedStatus === "APPROVED") {
+          await BillingService.markPaymentApproved(pendingPayment);
+
+          throw status(
+            Errors.BILLING.PAYMENT_ALREADY_PROCESSED.httpStatus,
+            Errors.BILLING.PAYMENT_ALREADY_PROCESSED
+              .message satisfies BillingModel.errorPaymentAlreadyProcessed,
+          );
+        }
+
+        if (
+          resolvedStatus === "REJECTED" ||
+          resolvedStatus === "CANCELLED" ||
+          resolvedStatus === "EXPIRED"
+        ) {
+          await BillingRepository.updatePaymentStatus(pendingPayment.id, {
+            status: resolvedStatus,
+          });
+          continue;
+        }
+
+        throw status(
+          Errors.BILLING.PAYMENT_CANCELLATION_FAILED.httpStatus,
+          Errors.BILLING.PAYMENT_CANCELLATION_FAILED
+            .message satisfies BillingModel.errorPaymentCancellationFailed,
+        );
+      }
+    }
+  }
+
+  private static async reconcilePayment(
+    payment: BillingPaymentSyncRecord,
+  ): Promise<BillingPaymentSyncRecord> {
+    if (payment.status !== "PENDING") {
+      return payment;
+    }
+
+    if (!payment.mpPaymentId) {
+      if (payment.pixExpiresAt && payment.pixExpiresAt <= new Date()) {
+        return BillingRepository.updatePaymentStatus(payment.id, {
+          status: "EXPIRED",
+        });
+      }
+
+      return payment;
+    }
+
+    const mpStatus = await BillingService.fetchMercadoPagoPaymentStatus(
+      payment.mpPaymentId,
+    );
+    const resolvedStatus = mapMercadoPagoStatusToBillingStatus(
+      mpStatus,
+      payment.pixExpiresAt,
+    );
+
+    if (resolvedStatus === "APPROVED") {
+      return BillingService.markPaymentApproved(payment);
+    }
+
+    if (resolvedStatus === "REJECTED") {
+      return BillingRepository.updatePaymentStatus(payment.id, {
+        status: "REJECTED",
+      });
+    }
+
+    if (resolvedStatus === "CANCELLED" || resolvedStatus === "EXPIRED") {
+      return BillingRepository.updatePaymentStatus(payment.id, {
+        status: resolvedStatus,
+      });
+    }
+
+    return payment;
+  }
+
+  private static async markPaymentApproved(
+    payment: BillingPaymentSyncRecord,
+  ): Promise<BillingPaymentSyncRecord> {
+    const paidAt = new Date();
+
+    // Keep payment history even if the user no longer exists.
+    if (!payment.userId) {
+      return BillingRepository.updatePaymentStatus(payment.id, {
+        status: "APPROVED",
+        paidAt,
+      });
+    }
+
+    const user = await BillingRepository.findUserById(payment.userId);
+    if (!user) {
+      return BillingRepository.updatePaymentStatus(payment.id, {
+        status: "APPROVED",
+        paidAt,
+      });
+    }
+
+    const newExpiresAt = BillingService.calcNewExpiry(
+      user.planExpiresAt,
+      payment.durationDays,
+    );
+    const [{ prisma }, { notifyPaymentApproved }] = await Promise.all([
+      import("../../shared/lib/db"),
+      import("./billing.ws"),
+    ]);
+
+    await prisma.$transaction([
+      prisma.billingPayment.update({
+        where: { id: payment.id },
+        data: {
+          status: "APPROVED",
+          paidAt,
+          expiresAt: newExpiresAt,
+        },
+      }),
+      prisma.user.update({
+        where: { id: payment.userId },
+        data: { planExpiresAt: newExpiresAt },
+      }),
+    ]);
+
+    notifyPaymentApproved(payment.userId, {
+      paymentId: payment.id,
+      planExpiresAt: newExpiresAt.toISOString(),
+    });
+
+    return {
+      ...payment,
+      status: "APPROVED",
+      paidAt,
+      expiresAt: newExpiresAt,
+    };
   }
 }

@@ -10,16 +10,16 @@ export function usePixCountdown(
   pixExpiresAt: string | null,
 ): UsePixCountdownResult {
   const [remainingSeconds, setRemainingSeconds] = useState(() =>
-    calcRemaining(pixExpiresAt),
+    calculatePixRemainingSeconds(pixExpiresAt),
   );
 
   useEffect(() => {
     if (!pixExpiresAt) return;
 
-    setRemainingSeconds(calcRemaining(pixExpiresAt));
+    setRemainingSeconds(calculatePixRemainingSeconds(pixExpiresAt));
 
     const interval = setInterval(() => {
-      const remaining = calcRemaining(pixExpiresAt);
+      const remaining = calculatePixRemainingSeconds(pixExpiresAt);
       setRemainingSeconds(remaining);
       if (remaining <= 0) clearInterval(interval);
     }, 1_000);
@@ -27,9 +27,7 @@ export function usePixCountdown(
     return () => clearInterval(interval);
   }, [pixExpiresAt]);
 
-  const minutes = Math.floor(Math.max(0, remainingSeconds) / 60);
-  const seconds = Math.max(0, remainingSeconds) % 60;
-  const formatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  const formatted = formatPixCountdown(remainingSeconds);
 
   return {
     remainingSeconds: Math.max(0, remainingSeconds),
@@ -38,7 +36,16 @@ export function usePixCountdown(
   };
 }
 
-function calcRemaining(expiresAt: string | null): number {
+export function calculatePixRemainingSeconds(
+  expiresAt: string | null,
+  now = Date.now(),
+): number {
   if (!expiresAt) return 0;
-  return Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000);
+  return Math.floor((new Date(expiresAt).getTime() - now) / 1000);
+}
+
+export function formatPixCountdown(remainingSeconds: number): string {
+  const minutes = Math.floor(Math.max(0, remainingSeconds) / 60);
+  const seconds = Math.max(0, remainingSeconds) % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }

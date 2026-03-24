@@ -24,18 +24,23 @@ export function billingPlansQueryOptions(handleError?: ApiErrorHandler) {
   });
 }
 
+export async function fetchBillingPaymentStatus(
+  paymentId: string | undefined,
+  handleError?: ApiErrorHandler,
+) {
+  if (!paymentId) return null;
+  const result = await api.api.billing.payments({ id: paymentId }).get();
+  return getDataOrThrow(result, handleError);
+}
+
 export function billingPaymentStatusQueryOptions(
   paymentId: string | undefined,
   handleError?: ApiErrorHandler,
 ) {
   return queryOptions({
     queryKey: billingKeys.paymentStatus(paymentId ?? ""),
-    queryFn: async () => {
-      if (!paymentId) return null;
-      const result = await api.api.billing.payments({ id: paymentId }).get();
-      return getDataOrThrow(result, handleError);
-    },
+    queryFn: () => fetchBillingPaymentStatus(paymentId, handleError),
     enabled: !!paymentId,
-    refetchInterval: 10_000, // Poll every 10 seconds
+    retry: 1,
   });
 }

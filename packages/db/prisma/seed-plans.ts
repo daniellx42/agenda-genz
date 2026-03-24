@@ -1,11 +1,21 @@
-import { env } from "@agenda-genz/env/server";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { config } from "dotenv";
+import dotenv from "dotenv";
+import { fileURLToPath } from "node:url";
 import { PrismaClient } from "./generated/client";
 
-config({ path: "../../apps/server/.env" });
+const envPath = fileURLToPath(
+  new URL("../../../apps/server/.env", import.meta.url),
+);
 
-const adapter = new PrismaPg({ connectionString: env.DATABASE_URL! });
+dotenv.config({ path: envPath, override: false });
+
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error(`DATABASE_URL is missing. Checked ${envPath}`);
+}
+
+const adapter = new PrismaPg({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
 const plans = [

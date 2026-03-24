@@ -4,6 +4,8 @@ import { ActivityIndicator, View } from "react-native";
 
 export default function Index() {
   const { session, isPending } = useAuthSession();
+  const isExpired = !session?.user.planExpiresAt
+    || new Date(session.user.planExpiresAt) <= new Date();
 
   if (isPending) {
     return (
@@ -16,9 +18,6 @@ export default function Index() {
   if (!session) {
     return <Redirect href="/login" />;
   }
-
-  const isExpired = !session.user.planExpiresAt
-    || new Date(session.user.planExpiresAt) <= new Date();
 
   if (isExpired) {
     return <Redirect href="/plans" />;

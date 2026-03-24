@@ -87,9 +87,64 @@ describe("BillingService.listPlans", () => {
 });
 
 describe("BillingService.createPixPayment", () => {
-  it("deve criar pagamento PIX e retornar dados do QR", async () => {
-    const cancelMock = mock(() => Promise.resolve());
+  it("deve reaproveitar um PIX pendente válido do mesmo plano", async () => {
     const findPlanMock = mock(() => Promise.resolve(mockPlan));
+    const findResumablePaymentMock = mock(() =>
+      Promise.resolve({
+        ...mockPayment,
+        id: "payment-existing",
+        pixExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      }),
+    );
+    const cancelPendingMock = mock(() => Promise.resolve());
+    const createPaymentMock = mock(() => Promise.resolve(mockPayment));
+    const createMpPaymentMock = mock(() =>
+      Promise.resolve({
+        id: 999,
+      }),
+    );
+
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPlanById: findPlanMock,
+        findResumablePendingPayment: findResumablePaymentMock,
+        findPendingPaymentsByUserId: cancelPendingMock,
+        createPayment: createPaymentMock,
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        create: createMpPaymentMock,
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test-token",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test-secret",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+    const result = await BS.createPixPayment(
+      "user-1",
+      "user@test.com",
+      "plan-1",
+    );
+
+    expect(result.paymentId).toBe("payment-existing");
+    expect(findResumablePaymentMock).toHaveBeenCalledWith("user-1", "plan-1");
+    expect(cancelPendingMock).not.toHaveBeenCalled();
+    expect(createPaymentMock).not.toHaveBeenCalled();
+    expect(createMpPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("deve criar pagamento PIX e retornar dados do QR", async () => {
+    const cancelMock = mock(() => Promise.resolve([]));
+    const findPlanMock = mock(() => Promise.resolve(mockPlan));
+    const findResumablePaymentMock = mock(() => Promise.resolve(null));
     const createPaymentMock = mock(() =>
       Promise.resolve({
         ...mockPayment,
@@ -100,7 +155,8 @@ describe("BillingService.createPixPayment", () => {
     mock.module("../billing.repository", () => ({
       BillingRepository: {
         findPlanById: findPlanMock,
-        cancelPendingPayments: cancelMock,
+        findResumablePendingPayment: findResumablePaymentMock,
+        findPendingPaymentsByUserId: cancelMock,
         createPayment: createPaymentMock,
       },
     }));
@@ -145,10 +201,168 @@ describe("BillingService.createPixPayment", () => {
     expect(cancelMock).toHaveBeenCalledWith("user-1");
   });
 
+  it("deve cancelar PIXs pendentes anteriores no Mercado Pago antes de criar outro", async () => {
+    const cancelMpPaymentMock = mock(() =>
+      Promise.resolve({
+        status: "cancelled",
+      }),
+    );
+    const updatePaymentStatusMock = mock(() =>
+      Promise.resolve({
+        ...mockPayment,
+        status: "CANCELLED" as const,
+      }),
+    );
+
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPlanById: mock(() => Promise.resolve(mockPlan)),
+        findResumablePendingPayment: mock(() => Promise.resolve(null)),
+        findPendingPaymentsByUserId: mock(() =>
+          Promise.resolve([
+            {
+              ...mockPayment,
+              id: "payment-old",
+              mpPaymentId: "mp-old",
+            },
+          ]),
+        ),
+        updatePaymentStatus: updatePaymentStatusMock,
+        createPayment: mock(() =>
+          Promise.resolve({
+            ...mockPayment,
+            id: "payment-new",
+          }),
+        ),
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        cancel: cancelMpPaymentMock,
+        create: mock(() =>
+          Promise.resolve({
+            id: 999,
+            status: "pending",
+            point_of_interaction: {
+              transaction_data: {
+                qr_code: "pix-code",
+                qr_code_base64: "base64-img",
+              },
+            },
+          }),
+        ),
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test-token",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test-secret",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+    await BS.createPixPayment("user-1", "user@test.com", "plan-1");
+
+    expect(cancelMpPaymentMock).toHaveBeenCalledWith({ id: Number("mp-old") });
+    expect(updatePaymentStatusMock).toHaveBeenCalledWith("payment-old", {
+      status: "CANCELLED",
+    });
+  });
+
+  it("deve impedir novo PIX quando o anterior já foi aprovado durante a troca", async () => {
+    const findUserMock = mock(() =>
+      Promise.resolve({ ...mockUser, planExpiresAt: null }),
+    );
+    const notifyPaymentApprovedMock = mock();
+
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPlanById: mock(() => Promise.resolve(mockPlan)),
+        findResumablePendingPayment: mock(() => Promise.resolve(null)),
+        findPendingPaymentsByUserId: mock(() =>
+          Promise.resolve([
+            {
+              ...mockPayment,
+              id: "payment-old",
+              mpPaymentId: "mp-old",
+              status: "PENDING" as const,
+            },
+          ]),
+        ),
+        findUserById: findUserMock,
+        updatePaymentStatus: mock(() =>
+          Promise.resolve({
+            ...mockPayment,
+            id: "payment-old",
+            status: "APPROVED" as const,
+            paidAt: new Date(),
+          }),
+        ),
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        cancel: mock(() => Promise.reject(new Error("already approved"))),
+        get: mock(() => Promise.resolve({ status: "approved" })),
+        create: mock(),
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test-token",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test-secret",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    mock.module("../../../shared/lib/db", () => ({
+      prisma: {
+        $transaction: mock(<T>(ops: Promise<T>[]) => Promise.all(ops)),
+        billingPayment: {
+          update: mock(() =>
+            Promise.resolve({
+              ...mockPayment,
+              id: "payment-old",
+              status: "APPROVED" as const,
+              paidAt: new Date(),
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            }),
+          ),
+        },
+        user: {
+          update: mock(() =>
+            Promise.resolve({
+              ...mockUser,
+              planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            }),
+          ),
+        },
+      },
+    }));
+
+    mock.module("../billing.ws", () => ({
+      notifyPaymentApproved: notifyPaymentApprovedMock,
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+
+    await expectElysiaError(
+      BS.createPixPayment("user-1", "user@test.com", "plan-1"),
+      Errors.BILLING.PAYMENT_ALREADY_PROCESSED.message,
+      Errors.BILLING.PAYMENT_ALREADY_PROCESSED.httpStatus,
+    );
+  });
+
   it("deve lançar 404 quando plano não existe", async () => {
     mock.module("../billing.repository", () => ({
       BillingRepository: {
         findPlanById: mock(() => Promise.resolve(null)),
+        findResumablePendingPayment: mock(() => Promise.resolve(null)),
       },
     }));
 
@@ -177,7 +391,8 @@ describe("BillingService.createPixPayment", () => {
     mock.module("../billing.repository", () => ({
       BillingRepository: {
         findPlanById: mock(() => Promise.resolve(mockPlan)),
-        cancelPendingPayments: mock(() => Promise.resolve()),
+        findResumablePendingPayment: mock(() => Promise.resolve(null)),
+        findPendingPaymentsByUserId: mock(() => Promise.resolve([])),
       },
     }));
 
@@ -203,6 +418,49 @@ describe("BillingService.createPixPayment", () => {
       Errors.BILLING.PAYMENT_CREATION_FAILED.httpStatus,
     );
   });
+
+  it("deve lançar 502 quando não consegue invalidar um PIX anterior", async () => {
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPlanById: mock(() => Promise.resolve(mockPlan)),
+        findResumablePendingPayment: mock(() => Promise.resolve(null)),
+        findPendingPaymentsByUserId: mock(() =>
+          Promise.resolve([
+            {
+              ...mockPayment,
+              id: "payment-old",
+              mpPaymentId: "mp-old",
+              status: "PENDING" as const,
+            },
+          ]),
+        ),
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        cancel: mock(() => Promise.reject(new Error("cancel failed"))),
+        get: mock(() => Promise.reject(new Error("get failed"))),
+        create: mock(),
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+
+    await expectElysiaError(
+      BS.createPixPayment("user-1", "user@test.com", "plan-1"),
+      Errors.BILLING.PAYMENT_CANCELLATION_FAILED.message,
+      Errors.BILLING.PAYMENT_CANCELLATION_FAILED.httpStatus,
+    );
+  });
 });
 
 describe("BillingService.getPaymentStatus", () => {
@@ -210,8 +468,9 @@ describe("BillingService.getPaymentStatus", () => {
     const findMock = mock(() =>
       Promise.resolve({
         ...mockPayment,
-        paidAt: null,
-        expiresAt: null,
+        status: "APPROVED",
+        paidAt: new Date("2026-03-23T12:00:00.000Z"),
+        expiresAt: new Date("2026-04-22T12:00:00.000Z"),
       }),
     );
 
@@ -237,7 +496,7 @@ describe("BillingService.getPaymentStatus", () => {
     const result = await BS.getPaymentStatus("payment-1", "user-1");
 
     expect(result.id).toBe("payment-1");
-    expect(result.status).toBe("PENDING");
+    expect(result.status).toBe("APPROVED");
     expect(result.planName).toBe("Mensal");
   });
 
@@ -266,6 +525,170 @@ describe("BillingService.getPaymentStatus", () => {
       BS.getPaymentStatus("non-existent", "user-1"),
       Errors.BILLING.PAYMENT_NOT_FOUND.message,
       Errors.BILLING.PAYMENT_NOT_FOUND.httpStatus,
+    );
+  });
+
+  it("deve reconciliar pagamento pendente aprovado com Mercado Pago", async () => {
+    const payment = {
+      ...mockPayment,
+      status: "PENDING" as const,
+      expiresAt: null,
+      paidAt: null,
+    };
+    const futureExpiry = new Date("2026-04-22T12:00:00.000Z");
+
+    const findPaymentMock = mock(() => Promise.resolve(payment));
+    const findUserMock = mock(() =>
+      Promise.resolve({ ...mockUser, planExpiresAt: null }),
+    );
+    const notifyPaymentApprovedMock = mock();
+
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPaymentById: findPaymentMock,
+        findUserById: findUserMock,
+        updatePaymentStatus: mock(() => Promise.resolve(mockPayment)),
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        get: mock(() => Promise.resolve({ status: "approved" })),
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    mock.module("../../../shared/lib/db", () => ({
+      prisma: {
+        $transaction: mock(<T>(ops: Promise<T>[]) => Promise.all(ops)),
+        billingPayment: {
+          update: mock(() =>
+            Promise.resolve({
+              ...payment,
+              status: "APPROVED",
+              paidAt: new Date("2026-03-23T12:00:00.000Z"),
+              expiresAt: futureExpiry,
+            }),
+          ),
+        },
+        user: {
+          update: mock(() =>
+            Promise.resolve({
+              ...mockUser,
+              planExpiresAt: futureExpiry,
+            }),
+          ),
+        },
+      },
+    }));
+
+    mock.module("../billing.ws", () => ({
+      notifyPaymentApproved: notifyPaymentApprovedMock,
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+    const result = await BS.getPaymentStatus("payment-1", "user-1");
+    const expectedExpiry = new Date();
+    expectedExpiry.setDate(expectedExpiry.getDate() + 30);
+
+    expect(result.status).toBe("APPROVED");
+    expect(result.expiresAt).not.toBeNull();
+    expect(
+      Math.abs(
+        new Date(result.expiresAt!).getTime() - expectedExpiry.getTime(),
+      ),
+    ).toBeLessThan(5000);
+    expect(notifyPaymentApprovedMock).toHaveBeenCalledWith("user-1", {
+      paymentId: "payment-1",
+      planExpiresAt: result.expiresAt!,
+    });
+  });
+
+  it("deve marcar pagamento pendente como expirado quando o PIX venceu", async () => {
+    const expiredPix = new Date(Date.now() - 5 * 60 * 1000);
+    const updatePaymentStatusMock = mock(() =>
+      Promise.resolve({
+        ...mockPayment,
+        status: "EXPIRED" as const,
+        pixExpiresAt: expiredPix,
+      }),
+    );
+
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPaymentById: mock(() =>
+          Promise.resolve({
+            ...mockPayment,
+            status: "PENDING" as const,
+            pixExpiresAt: expiredPix,
+          }),
+        ),
+        updatePaymentStatus: updatePaymentStatusMock,
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        get: mock(() => Promise.resolve({ status: "pending" })),
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+    const result = await BS.getPaymentStatus("payment-1", "user-1");
+
+    expect(result.status).toBe("EXPIRED");
+    expect(updatePaymentStatusMock).toHaveBeenCalledWith("payment-1", {
+      status: "EXPIRED",
+    });
+  });
+
+  it("deve lançar 502 quando não consegue sincronizar um pagamento pendente", async () => {
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPaymentById: mock(() =>
+          Promise.resolve({
+            ...mockPayment,
+            status: "PENDING" as const,
+          }),
+        ),
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        get: mock(() => Promise.reject(new Error("MP unavailable"))),
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+
+    await expectElysiaError(
+      BS.getPaymentStatus("payment-1", "user-1"),
+      Errors.BILLING.PAYMENT_STATUS_SYNC_FAILED.message,
+      Errors.BILLING.PAYMENT_STATUS_SYNC_FAILED.httpStatus,
     );
   });
 });
@@ -474,6 +897,40 @@ describe("BillingService.processWebhook", () => {
     expect(updateStatusMock).toHaveBeenCalledWith(mockPayment.id, {
       status: "REJECTED",
     });
+  });
+
+  it("deve falhar para o Mercado Pago tentar novamente quando não consegue verificar o webhook", async () => {
+    const findByMpMock = mock(() =>
+      Promise.resolve({ ...mockPayment, status: "PENDING" }),
+    );
+
+    mock.module("../billing.repository", () => ({
+      BillingRepository: {
+        findPaymentByMpId: findByMpMock,
+      },
+    }));
+
+    mock.module("../../../shared/lib/mercadopago", () => ({
+      mpPayment: {
+        get: mock(() => Promise.reject(new Error("MP offline"))),
+      },
+    }));
+
+    mock.module("@agenda-genz/env/server", () => ({
+      env: {
+        MERCADO_PAGO_ACCESS_TOKEN: "test",
+        MERCADO_PAGO_WEBHOOK_SECRET: "test",
+        SERVER_URL: "https://test.com",
+      },
+    }));
+
+    const { BillingService: BS } = await loadBillingService();
+
+    await expectElysiaError(
+      BS.processWebhook("mp-123"),
+      Errors.BILLING.PAYMENT_STATUS_SYNC_FAILED.message,
+      Errors.BILLING.PAYMENT_STATUS_SYNC_FAILED.httpStatus,
+    );
   });
 });
 

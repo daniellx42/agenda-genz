@@ -1,15 +1,17 @@
 import { authClient } from "@/lib/auth-client";
 import { env } from "@agenda-genz/env/native";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
-
-interface PaymentApprovedData {
-  paymentId: string;
-  planExpiresAt: string;
-}
+import {
+  createPaymentWsController,
+  type PaymentWsSocket,
+} from "../lib/payment-ws-controller";
+import type { PaymentApprovedData } from "../lib/billing-ws-message";
 
 interface UsePaymentWsOptions {
+  paymentId: string | null;
   onPaymentApproved: (data: PaymentApprovedData) => void;
+  onConnected?: () => void;
 }
 
 interface ReactNativeWebSocketOptions {
@@ -31,74 +33,47 @@ type ReactNativeWebSocketConstructor = {
   ): WebSocket;
 };
 
-interface PaymentApprovedMessage extends PaymentApprovedData {
-  type: "payment_approved";
-}
-
-function isPaymentApprovedMessage(
-  value: string | PaymentApprovedData | Record<string, string>,
-): value is PaymentApprovedMessage {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    value.type === "payment_approved" &&
-    "paymentId" in value &&
-    typeof value.paymentId === "string" &&
-    "planExpiresAt" in value &&
-    typeof value.planExpiresAt === "string"
-  );
-}
-
-export function usePaymentWs({ onPaymentApproved }: UsePaymentWsOptions) {
-  const wsRef = useRef<WebSocket | null>(null);
+export function usePaymentWs({
+  paymentId,
+  onPaymentApproved,
+  onConnected,
+}: UsePaymentWsOptions) {
   const onPaymentApprovedRef = useRef(onPaymentApproved);
+  const onConnectedRef = useRef(onConnected);
+  const paymentIdRef = useRef(paymentId);
+  const controllerRef = useRef<ReturnType<typeof createPaymentWsController> | null>(
+    null,
+  );
   onPaymentApprovedRef.current = onPaymentApproved;
+  onConnectedRef.current = onConnected;
+  paymentIdRef.current = paymentId;
 
-  const connect = useCallback(() => {
-    const cookie = authClient.getCookie();
-    const wsUrl =
-      env.EXPO_PUBLIC_SERVER_URL.replace(/^http/, "ws") + "/ws/billing";
-    // This is only a TypeScript assertion for React Native's extended constructor.
-    const ReactNativeWebSocket: ReactNativeWebSocketConstructor = WebSocket;
+  if (!controllerRef.current) {
+    controllerRef.current = createPaymentWsController({
+      getPaymentId: () => paymentIdRef.current,
+      onPaymentApproved: (data) => onPaymentApprovedRef.current(data),
+      onConnected: () => onConnectedRef.current?.(),
+      createSocket: () => {
+        const cookie = authClient.getCookie();
+        const wsUrl =
+          env.EXPO_PUBLIC_SERVER_URL.replace(/^http/, "ws") + "/ws/billing";
+        const ReactNativeWebSocket: ReactNativeWebSocketConstructor =
+          WebSocket;
 
-    const ws =
-      Platform.OS === "web"
-        ? new WebSocket(wsUrl)
-        : new ReactNativeWebSocket(
-          wsUrl,
-          undefined,
-          cookie ? { headers: { Cookie: cookie } } : undefined,
-        );
+        return (
+          Platform.OS === "web"
+            ? new WebSocket(wsUrl)
+            : new ReactNativeWebSocket(
+              wsUrl,
+              undefined,
+              cookie ? { headers: { Cookie: cookie } } : undefined,
+            )
+        ) as PaymentWsSocket;
+      },
+    });
+  }
 
-    ws.onmessage = (event) => {
-      try {
-        const parsedMessage: string | PaymentApprovedData | Record<string, string> =
-          JSON.parse(event.data);
+  useEffect(() => () => controllerRef.current?.disconnect(), []);
 
-        if (isPaymentApprovedMessage(parsedMessage)) {
-          onPaymentApprovedRef.current(parsedMessage);
-        }
-      } catch {
-        // Ignore invalid messages
-      }
-    };
-
-    // Ping every 25s to keep alive
-    const pingInterval = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) ws.send("ping");
-    }, 25_000);
-
-    ws.onclose = () => clearInterval(pingInterval);
-    wsRef.current = ws;
-  }, []);
-
-  const disconnect = useCallback(() => {
-    wsRef.current?.close();
-    wsRef.current = null;
-  }, []);
-
-  useEffect(() => () => disconnect(), [disconnect]);
-
-  return { connect, disconnect };
+  return controllerRef.current;
 }

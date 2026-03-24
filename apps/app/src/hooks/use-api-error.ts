@@ -1,64 +1,37 @@
-import type {
-  ApiErrorObject,
-  ApiErrorValue,
-} from "@/lib/api/query-utils";
+import { authClient } from "@/lib/auth-client";
 import { useSubscriptionStore } from "@/features/billing/store/subscription-store";
+import { useRouter } from "expo-router";
 import { toast } from "sonner-native";
-
-interface ApiErrorDisplayOptions {
-  duration?: number;
-}
-
-function isApiErrorObject(error: object): error is ApiErrorObject {
-  return "message" in error || "status" in error || "value" in error;
-}
-
-function hasMessageValue(value: string | ApiErrorValue | null | undefined): value is ApiErrorValue {
-  return typeof value === "object" && value !== null;
-}
+import { getApiErrorAction } from "./api-error-actions";
 
 function isApiErrorDisplayOptions(value: object): value is ApiErrorDisplayOptions {
   return "duration" in value;
 }
 
-export function getApiErrorMessage<TError>(error: TError): string {
-  if (!error) return "Erro inesperado";
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  // Eden Treaty error format
-  if (typeof error === "object" && error !== null && isApiErrorObject(error)) {
-    if (typeof error.message === "string") return error.message;
-    if (typeof error.value === "string") return error.value;
-    if (hasMessageValue(error.value) && error.value.message !== undefined) {
-      return String(error.value.message);
-    }
-  }
-
-  if (typeof error === "string") return error;
-
-  return "Erro inesperado";
+interface ApiErrorDisplayOptions {
+  duration?: number;
 }
 
 export function useApiError() {
+  const router = useRouter();
+  const { refetch: refetchSession } = authClient.useSession();
+
   const showError = <TError, TContext>(
     error: TError,
     optionsOrContext?: TContext,
   ) => {
-    // Handle 402 Plan Expired — trigger paywall immediately
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      isApiErrorObject(error) &&
-      error.status === 402
-    ) {
-      const store = useSubscriptionStore.getState();
-      // Only update if not already expired to avoid unnecessary re-renders
-      if (!store.isExpired) {
-        store.setPlanExpiresAt(null);
-      }
+    const action = getApiErrorAction(error);
+
+    if (action.type === "plan_expired") {
+      useSubscriptionStore.getState().forceExpired();
+      void refetchSession();
+      router.replace("/plans");
+      return;
+    }
+
+    if (action.type === "payment_already_processed") {
+      void refetchSession();
+      router.replace("/appointments");
       return;
     }
 
@@ -69,8 +42,7 @@ export function useApiError() {
         ? optionsOrContext
         : undefined;
 
-    const message = getApiErrorMessage(error);
-    toast.error(message, {
+    toast.error(action.message, {
       duration: options?.duration ?? 5000,
     });
   };

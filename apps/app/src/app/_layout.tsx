@@ -10,7 +10,7 @@ import {
 import { queryClient } from "@/lib/query-client";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef } from "react";
 import { AppState, StatusBar } from "react-native";
@@ -23,11 +23,16 @@ setupNotificationHandler();
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending, refetch: refetchSession } =
+    authClient.useSession();
   const previousUserIdRef = useRef<string | null | undefined>(undefined);
-  const { setPlanExpiresAt } = useSubscriptionStore();
+  const { forcedExpired, setPlanExpiresAt } = useSubscriptionStore();
   const router = useRouter();
-  const segments = useSegments();
+  const pathname = usePathname();
+  const sessionPlanExpiresAt = session?.user?.planExpiresAt ?? null;
+  const sessionIsExpired = !sessionPlanExpiresAt
+    || new Date(sessionPlanExpiresAt) <= new Date();
+  const effectiveIsExpired = forcedExpired || sessionIsExpired;
 
   useEffect(() => {
     if (isPending) return;
@@ -63,9 +68,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (isPending) return;
 
-    const rootSegment = segments[0];
-    const isAuthRoute = rootSegment === "(auth)";
-    const isProtectedRoute = rootSegment !== "(auth)";
+    const isAuthRoute = pathname === "/login";
+    const isPaywallPlansRoute = pathname === "/plans";
+    const isPaywallRoute =
+      pathname === "/plans" ||
+      pathname === "/checkout" ||
+      pathname === "/success";
+    const isProtectedRoute = !isAuthRoute;
 
     if (!session && isProtectedRoute) {
       router.replace("/login");
@@ -74,8 +83,18 @@ export default function RootLayout() {
 
     if (session && isAuthRoute) {
       router.replace("/");
+      return;
     }
-  }, [isPending, router, segments, session]);
+
+    if (session && effectiveIsExpired && !isAuthRoute && !isPaywallRoute) {
+      router.replace("/plans");
+      return;
+    }
+
+    if (session && !effectiveIsExpired && isPaywallPlansRoute) {
+      router.replace("/appointments");
+    }
+  }, [effectiveIsExpired, isPending, pathname, router, session]);
 
   useEffect(() => {
     void setupAndroidChannels();
@@ -85,11 +104,12 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
+        void refetchSession();
         useSubscriptionStore.getState().checkExpired();
       }
     });
     return () => sub.remove();
-  }, []);
+  }, [refetchSession]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

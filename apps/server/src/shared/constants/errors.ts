@@ -152,6 +152,16 @@ export const Errors = {
       message: "Erro ao criar pagamento PIX",
       httpStatus: 502,
     },
+    PAYMENT_CANCELLATION_FAILED: {
+      code: "BILLING_PAYMENT_CANCELLATION_FAILED",
+      message: "Não foi possível invalidar o PIX anterior",
+      httpStatus: 502,
+    },
+    PAYMENT_STATUS_SYNC_FAILED: {
+      code: "BILLING_PAYMENT_STATUS_SYNC_FAILED",
+      message: "Não foi possível verificar o pagamento agora",
+      httpStatus: 502,
+    },
     PLAN_EXPIRED: {
       code: "BILLING_PLAN_EXPIRED",
       message: "Plano expirado. Renove sua assinatura.",

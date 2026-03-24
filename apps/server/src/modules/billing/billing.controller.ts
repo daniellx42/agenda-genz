@@ -1,4 +1,4 @@
-import { Elysia, status } from "elysia";
+import { Elysia, status, t } from "elysia";
 import { Errors } from "../../shared/constants/errors";
 import { authMiddleware } from "../../shared/middleware/auth";
 import { BillingModel } from "./billing.model";
@@ -45,7 +45,11 @@ export const billingController = new Elysia({ prefix: "/billing" })
         200: BillingModel.createPaymentResponse,
         401: BillingModel.errorUnauthorized,
         404: BillingModel.errorPlanNotFound,
-        502: BillingModel.errorPaymentCreationFailed,
+        409: BillingModel.errorPaymentAlreadyProcessed,
+        502: t.Union([
+          BillingModel.errorPaymentCancellationFailed,
+          BillingModel.errorPaymentCreationFailed,
+        ]),
       },
     },
   )
@@ -62,6 +66,7 @@ export const billingController = new Elysia({ prefix: "/billing" })
         200: BillingModel.paymentStatusResponse,
         401: BillingModel.errorUnauthorized,
         404: BillingModel.errorPaymentNotFound,
+        502: BillingModel.errorPaymentStatusSyncFailed,
       },
     },
   )

@@ -97,6 +97,24 @@ export namespace BillingModel {
   export type errorPaymentCreationFailed =
     typeof errorPaymentCreationFailed.static;
 
+  export const errorPaymentCancellationFailed = t.Literal(
+    Errors.BILLING.PAYMENT_CANCELLATION_FAILED.message,
+  );
+  export type errorPaymentCancellationFailed =
+    typeof errorPaymentCancellationFailed.static;
+
+  export const errorPaymentStatusSyncFailed = t.Literal(
+    Errors.BILLING.PAYMENT_STATUS_SYNC_FAILED.message,
+  );
+  export type errorPaymentStatusSyncFailed =
+    typeof errorPaymentStatusSyncFailed.static;
+
+  export const errorPaymentAlreadyProcessed = t.Literal(
+    Errors.BILLING.PAYMENT_ALREADY_PROCESSED.message,
+  );
+  export type errorPaymentAlreadyProcessed =
+    typeof errorPaymentAlreadyProcessed.static;
+
   export const errorPlanExpired = t.Literal(
     Errors.BILLING.PLAN_EXPIRED.message,
   );

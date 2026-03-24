@@ -51,7 +51,7 @@ type BillingPlanWithActiveRecord = BillingPlanRecord & {
   active: boolean;
 };
 
-type BillingPaymentRecord = {
+export type BillingPaymentRecord = {
   id: string;
   userId: string | null;
   planId: string;
@@ -72,7 +72,7 @@ type BillingPaymentRecord = {
   };
 };
 
-type BillingPaymentWithPlanDetailsRecord = Omit<BillingPaymentRecord, "plan"> & {
+export type BillingPaymentWithPlanDetailsRecord = Omit<BillingPaymentRecord, "plan"> & {
   plan: {
     name: string;
     durationDays: number;
@@ -117,6 +117,41 @@ export abstract class BillingRepository {
   }): Promise<BillingPaymentRecord> {
     return prisma.billingPayment.create({
       data,
+      select: paymentSelect,
+    });
+  }
+
+  static async findResumablePendingPayment(
+    userId: string,
+    planId: string,
+  ): Promise<BillingPaymentRecord | null> {
+    return prisma.billingPayment.findFirst({
+      where: {
+        userId,
+        planId,
+        status: "PENDING",
+        pixExpiresAt: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: paymentSelect,
+    });
+  }
+
+  static async findPendingPaymentsByUserId(
+    userId: string,
+  ): Promise<BillingPaymentRecord[]> {
+    return prisma.billingPayment.findMany({
+      where: {
+        userId,
+        status: "PENDING",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
       select: paymentSelect,
     });
   }
