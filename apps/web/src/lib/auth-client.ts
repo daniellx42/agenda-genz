@@ -8,9 +8,9 @@ export const authClient = createAuthClient({
   plugins: [
     inferAdditionalFields({
       user: {
-        role: { type: "string" },
-        trialStartedAt: { type: "date" },
-        planExpiresAt: { type: "date" },
+        role: { type: "string", required: false, input: false },
+        trialStartedAt: { type: "date", required: false, input: false },
+        planExpiresAt: { type: "date", required: false, input: false },
       },
     }),
   ],

@@ -1,7 +1,7 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
-import { spawnSync } from "node:child_process";
 
 const args = new Set(process.argv.slice(2));
 const shouldWrite = args.has("--write");
@@ -36,14 +36,14 @@ const gradleBlock = [
   gradleEnd,
 ].join("\n");
 
-function run(command, commandArgs) {
+function run(command: string, commandArgs: string[] = []) {
   return spawnSync(command, commandArgs, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
 
-function upsertBlock(filePath, startMarker, endMarker, block) {
+function upsertBlock(filePath: string, startMarker: string, endMarker: string, block: string) {
   const current = existsSync(filePath) ? readFileSync(filePath, "utf8") : "";
   const pattern = new RegExp(`${escapeRegExp(startMarker)}[\\s\\S]*?${escapeRegExp(endMarker)}\\n?`, "g");
   const trimmed = current.replace(pattern, "").trimEnd();
@@ -53,16 +53,16 @@ function upsertBlock(filePath, startMarker, endMarker, block) {
   writeFileSync(filePath, next);
 }
 
-function escapeRegExp(value) {
+function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function status(label, ok, details) {
+function status(label: string, ok: boolean, details: string) {
   const mark = ok ? "OK " : "WARN";
   console.log(`${mark} ${label}: ${details}`);
 }
 
-function commandExists(command, commandArgs = ["--version"]) {
+function commandExists(command: string, commandArgs: string[] = ["--version"]) {
   const result = run(command, commandArgs);
   return result.status === 0;
 }

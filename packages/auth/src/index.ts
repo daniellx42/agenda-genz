@@ -27,6 +27,7 @@ const authOptions = {
     authOrigin,
     serverOrigin,
     frontendOrigin,
+    "https://appleid.apple.com",
     "app://",
     "exp+agenda-genz://",
     ...(env.NODE_ENV === "development"
@@ -39,6 +40,17 @@ const authOptions = {
       clientSecret: env.GOOGLE_CLIENT_SECRET,
       prompt: "select_account",
     },
+    apple: {
+      clientId: env.APPLE_CLIENT_ID,
+      clientSecret: env.APPLE_CLIENT_SECRET,
+      appBundleIdentifier: env.APPLE_APP_BUNDLE_IDENTIFIER,
+    },
+  },
+  emailAndPassword: {
+    enabled: true,
+    autoSignIn: true,
+    requireEmailVerification: false,
+    minPasswordLength: 8,
   },
   advanced: {
     defaultCookieAttributes: {
