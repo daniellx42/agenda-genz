@@ -31,7 +31,7 @@ const mockClient = {
   instagram: "ana",
   cpf: "123.456.789-00",
   address: null,
-  age: null,
+  birthDate: null,
   gender: null,
   notes: null,
   profileImageKey: null,
@@ -49,6 +49,7 @@ const mockListResult = {
       email: null,
       instagram: null,
       notes: null,
+      birthDate: null,
       profileImageKey: null,
       lastCompletedAppointmentDate: null,
     },
@@ -86,7 +87,7 @@ describe("ClientService.create", () => {
       instagram: undefined,
       cpf: undefined,
       address: undefined,
-      age: undefined,
+      birthDate: undefined,
       gender: undefined,
       notes: undefined,
       profileImageKey: undefined,
@@ -99,7 +100,7 @@ describe("ClientService.create", () => {
         ...mockClient,
         instagram: "ana_weiss_nails",
         address: "Rua das Flores, 10",
-        age: 28,
+        birthDate: "1996-04-12",
         gender: "FEMALE",
       }),
     );
@@ -117,7 +118,7 @@ describe("ClientService.create", () => {
       phone: "(11) 99999-9999",
       instagram: "https://www.instagram.com/ana_weiss_nails/",
       address: " Rua das Flores, 10 ",
-      age: 28,
+      birthDate: "1996-04-12",
       gender: "FEMALE",
     });
 
@@ -128,11 +129,35 @@ describe("ClientService.create", () => {
       instagram: "ana_weiss_nails",
       cpf: undefined,
       address: "Rua das Flores, 10",
-      age: 28,
+      birthDate: new Date(Date.UTC(1996, 3, 12, 12, 0, 0, 0)),
       gender: "FEMALE",
       notes: undefined,
       profileImageKey: undefined,
     });
+  });
+
+  it("deve lançar 400 quando a data de nascimento for inválida", async () => {
+    const createMock = mock(() => Promise.resolve(mockClient));
+
+    mock.module("../client.repository", () => ({
+      ClientRepository: {
+        create: createMock,
+      },
+    }));
+
+    const { ClientService: CS } = await loadClientService();
+
+    await expectElysiaError(
+      CS.create("user-1", {
+        name: "Ana Silva",
+        phone: "11999999999",
+        birthDate: "1996-02-31",
+      }),
+      Errors.CLIENT.INVALID_BIRTH_DATE.message,
+      Errors.CLIENT.INVALID_BIRTH_DATE.httpStatus,
+    );
+
+    expect(createMock).not.toHaveBeenCalled();
   });
 });
 
@@ -189,7 +214,7 @@ describe("ClientService.update", () => {
       instagram: undefined,
       cpf: undefined,
       address: undefined,
-      age: undefined,
+      birthDate: undefined,
       gender: undefined,
       notes: undefined,
       profileImageKey: undefined,
@@ -421,7 +446,7 @@ describe("ClientService — profileImageKey", () => {
       instagram: undefined,
       cpf: undefined,
       address: undefined,
-      age: undefined,
+      birthDate: undefined,
       gender: undefined,
       notes: undefined,
       profileImageKey: "profile/user-1/abc123-avatar.jpg",
@@ -465,7 +490,7 @@ describe("ClientService — profileImageKey", () => {
       instagram: undefined,
       cpf: undefined,
       address: undefined,
-      age: undefined,
+      birthDate: undefined,
       gender: undefined,
       notes: undefined,
       profileImageKey: null,

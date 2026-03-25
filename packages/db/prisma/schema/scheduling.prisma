@@ -20,7 +20,7 @@ model Client {
   instagram       String?
   cpf             String?
   address         String?
-  age             Int?
+  birthDate       DateTime? @db.Date
   gender          String?
   notes           String?
   profileImageKey String?

@@ -28,7 +28,7 @@ const clientSelect = {
   instagram: true,
   cpf: true,
   address: true,
-  age: true,
+  birthDate: true,
   gender: true,
   notes: true,
   profileImageKey: true,
@@ -44,12 +44,40 @@ const clientListSelect = {
   email: true,
   instagram: true,
   notes: true,
+  birthDate: true,
   profileImageKey: true,
   appointments: latestCompletedAppointmentSelect,
 } satisfies Prisma.ClientSelect;
 
 type ClientRecord = Prisma.ClientGetPayload<{ select: typeof clientSelect }>;
 type ClientListRecord = Prisma.ClientGetPayload<{ select: typeof clientListSelect }>;
+type ClientGender = "FEMALE" | "MALE" | "OTHER";
+
+interface ClientCreateData {
+  name: string;
+  phone: string;
+  email?: string;
+  instagram?: string;
+  cpf?: string;
+  address?: string;
+  birthDate?: Date;
+  gender?: ClientGender;
+  notes?: string;
+  profileImageKey?: string;
+}
+
+interface ClientUpdateData {
+  name?: string;
+  phone?: string;
+  email?: string | null;
+  instagram?: string | null;
+  cpf?: string | null;
+  address?: string | null;
+  birthDate?: Date | null;
+  gender?: ClientGender | null;
+  notes?: string | null;
+  profileImageKey?: string | null;
+}
 
 function normalizeInstagramValue(value: string | null): string | null {
   return value ? normalizeInstagram(value) : null;
@@ -71,10 +99,11 @@ function getLastCompletedAppointmentDate(
 }
 
 function toClientResponse(client: ClientRecord): ClientModel.clientResponse {
-  const { appointments, ...rest } = client;
+  const { appointments, birthDate, ...rest } = client;
 
   return {
     ...rest,
+    birthDate: birthDate ? formatDateOnly(birthDate) : null,
     instagram: normalizeInstagramValue(client.instagram),
     gender: normalizeGenderValue(client.gender),
     lastCompletedAppointmentDate: getLastCompletedAppointmentDate(appointments),
@@ -84,10 +113,11 @@ function toClientResponse(client: ClientRecord): ClientModel.clientResponse {
 }
 
 function toClientListItem(client: ClientListRecord) {
-  const { appointments, ...rest } = client;
+  const { appointments, birthDate, ...rest } = client;
 
   return {
     ...rest,
+    birthDate: birthDate ? formatDateOnly(birthDate) : null,
     instagram: normalizeInstagramValue(client.instagram),
     lastCompletedAppointmentDate: getLastCompletedAppointmentDate(appointments),
   };
@@ -143,7 +173,7 @@ export abstract class ClientRepository {
 
   static async create(
     userId: string,
-    data: ClientModel.createBody,
+    data: ClientCreateData,
   ): Promise<ClientModel.clientResponse> {
     const client = await prisma.client.create({
       data: { ...data, userId },
@@ -170,7 +200,7 @@ export abstract class ClientRepository {
   static async update(
     id: string,
     userId: string,
-    data: ClientModel.updateBody,
+    data: ClientUpdateData,
   ): Promise<ClientModel.clientResponse | null> {
     const existing = await prisma.client.findFirst({ where: { id, userId } });
     if (!existing) return null;

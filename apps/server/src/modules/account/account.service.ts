@@ -3,7 +3,25 @@ import { status } from "elysia";
 import { Errors } from "../../shared/constants/errors";
 import { UploadService } from "../uploads/upload.service";
 
+function isOwnedProfileImageKey(userId: string, key: string) {
+  return key.startsWith(`profile/${userId}/`);
+}
+
 export abstract class AccountService {
+  static async deleteProfileImageObject(
+    userId: string,
+    key: string,
+  ): Promise<void> {
+    if (!isOwnedProfileImageKey(userId, key)) {
+      throw status(
+        Errors.ACCOUNT.PROFILE_IMAGE_UNAUTHORIZED_KEY.httpStatus,
+        Errors.ACCOUNT.PROFILE_IMAGE_UNAUTHORIZED_KEY.message,
+      );
+    }
+
+    await UploadService.deleteObject(userId, key);
+  }
+
   static async delete(userId: string): Promise<void> {
     const user = await prisma.user.findUnique({
       where: { id: userId },

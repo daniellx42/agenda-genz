@@ -7,6 +7,14 @@ export const Errors = {
     },
   },
 
+  ACCOUNT: {
+    PROFILE_IMAGE_UNAUTHORIZED_KEY: {
+      code: "ACCOUNT_PROFILE_IMAGE_UNAUTHORIZED_KEY",
+      message: "Acesso negado a esta foto de perfil",
+      httpStatus: 403,
+    },
+  },
+
   CLIENT: {
     NOT_FOUND: {
       code: "CLIENT_NOT_FOUND",
@@ -21,6 +29,11 @@ export const Errors = {
     PHONE_REQUIRED: {
       code: "CLIENT_PHONE_REQUIRED",
       message: "Telefone é obrigatório",
+      httpStatus: 400,
+    },
+    INVALID_BIRTH_DATE: {
+      code: "CLIENT_INVALID_BIRTH_DATE",
+      message: "Data de nascimento inválida",
       httpStatus: 400,
     },
   },
@@ -177,6 +190,7 @@ export const Errors = {
 
 export type ErrorCode =
   | (typeof Errors.AUTH)[keyof typeof Errors.AUTH]["code"]
+  | (typeof Errors.ACCOUNT)[keyof typeof Errors.ACCOUNT]["code"]
   | (typeof Errors.CLIENT)[keyof typeof Errors.CLIENT]["code"]
   | (typeof Errors.SERVICE)[keyof typeof Errors.SERVICE]["code"]
   | (typeof Errors.TIME_SLOT)[keyof typeof Errors.TIME_SLOT]["code"]

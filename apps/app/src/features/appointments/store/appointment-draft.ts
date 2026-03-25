@@ -5,6 +5,7 @@ interface ClientDraft {
   id: string;
   name: string;
   phone: string;
+  profileImageKey: string | null;
 }
 
 interface ServiceDraft {

@@ -11,7 +11,7 @@ interface CreateClientInput {
   instagram?: string;
   cpf?: string;
   address?: string;
-  age?: number;
+  birthDate?: string;
   gender?: "FEMALE" | "MALE" | "OTHER";
   notes?: string;
   profileImageKey?: string;
@@ -24,7 +24,7 @@ interface UpdateClientInput {
   instagram?: string | null;
   cpf?: string | null;
   address?: string | null;
-  age?: number | null;
+  birthDate?: string | null;
   gender?: "FEMALE" | "MALE" | "OTHER" | null;
   notes?: string | null;
   profileImageKey?: string | null;

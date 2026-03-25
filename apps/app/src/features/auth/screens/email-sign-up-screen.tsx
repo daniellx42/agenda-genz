@@ -95,7 +95,6 @@ export default function EmailSignUpScreen() {
         name: normalizedName,
         email: normalizedEmail,
         password,
-        callbackURL: "/appointments",
       });
 
       if (result.error) {

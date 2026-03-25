@@ -59,7 +59,6 @@ export default function EmailLoginScreen() {
       const result = await authClient.signIn.email({
         email: normalizedEmail,
         password,
-        callbackURL: "/appointments",
         rememberMe: true,
       });
 

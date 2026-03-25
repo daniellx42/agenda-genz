@@ -8,6 +8,7 @@ import {
   formatInstagramHandle,
   openInstagramProfile,
 } from "../lib/client-instagram";
+import { getClientBirthdayListBadge } from "../lib/client-birthday";
 import { formatDaysLabel, getDaysSince } from "../lib/client-relative-time";
 import { openWhatsApp } from "../lib/client-whatsapp";
 import type { ClientItem } from "../types";
@@ -29,6 +30,9 @@ export function ClientCard({
   const { imageUrl: profileImageUrl } = useResolvedImage({
     imageKey: client.profileImageKey,
   });
+  const birthdayBadge = client.birthDate
+    ? getClientBirthdayListBadge(client.birthDate)
+    : null;
   const lastCompletedAppointmentDays = client.lastCompletedAppointmentDate
     ? getDaysSince(client.lastCompletedAppointmentDate)
     : null;
@@ -100,6 +104,27 @@ export function ClientCard({
                   {formatInstagramHandle(client.instagram)}
                 </Text>
               </Pressable>
+            ) : null}
+
+            {birthdayBadge ? (
+              <View
+                className={`flex-row items-center gap-1.5 self-start rounded-2xl px-3 py-1.5 ${
+                  birthdayBadge.tone === "red" ? "bg-red-50" : "bg-sky-50"
+                }`}
+              >
+                <Feather
+                  name={birthdayBadge.tone === "red" ? "gift" : "calendar"}
+                  size={12}
+                  color={birthdayBadge.tone === "red" ? "#dc2626" : "#0284c7"}
+                />
+                <Text
+                  className={`text-xs font-semibold ${
+                    birthdayBadge.tone === "red" ? "text-red-600" : "text-sky-700"
+                  }`}
+                >
+                  {birthdayBadge.label}
+                </Text>
+              </View>
             ) : null}
 
             {lastCompletedAppointmentDays !== null ? (

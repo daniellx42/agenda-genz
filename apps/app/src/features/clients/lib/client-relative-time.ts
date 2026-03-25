@@ -1,7 +1,13 @@
+import type { ClientDateValue } from "../types";
+
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-function parseClientDate(value: string): Date | null {
+function parseClientDate(value: ClientDateValue): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
   if (DATE_ONLY_REGEX.test(value)) {
     const [year, month, day] = value.split("-").map(Number);
 
@@ -20,7 +26,7 @@ function startOfLocalDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
-export function getDaysSince(value: string, now = new Date()): number | null {
+export function getDaysSince(value: ClientDateValue, now = new Date()): number | null {
   const parsedDate = parseClientDate(value);
 
   if (!parsedDate) {
@@ -35,11 +41,11 @@ export function formatDaysLabel(days: number): string {
   return `${days} ${days === 1 ? "dia" : "dias"}`;
 }
 
-export function formatClientDate(value: string): string {
+export function formatClientDate(value: ClientDateValue): string {
   const parsedDate = parseClientDate(value);
 
   if (!parsedDate) {
-    return value;
+    return String(value);
   }
 
   return parsedDate.toLocaleDateString("pt-BR", {

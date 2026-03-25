@@ -1,5 +1,6 @@
 import { status } from "elysia";
 import { Errors } from "../../shared/constants/errors";
+import { parseDateOnly } from "../../shared/lib/date-only";
 import {
   normalizeCpf,
   normalizeEmail,
@@ -13,6 +14,42 @@ import { ClientRepository } from "./client.repository";
 import type { ClientModel } from "./client.model";
 
 export abstract class ClientService {
+  private static parseCreateBirthDate(value?: string): Date | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    const parsed = parseDateOnly(value);
+
+    if (!parsed) {
+      throw status(
+        Errors.CLIENT.INVALID_BIRTH_DATE.httpStatus,
+        Errors.CLIENT.INVALID_BIRTH_DATE.message satisfies ClientModel.errorInvalidBirthDate,
+      );
+    }
+
+    return parsed;
+  }
+
+  private static parseUpdateBirthDate(
+    value?: string | null,
+  ): Date | null | undefined {
+    if (value === undefined || value === null) {
+      return value;
+    }
+
+    const parsed = parseDateOnly(value);
+
+    if (!parsed) {
+      throw status(
+        Errors.CLIENT.INVALID_BIRTH_DATE.httpStatus,
+        Errors.CLIENT.INVALID_BIRTH_DATE.message satisfies ClientModel.errorInvalidBirthDate,
+      );
+    }
+
+    return parsed;
+  }
+
   private static async deleteStoredObject(
     userId: string,
     key: string,
@@ -32,7 +69,7 @@ export abstract class ClientService {
       instagram: data.instagram ? normalizeInstagram(data.instagram) : undefined,
       cpf: data.cpf ? normalizeCpf(data.cpf) : undefined,
       address: toOptionalString(data.address),
-      age: data.age,
+      birthDate: ClientService.parseCreateBirthDate(data.birthDate),
       gender: data.gender,
       notes: toOptionalString(data.notes),
       profileImageKey: data.profileImageKey,
@@ -82,7 +119,7 @@ export abstract class ClientService {
             : normalizeCpf(data.cpf)
           : undefined,
       address: toNullableString(data.address),
-      age: data.age === undefined ? undefined : data.age,
+      birthDate: ClientService.parseUpdateBirthDate(data.birthDate),
       gender: data.gender === undefined ? undefined : data.gender,
       notes: toNullableString(data.notes),
       profileImageKey: data.profileImageKey,

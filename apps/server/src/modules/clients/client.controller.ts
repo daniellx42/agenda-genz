@@ -44,6 +44,7 @@ export const clientController = new Elysia({ prefix: "/clients" })
       body: ClientModel.createBody,
       response: {
         200: ClientModel.clientResponse,
+        400: ClientModel.errorInvalidBirthDate,
         401: ClientModel.errorUnauthorized,
       },
     },
@@ -57,6 +58,7 @@ export const clientController = new Elysia({ prefix: "/clients" })
       params: ClientModel.idParams,
       response: {
         200: ClientModel.clientResponse,
+        400: ClientModel.errorInvalidBirthDate,
         401: ClientModel.errorUnauthorized,
         404: ClientModel.errorNotFound,
       },

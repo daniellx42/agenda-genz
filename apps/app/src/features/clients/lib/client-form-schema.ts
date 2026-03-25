@@ -1,5 +1,4 @@
 import {
-  digitsOnly,
   isValidCpf,
   isValidEmail,
   isValidInstagram,
@@ -10,6 +9,11 @@ import {
   normalizeWhitespace,
 } from "@/lib/formatters";
 import { z } from "zod";
+import {
+  formatBirthDateInput,
+  isValidBirthDateInput,
+  toBirthDateValue,
+} from "./client-birthday";
 
 export const clientSchema = z.object({
   name: z
@@ -52,15 +56,14 @@ export const clientSchema = z.object({
     .transform(normalizeWhitespace)
     .refine((value) => value.length <= 240, "Máximo de 240 caracteres")
     .transform((value) => value || undefined),
-  age: z
+  birthDate: z
     .string()
-    .transform(digitsOnly)
-    .refine((value) => {
-      if (value.length === 0) return true;
-      const age = Number(value);
-      return age >= 1 && age <= 120;
-    }, "Idade inválida")
-    .transform((value) => (value ? Number(value) : undefined)),
+    .transform(formatBirthDateInput)
+    .refine(
+      (value) => value.length === 0 || isValidBirthDateInput(value),
+      "Data de nascimento inválida",
+    )
+    .transform((value) => (value ? toBirthDateValue(value) : undefined)),
   gender: z
     .enum(["", "FEMALE", "MALE", "OTHER"])
     .transform((value) => value || undefined),

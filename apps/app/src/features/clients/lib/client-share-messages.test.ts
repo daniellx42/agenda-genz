@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { buildClientFollowUpMessage } from "./client-share-messages";
+import {
+  buildClientBirthdayMessage,
+  buildClientFollowUpMessage,
+} from "./client-share-messages";
 
 describe("client-share-messages", () => {
   it("monta a mensagem de follow-up com plural corretamente", () => {
@@ -31,5 +34,30 @@ describe("client-share-messages", () => {
     });
 
     expect(message).toContain("Seu último atendimento foi hoje por aqui.");
+  });
+
+  it("monta a mensagem de aniversário com incentivo para novo agendamento", () => {
+    const message = buildClientBirthdayMessage({
+      clientName: "Maria Silva",
+      daysUntilBirthday: 12,
+      turningAge: 30,
+    });
+
+    expect(message).toContain("Faltam 12 dias para o seu aniversário.");
+    expect(message).toContain("celebrar seus 30 anos");
+    expect(message).toContain("desconto exclusivo");
+    expect(message).toContain("garantir seu horário");
+  });
+
+  it("troca para uma mensagem de parabéns no dia do aniversário", () => {
+    const message = buildClientBirthdayMessage({
+      clientName: "Maria Silva",
+      daysUntilBirthday: 0,
+      turningAge: 30,
+    });
+
+    expect(message).toContain("Parabéns pelo seu dia");
+    expect(message).toContain("agradecer pela sua confiança");
+    expect(message).toContain("cliente fiel e tão especial");
   });
 });

@@ -6,6 +6,7 @@ export namespace ClientModel {
   const phonePattern = "^\\d{10,11}$";
   const cpfPattern = "^\\d{11}$";
   const instagramPattern = "^@?[A-Za-z0-9._]{1,30}$";
+  const dateOnlyPattern = "^\\d{4}-\\d{2}-\\d{2}$";
   const genderSchema = t.Union([
     t.Literal("FEMALE"),
     t.Literal("MALE"),
@@ -42,7 +43,7 @@ export namespace ClientModel {
     instagram: t.Optional(t.String({ pattern: instagramPattern })),
     cpf: t.Optional(t.String({ pattern: cpfPattern })),
     address: t.Optional(t.String({ maxLength: 240 })),
-    age: t.Optional(t.Integer({ minimum: 1, maximum: 120 })),
+    birthDate: t.Optional(t.String({ pattern: dateOnlyPattern })),
     gender: t.Optional(genderSchema),
     notes: t.Optional(t.String({ maxLength: 500 })),
     profileImageKey: t.Optional(t.String()),
@@ -56,7 +57,7 @@ export namespace ClientModel {
     instagram: t.Optional(t.Union([t.String({ pattern: instagramPattern }), t.Null()])),
     cpf: t.Optional(t.Union([t.String({ pattern: cpfPattern }), t.Null()])),
     address: t.Optional(t.Union([t.String({ maxLength: 240 }), t.Null()])),
-    age: t.Optional(t.Union([t.Integer({ minimum: 1, maximum: 120 }), t.Null()])),
+    birthDate: t.Optional(t.Union([t.String({ pattern: dateOnlyPattern }), t.Null()])),
     gender: t.Optional(t.Union([genderSchema, t.Null()])),
     notes: t.Optional(t.Union([t.String({ maxLength: 500 }), t.Null()])),
     profileImageKey: t.Optional(t.Union([t.String(), t.Null()])),
@@ -73,7 +74,7 @@ export namespace ClientModel {
     instagram: t.Union([t.String(), t.Null()]),
     cpf: t.Union([t.String(), t.Null()]),
     address: t.Union([t.String(), t.Null()]),
-    age: t.Union([t.Number(), t.Null()]),
+    birthDate: t.Union([t.String(), t.Null()]),
     gender: t.Union([genderSchema, t.Null()]),
     notes: t.Union([t.String(), t.Null()]),
     profileImageKey: t.Union([t.String(), t.Null()]),
@@ -104,6 +105,7 @@ export namespace ClientModel {
         email: t.Union([t.String(), t.Null()]),
         instagram: t.Union([t.String(), t.Null()]),
         notes: t.Union([t.String(), t.Null()]),
+        birthDate: t.Union([t.String(), t.Null()]),
         profileImageKey: t.Union([t.String(), t.Null()]),
         lastCompletedAppointmentDate: t.Union([t.String(), t.Null()]),
       }),
@@ -131,6 +133,11 @@ export namespace ClientModel {
     Errors.CLIENT.PROFILE_IMAGE_NOT_FOUND.message,
   );
   export type errorProfileImageNotFound = typeof errorProfileImageNotFound.static;
+
+  export const errorInvalidBirthDate = t.Literal(
+    Errors.CLIENT.INVALID_BIRTH_DATE.message,
+  );
+  export type errorInvalidBirthDate = typeof errorInvalidBirthDate.static;
 
   export const errorUnauthorized = t.Literal(Errors.AUTH.UNAUTHORIZED.message);
   export type errorUnauthorized = typeof errorUnauthorized.static;

@@ -39,10 +39,15 @@ export function ProfileAvatarEdit({
         />
         <Pressable
           onPress={onClearLocal}
+          disabled={busy}
           style={{ position: "absolute", top: -2, right: -2 }}
           className="h-6 w-6 items-center justify-center rounded-full bg-rose-500 active:opacity-70"
         >
-          <Feather name="trash-2" size={11} color="white" />
+          {busy ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Feather name="trash-2" size={11} color="white" />
+          )}
         </Pressable>
       </View>
     );

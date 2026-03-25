@@ -29,6 +29,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { toast } from "sonner-native";
 import { ClientFormFields } from "../components/client-form-fields";
 import { useClientForm } from "../hooks/use-client-form";
+import { formatBirthDateInputFromValue } from "../lib/client-birthday";
 import { ProfileAvatarEdit } from "../components/profile-avatar-edit";
 import { clientSchema } from "../lib/client-form-schema";
 import { uploadImageToR2 } from "../lib/client-image";
@@ -47,7 +48,7 @@ function shouldShowAdditionalInfo(client?: ClientDetail | null) {
     client?.email ||
       client?.cpf ||
       client?.address ||
-      client?.age ||
+      client?.birthDate ||
       client?.gender ||
       client?.notes,
   );
@@ -124,7 +125,7 @@ export function ClientEditSheet({
       instagram: client?.instagram ? normalizeInstagram(client.instagram) : "",
       cpf: client?.cpf ? formatCpf(client.cpf) : "",
       address: client?.address ?? "",
-      age: client?.age ? String(client.age) : "",
+      birthDate: formatBirthDateInputFromValue(client?.birthDate),
       gender: client?.gender ?? "",
       notes: client?.notes ?? "",
     },
@@ -161,7 +162,8 @@ export function ClientEditSheet({
             parsed.data.instagram !== undefined ? parsed.data.instagram : null,
           cpf: parsed.data.cpf !== undefined ? parsed.data.cpf : null,
           address: parsed.data.address !== undefined ? parsed.data.address : null,
-          age: parsed.data.age !== undefined ? parsed.data.age : null,
+          birthDate:
+            parsed.data.birthDate !== undefined ? parsed.data.birthDate : null,
           gender: parsed.data.gender !== undefined ? parsed.data.gender : null,
           notes: parsed.data.notes !== undefined ? parsed.data.notes : null,
           ...(profileImageKey !== undefined ? { profileImageKey } : {}),
@@ -193,7 +195,7 @@ export function ClientEditSheet({
       instagram: client.instagram ? normalizeInstagram(client.instagram) : "",
       cpf: client.cpf ? formatCpf(client.cpf) : "",
       address: client.address ?? "",
-      age: client.age ? String(client.age) : "",
+      birthDate: formatBirthDateInputFromValue(client.birthDate),
       gender: client.gender ?? "",
       notes: client.notes ?? "",
     });

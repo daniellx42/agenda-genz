@@ -1,10 +1,10 @@
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
+import { NewAppointmentClientOptionCard } from "@/features/appointments/components/new-appointment-client-option-card";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { clientsInfiniteQueryOptions } from "@/features/clients/api/client-query-options";
 import { ClientCardSkeleton } from "@/features/clients/components/client-card-skeleton";
 import { useApiError } from "@/hooks/use-api-error";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { formatPhone } from "@/lib/formatters";
 import Feather from "@expo/vector-icons/Feather";
 import { useBottomSheetModal } from "@gorhom/bottom-sheet";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -95,28 +95,18 @@ export function StepClient() {
         ) : null}
 
         {clients.map((client) => (
-          <Pressable
+          <NewAppointmentClientOptionCard
             key={client.id}
+            client={client}
             onPress={() =>
               setClient({
                 id: client.id,
                 name: client.name,
                 phone: client.phone ?? "",
+                profileImageKey: client.profileImageKey,
               })
             }
-            className="flex-row items-center gap-3 bg-white border border-zinc-100 rounded-2xl p-4 mb-2 active:opacity-70"
-          >
-            <View className="w-10 h-10 rounded-full bg-rose-100 items-center justify-center">
-              <Feather name="user" size={16} color="#f43f5e" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-semibold text-zinc-900">
-                {client.name}
-              </Text>
-              <Text className="text-xs text-zinc-400">{formatPhone(client.phone)}</Text>
-            </View>
-            <Feather name="chevron-right" size={16} color="#d4d4d8" />
-          </Pressable>
+          />
         ))}
 
         {hasSearch && hasNextPage ? (

@@ -1,106 +1,65 @@
-import { deleteAccount } from "../api/account-mutations";
-import { DeleteAccountSheet } from "../sheets/delete-account-sheet";
-import { EditNameSheet } from "../sheets/edit-name-sheet";
-import { ClientAvatar } from "@/features/clients/components/client-avatar";
-import { useAuthSession } from "@/features/auth/lib/auth-session-context";
-import { useSubscriptionStore } from "@/features/billing/store/subscription-store";
-import { useApiError } from "@/hooks/use-api-error";
-import { authClient } from "@/lib/auth-client";
+import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { openPrivacyPolicy, openTermsOfService } from "@/lib/legal-links";
+import { openWhatsApp } from "@/lib/whatsapp";
 import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
-import { toast } from "sonner-native";
+import { useCallback, useRef } from "react";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { SettingsAccountActionsCard } from "../components/settings-account-actions-card";
+import { SettingsLegalText } from "../components/settings-legal-text";
+import { SettingsPhotoSourceSheet } from "../components/settings-photo-source-sheet";
+import { SettingsProfileCard } from "../components/settings-profile-card";
+import { SettingsSupportCard } from "../components/settings-support-card";
+import { useSettingsController } from "../hooks/use-settings-controller";
+import { DELETE_ACCOUNT_CONFIRMATION_TEXT } from "../lib/settings-form";
+import { DeleteAccountSheet } from "../sheets/delete-account-sheet";
+import { EditNameSheet } from "../sheets/edit-name-sheet";
 
-const DELETE_CONFIRMATION_TEXT = "quero deletar minha conta";
-
-function normalizeDeletionConfirmation(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, " ");
-}
+const SUPPORT_WHATSAPP_NUMBER = "42 99823-7502";
+const SUPPORT_WHATSAPP_MESSAGE =
+  "Olá! Vim pelo aplicativo Agenda GenZ e preciso de ajuda.";
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { session } = useAuthSession();
-  const { refetch: refetchSession } = authClient.useSession();
-  const { showError } = useApiError();
-  const queryClient = useQueryClient();
+  const {
+    session,
+    displayName,
+    setDisplayName,
+    deleteConfirmation,
+    setDeleteConfirmation,
+    trimmedDisplayName,
+    canSaveName,
+    canDeleteAccount,
+    profileImage,
+    cropperProps,
+    updateNameMutation,
+    signOutMutation,
+    deleteAccountMutation,
+    selectImageSource,
+    deleteProfileImage,
+    clearLocalProfileImage,
+    resetDisplayName,
+    resetDeleteConfirmation,
+  } = useSettingsController();
   const editNameSheetRef = useRef<BottomSheetModal>(null);
   const deleteAccountSheetRef = useRef<BottomSheetModal>(null);
-  const [displayName, setDisplayName] = useState(session?.user.name ?? "");
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-
-  useEffect(() => {
-    setDisplayName(session?.user.name ?? "");
-  }, [session?.user.name]);
-
-  const trimmedDisplayName = useMemo(
-    () => displayName.trim().replace(/\s+/g, " "),
-    [displayName],
-  );
-  const canSaveName =
-    trimmedDisplayName.length >= 2 &&
-    trimmedDisplayName !== (session?.user.name ?? "");
-  const canDeleteAccount =
-    normalizeDeletionConfirmation(deleteConfirmation) ===
-    DELETE_CONFIRMATION_TEXT;
-
-  const updateNameMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const result = await authClient.updateUser({ name });
-
-      if (result.error) {
-        throw result.error;
-      }
-    },
-    onSuccess: async () => {
-      toast.success("Nome atualizado!");
-      editNameSheetRef.current?.dismiss();
-      await refetchSession();
-    },
-    onError: showError,
-  });
-
-  const signOutMutation = useMutation({
-    mutationFn: async () => {
-      const result = await authClient.signOut();
-
-      if (result.error) {
-        throw result.error;
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.cancelQueries();
-      useSubscriptionStore.getState().setPlanExpiresAt(null);
-      await refetchSession();
-    },
-    onError: showError,
-  });
-
-  const deleteAccountMutation = useMutation({
-    mutationFn: async () => deleteAccount(),
-    onSuccess: async () => {
-      toast.success("Conta deletada com sucesso");
-      deleteAccountSheetRef.current?.dismiss();
-      setDeleteConfirmation("");
-      await queryClient.cancelQueries();
-      useSubscriptionStore.getState().setPlanExpiresAt(null);
-      await refetchSession();
-    },
-    onError: showError,
-  });
+  const imageSourceSheetRef = useRef<BottomSheetModal>(null);
 
   const openEditNameSheet = useCallback(() => {
-    setDisplayName(session?.user.name ?? "");
+    resetDisplayName();
     editNameSheetRef.current?.present();
-  }, [session?.user.name]);
+  }, [resetDisplayName]);
 
   const openDeleteAccountSheet = useCallback(() => {
-    setDeleteConfirmation("");
+    resetDeleteConfirmation();
     deleteAccountSheetRef.current?.present();
-  }, []);
+  }, [resetDeleteConfirmation]);
+
+  const openImageSourceSheet = useCallback(() => {
+    if (profileImage.isBusy) return;
+    imageSourceSheetRef.current?.present();
+  }, [profileImage.isBusy]);
 
   const handleGoBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -148,142 +107,52 @@ export default function SettingsScreen() {
         style={{ flex: 1, backgroundColor: "#fff9fb" }}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48, gap: 16 }}
       >
-        <View className="rounded-[28px] border border-rose-100 bg-white p-6">
-          <View className="items-center">
-            <View className="rounded-full border border-rose-100 bg-rose-50 p-2">
-              <ClientAvatar
-                name={session.user.name}
-                imageUrl={session.user.image ?? null}
-                size={104}
-              />
-            </View>
+        <SettingsProfileCard
+          name={session.user.name}
+          imageUrl={profileImage.imageUrl}
+          imageCacheKey={profileImage.imageCacheKey}
+          localImageUri={profileImage.localUri}
+          uploading={profileImage.uploading}
+          deleting={profileImage.deleting}
+          onPickImage={openImageSourceSheet}
+          onClearLocalImage={clearLocalProfileImage}
+          onDeleteImage={() => {
+            void deleteProfileImage();
+          }}
+          onEditName={openEditNameSheet}
+          editNameDisabled={updateNameMutation.isPending || profileImage.isBusy}
+        />
 
-            <Text className="mt-4 text-lg font-bold text-zinc-900">
-              Sua foto de perfil
-            </Text>
-            <Text className="mt-2 text-center text-sm leading-6 text-zinc-500">
-              Essa imagem vem da sua conta conectada e aparece aqui para você
-              identificar o perfil.
-            </Text>
-          </View>
+        <SettingsAccountActionsCard
+          signOutPending={signOutMutation.isPending}
+          deleteAccountPending={deleteAccountMutation.isPending}
+          disabled={
+            signOutMutation.isPending ||
+            deleteAccountMutation.isPending ||
+            profileImage.isBusy
+          }
+          onSignOut={() => signOutMutation.mutate(undefined)}
+          onDeleteAccount={openDeleteAccountSheet}
+        />
 
-          <Pressable
-            onPress={openEditNameSheet}
-            disabled={updateNameMutation.isPending}
-            className="mt-6 flex-row items-center justify-between rounded-3xl border border-rose-100 bg-[#fff9fb] px-4 py-4 active:opacity-80"
-            style={{ opacity: updateNameMutation.isPending ? 0.65 : 1 }}
-          >
-            <View className="flex-1 pr-3">
-              <Text className="text-xs font-semibold uppercase tracking-widest text-rose-400">
-                Nome
-              </Text>
-              <Text className="mt-1 text-base font-semibold text-zinc-900">
-                {session.user.name}
-              </Text>
-            </View>
+        <SettingsSupportCard
+          phone={SUPPORT_WHATSAPP_NUMBER}
+          onPress={() => {
+            void openWhatsApp(
+              SUPPORT_WHATSAPP_NUMBER,
+              SUPPORT_WHATSAPP_MESSAGE,
+            );
+          }}
+        />
 
-            <View className="flex-row items-center gap-2">
-              <Text className="text-sm font-medium text-zinc-500">
-                Editar
-              </Text>
-              <Feather name="edit-2" size={16} color="#71717a" />
-            </View>
-          </Pressable>
-        </View>
-
-        <View className="rounded-[28px] border border-rose-100 bg-white p-5">
-          <Text className="text-xs font-semibold uppercase tracking-widest text-rose-400">
-            Conta
-          </Text>
-
-          <Pressable
-            onPress={() => signOutMutation.mutate(undefined)}
-            disabled={signOutMutation.isPending || deleteAccountMutation.isPending}
-            className="mt-4 flex-row items-center gap-4 rounded-3xl bg-[#fff9fb] px-4 py-4 active:opacity-80"
-            style={{
-              opacity:
-                signOutMutation.isPending || deleteAccountMutation.isPending
-                  ? 0.65
-                  : 1,
-            }}
-          >
-            <View className="h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100">
-              {signOutMutation.isPending ? (
-                <ActivityIndicator size="small" color="#18181b" />
-              ) : (
-                <Feather name="log-out" size={18} color="#18181b" />
-              )}
-            </View>
-
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-zinc-900">
-                Sair do aplicativo
-              </Text>
-              <Text className="mt-1 text-sm leading-5 text-zinc-500">
-                Encerra sua sessão neste dispositivo.
-              </Text>
-            </View>
-
-            <Feather name="chevron-right" size={18} color="#a1a1aa" />
-          </Pressable>
-
-          <View className="my-4 h-px bg-rose-100" />
-
-          <Pressable
-            onPress={openDeleteAccountSheet}
-            disabled={signOutMutation.isPending || deleteAccountMutation.isPending}
-            className="flex-row items-center gap-4 rounded-3xl bg-red-50 px-4 py-4 active:opacity-80"
-            style={{
-              opacity:
-                signOutMutation.isPending || deleteAccountMutation.isPending
-                  ? 0.65
-                  : 1,
-            }}
-          >
-            <View className="h-11 w-11 items-center justify-center rounded-2xl bg-white">
-              {deleteAccountMutation.isPending ? (
-                <ActivityIndicator size="small" color="#ef4444" />
-              ) : (
-                <Feather name="trash-2" size={18} color="#ef4444" />
-              )}
-            </View>
-
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-red-600">
-                Deletar conta
-              </Text>
-              <Text className="mt-1 text-sm leading-5 text-red-500">
-                Remove sua conta e todos os dados do aplicativo.
-              </Text>
-            </View>
-
-            <Feather name="chevron-right" size={18} color="#f87171" />
-          </Pressable>
-        </View>
-
-        <Text className="px-2 text-center text-xs leading-6 text-zinc-400">
-          Ao continuar usando o aplicativo, você concorda com nossos{" "}
-          <Text
-            className="font-semibold text-rose-400"
-            accessibilityRole="link"
-            onPress={() => {
-              void openTermsOfService();
-            }}
-          >
-            Termos de Serviço
-          </Text>{" "}
-          e{" "}
-          <Text
-            className="font-semibold text-rose-400"
-            accessibilityRole="link"
-            onPress={() => {
-              void openPrivacyPolicy();
-            }}
-          >
-            Política de Privacidade
-          </Text>
-          .
-        </Text>
+        <SettingsLegalText
+          onOpenTerms={() => {
+            void openTermsOfService();
+          }}
+          onOpenPrivacy={() => {
+            void openPrivacyPolicy();
+          }}
+        />
       </ScrollView>
 
       <EditNameSheet
@@ -292,8 +161,14 @@ export default function SettingsScreen() {
         loading={updateNameMutation.isPending}
         canSubmit={canSaveName}
         onChangeText={setDisplayName}
-        onClose={() => setDisplayName(session.user.name)}
-        onSubmit={() => updateNameMutation.mutate(trimmedDisplayName)}
+        onClose={resetDisplayName}
+        onSubmit={() =>
+          updateNameMutation.mutate(trimmedDisplayName, {
+            onSuccess: () => {
+              editNameSheetRef.current?.dismiss();
+            },
+          })
+        }
       />
 
       <DeleteAccountSheet
@@ -301,14 +176,29 @@ export default function SettingsScreen() {
         value={deleteConfirmation}
         loading={deleteAccountMutation.isPending}
         canConfirm={canDeleteAccount}
-        confirmationText={DELETE_CONFIRMATION_TEXT}
+        confirmationText={DELETE_ACCOUNT_CONFIRMATION_TEXT}
         onChangeText={setDeleteConfirmation}
-        onClose={() => setDeleteConfirmation("")}
+        onClose={resetDeleteConfirmation}
         onConfirm={() => {
           if (!canDeleteAccount) return;
-          deleteAccountMutation.mutate(undefined);
+
+          deleteAccountMutation.mutate(undefined, {
+            onSuccess: () => {
+              deleteAccountSheetRef.current?.dismiss();
+            },
+          });
         }}
       />
+
+      <SettingsPhotoSourceSheet
+        sheetRef={imageSourceSheetRef}
+        onSelect={(value) => {
+          imageSourceSheetRef.current?.dismiss();
+          void selectImageSource(value);
+        }}
+      />
+
+      <SquareImageCropModal {...cropperProps} />
     </>
   );
 }

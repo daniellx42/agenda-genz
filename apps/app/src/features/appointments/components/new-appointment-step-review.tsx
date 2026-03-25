@@ -1,6 +1,7 @@
 import {
   appointmentKeys,
 } from "@/features/appointments/api/appointment-query-options";
+import { AppointmentClientAvatar } from "@/features/appointments/components/appointment-client-avatar";
 import { createAppointment } from "@/features/appointments/api/appointment-mutations";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { ServiceImage } from "@/features/services/components/service-image";
@@ -8,6 +9,7 @@ import { timeSlotKeys } from "@/features/time-slots/api/time-slot-query-options"
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useApiError } from "@/hooks/use-api-error";
 import { formatPhone } from "@/lib/formatters";
+import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import { scheduleAppointmentReminders } from "@/lib/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -34,6 +36,9 @@ export function StepReview({ onClose }: Props) {
   const { showError } = useApiError();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const { imageUrl: clientProfileImageUrl } = useResolvedImage({
+    imageKey: client?.profileImageKey,
+  });
 
   const formattedDate = (() => {
     const d = new Date(date + "T12:00:00");
@@ -113,13 +118,23 @@ export function StepReview({ onClose }: Props) {
           <Text className="text-xs text-zinc-400 uppercase tracking-wide">
             Cliente
           </Text>
-          <View className="items-end">
-            <Text className="text-sm font-semibold text-zinc-800">
-              {client?.name}
-            </Text>
-            <Text className="text-xs text-zinc-400">
-              {client?.phone ? formatPhone(client.phone) : ""}
-            </Text>
+          <View className="flex-row items-center gap-2">
+            {client ? (
+              <AppointmentClientAvatar
+                name={client.name}
+                profileImageUrl={clientProfileImageUrl}
+                profileImageKey={client.profileImageKey}
+                size={28}
+              />
+            ) : null}
+            <View className="items-end">
+              <Text className="text-sm font-semibold text-zinc-800">
+                {client?.name}
+              </Text>
+              <Text className="text-xs text-zinc-400">
+                {client?.phone ? formatPhone(client.phone) : ""}
+              </Text>
+            </View>
           </View>
         </View>
 

@@ -13,6 +13,10 @@ import {
 } from "@/lib/formatters";
 import { Pressable, Switch, Text, View } from "react-native";
 import type { ClientFormApi } from "../hooks/use-client-form";
+import {
+  formatBirthDateInput,
+  isValidBirthDateInput,
+} from "../lib/client-birthday";
 import type { ClientGender } from "../types";
 
 interface ClientFormFieldsProps {
@@ -155,7 +159,7 @@ export function ClientFormFields({
             Informações adicionais
           </Text>
           <Text className="mt-0.5 text-xs text-zinc-400">
-            Endereço, idade, sexo, CPF, email e observações
+            Endereço, data de nascimento, sexo, CPF, email e observações
           </Text>
         </View>
         <Switch
@@ -257,13 +261,15 @@ export function ClientFormFields({
           </form.Field>
 
           <form.Field
-            name="age"
+            name="birthDate"
             validators={{
               onChange: ({ value }: { value: string }) => {
                 if (!value) return undefined;
-                const age = Number(value.replace(/\D/g, ""));
-                if (!age || age < 1 || age > 120) {
-                  return "Idade inválida";
+                if (value.length < 10) {
+                  return "Use DD/MM/AAAA";
+                }
+                if (!isValidBirthDateInput(value)) {
+                  return "Data de nascimento inválida";
                 }
                 return undefined;
               },
@@ -272,18 +278,18 @@ export function ClientFormFields({
             {(field) => (
               <View className="mb-4">
                 <Text className="mb-1.5 text-xs font-medium text-zinc-500">
-                  Idade
+                  Data de nascimento
                 </Text>
                 <SheetTextInput
                   className={`rounded-2xl border bg-zinc-50 px-4 py-3 text-sm text-zinc-900 ${field.state.meta.errors.length ? "border-red-300" : "border-zinc-200"}`}
-                  placeholder="Ex: 28"
+                  placeholder="DD/MM/AAAA"
                   placeholderTextColor="#a1a1aa"
-                  keyboardType="numeric"
+                  keyboardType="number-pad"
                   value={field.state.value}
                   onChangeText={(value: string) =>
-                    field.handleChange(value.replace(/\D/g, "").slice(0, 3))
+                    field.handleChange(formatBirthDateInput(value))
                   }
-                  maxLength={3}
+                  maxLength={10}
                   editable={!disabled}
                 />
                 {renderFieldErrors(field)}

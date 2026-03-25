@@ -1,3 +1,5 @@
+export type ClientDateValue = string | Date;
+
 export type ClientGender = "FEMALE" | "MALE" | "OTHER";
 
 export interface ClientItem {
@@ -7,17 +9,17 @@ export interface ClientItem {
   email: string | null;
   instagram: string | null;
   notes: string | null;
+  birthDate: ClientDateValue | null;
   profileImageKey: string | null;
-  lastCompletedAppointmentDate: string | null;
+  lastCompletedAppointmentDate: ClientDateValue | null;
 }
 
 export interface ClientDetail extends ClientItem {
   cpf: string | null;
   address: string | null;
-  age: number | null;
   gender: ClientGender | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: ClientDateValue;
+  updatedAt: ClientDateValue;
 }
 
 export interface ClientListResponse {
