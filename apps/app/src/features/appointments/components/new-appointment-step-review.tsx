@@ -1,6 +1,5 @@
-import {
-  appointmentKeys,
-} from "@/features/appointments/api/appointment-query-options";
+import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
+import { useAppExperience } from "@/features/app-experience/lib/app-experience-context";
 import { AppointmentClientAvatar } from "@/features/appointments/components/appointment-client-avatar";
 import { createAppointment } from "@/features/appointments/api/appointment-mutations";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
@@ -13,18 +12,12 @@ import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import { scheduleAppointmentReminders } from "@/lib/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { toast } from "sonner-native";
 
 function formatPrice(cents: number): string {
   return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 }
-
 
 interface Props {
   onClose: () => void;
@@ -33,6 +26,7 @@ interface Props {
 export function StepReview({ onClose }: Props) {
   const { client, service, timeSlot, date, notes, setNotes, goBack, reset } =
     useAppointmentDraft();
+  const appExperience = useAppExperience();
   const { showError } = useApiError();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -69,7 +63,10 @@ export function StepReview({ onClose }: Props) {
           appointment.id,
         );
 
-        if (reminderResult.permissionGranted && reminderResult.scheduledCount > 0) {
+        if (
+          reminderResult.permissionGranted &&
+          reminderResult.scheduledCount > 0
+        ) {
           toast.success("Agendamento criado e lembretes ativados!");
         } else if (!reminderResult.permissionGranted) {
           toast.success("Agendamento criado com sucesso!");
@@ -83,6 +80,7 @@ export function StepReview({ onClose }: Props) {
       }
       await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
       await queryClient.invalidateQueries({ queryKey: timeSlotKeys.all });
+      await appExperience.registerSuccessfulAppointment();
       reset();
       onClose();
     } catch (err) {
@@ -166,40 +164,45 @@ export function StepReview({ onClose }: Props) {
           </View>
         </View>
 
-        {service?.depositPercentage != null && (() => {
-          const depositAmount = Math.round(service.price * service.depositPercentage / 100);
-          const remaining = service.price - depositAmount;
-          return (
-            <>
-              <View className="h-px bg-zinc-200" />
-              <View className="gap-1.5">
-                <Text className="text-xs text-zinc-400 uppercase tracking-wide mb-1">
-                  Valores
-                </Text>
-                <View className="flex-row justify-between">
-                  <Text className="text-xs text-zinc-500">Total</Text>
-                  <Text className="text-xs font-semibold text-zinc-700">
-                    {formatPrice(service.price)}
+        {service?.depositPercentage != null &&
+          (() => {
+            const depositAmount = Math.round(
+              (service.price * service.depositPercentage) / 100,
+            );
+            const remaining = service.price - depositAmount;
+            return (
+              <>
+                <View className="h-px bg-zinc-200" />
+                <View className="gap-1.5">
+                  <Text className="text-xs text-zinc-400 uppercase tracking-wide mb-1">
+                    Valores
                   </Text>
+                  <View className="flex-row justify-between">
+                    <Text className="text-xs text-zinc-500">Total</Text>
+                    <Text className="text-xs font-semibold text-zinc-700">
+                      {formatPrice(service.price)}
+                    </Text>
+                  </View>
+                  <View className="flex-row justify-between">
+                    <Text className="text-xs text-blue-500">
+                      Sinal ({service.depositPercentage}%)
+                    </Text>
+                    <Text className="text-xs font-semibold text-blue-600">
+                      {formatPrice(depositAmount)}
+                    </Text>
+                  </View>
+                  <View className="flex-row justify-between">
+                    <Text className="text-xs text-zinc-500">
+                      Restante no dia
+                    </Text>
+                    <Text className="text-xs font-semibold text-zinc-700">
+                      {formatPrice(remaining)}
+                    </Text>
+                  </View>
                 </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-xs text-blue-500">
-                    Sinal ({service.depositPercentage}%)
-                  </Text>
-                  <Text className="text-xs font-semibold text-blue-600">
-                    {formatPrice(depositAmount)}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-xs text-zinc-500">Restante no dia</Text>
-                  <Text className="text-xs font-semibold text-zinc-700">
-                    {formatPrice(remaining)}
-                  </Text>
-                </View>
-              </View>
-            </>
-          );
-        })()}
+              </>
+            );
+          })()}
       </View>
 
       {/* Observações */}

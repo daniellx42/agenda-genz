@@ -1,3 +1,4 @@
+import { useAppExperience } from "@/features/app-experience/lib/app-experience-context";
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { openPrivacyPolicy, openTermsOfService } from "@/lib/legal-links";
 import { openWhatsApp } from "@/lib/whatsapp";
@@ -7,6 +8,7 @@ import { Stack, useRouter } from "expo-router";
 import { useCallback, useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SettingsAccountActionsCard } from "../components/settings-account-actions-card";
+import { SettingsAppActionsCard } from "../components/settings-app-actions-card";
 import { SettingsLegalText } from "../components/settings-legal-text";
 import { SettingsPhotoSourceSheet } from "../components/settings-photo-source-sheet";
 import { SettingsProfileCard } from "../components/settings-profile-card";
@@ -22,6 +24,7 @@ const SUPPORT_WHATSAPP_MESSAGE =
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const appExperience = useAppExperience();
   const {
     session,
     displayName,
@@ -105,7 +108,11 @@ export default function SettingsScreen() {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         style={{ flex: 1, backgroundColor: "#fff9fb" }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48, gap: 16 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 48,
+          gap: 16,
+        }}
       >
         <SettingsProfileCard
           name={session.user.name}
@@ -142,6 +149,18 @@ export default function SettingsScreen() {
               SUPPORT_WHATSAPP_NUMBER,
               SUPPORT_WHATSAPP_MESSAGE,
             );
+          }}
+        />
+
+        <SettingsAppActionsCard
+          currentVersion={appExperience.currentVersion}
+          updateAvailable={appExperience.hasStoreUpdate}
+          checkingForUpdates={appExperience.isCheckingForUpdates}
+          onCheckUpdates={() => {
+            void appExperience.checkForUpdates(true);
+          }}
+          onReviewApp={() => {
+            void appExperience.openStoreReview();
           }}
         />
 

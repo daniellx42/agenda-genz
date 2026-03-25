@@ -5,11 +5,13 @@
   },
   "build": {
     "development": {
+      "channel": "development",
       "developmentClient": true,
       "environment": "development",
       "distribution": "internal"
     },
     "production": {
+      "channel": "production",
       "autoIncrement": true,
       "environment": "production"
     }

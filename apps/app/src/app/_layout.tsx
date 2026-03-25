@@ -1,5 +1,6 @@
 import "../../global.css";
 
+import { AppExperienceProvider } from "@/features/app-experience/lib/app-experience-context";
 import { AuthSessionProvider } from "@/features/auth/lib/auth-session-context";
 import { useSubscriptionStore } from "@/features/billing/store/subscription-store";
 import { authClient } from "@/lib/auth-client";
@@ -23,15 +24,18 @@ setupNotificationHandler();
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { data: session, isPending, refetch: refetchSession } =
-    authClient.useSession();
+  const {
+    data: session,
+    isPending,
+    refetch: refetchSession,
+  } = authClient.useSession();
   const previousUserIdRef = useRef<string | null | undefined>(undefined);
   const { forcedExpired, setPlanExpiresAt } = useSubscriptionStore();
   const router = useRouter();
   const pathname = usePathname();
   const sessionPlanExpiresAt = session?.user?.planExpiresAt ?? null;
-  const sessionIsExpired = !sessionPlanExpiresAt
-    || new Date(sessionPlanExpiresAt) <= new Date();
+  const sessionIsExpired =
+    !sessionPlanExpiresAt || new Date(sessionPlanExpiresAt) <= new Date();
   const effectiveIsExpired = forcedExpired || sessionIsExpired;
 
   useEffect(() => {
@@ -120,16 +124,18 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <BottomSheetModalProvider>
             <AuthSessionProvider session={session} isPending={isPending}>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(paywall)" />
-                <Stack.Screen name="(app)" />
-                <Stack.Screen name="appointment/[id]" />
-                <Stack.Screen name="client/[id]" />
-                <Stack.Screen name="client/[id]/appointments" />
-                <Stack.Screen name="settings" />
-                <Stack.Screen name="index" options={{ animation: "none" }} />
-              </Stack>
+              <AppExperienceProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen name="(paywall)" />
+                  <Stack.Screen name="(app)" />
+                  <Stack.Screen name="appointment/[id]" />
+                  <Stack.Screen name="client/[id]" />
+                  <Stack.Screen name="client/[id]/appointments" />
+                  <Stack.Screen name="settings" />
+                  <Stack.Screen name="index" options={{ animation: "none" }} />
+                </Stack>
+              </AppExperienceProvider>
             </AuthSessionProvider>
             <StatusBar backgroundColor="#ffccd3" barStyle="dark-content" />
             <Toaster />
