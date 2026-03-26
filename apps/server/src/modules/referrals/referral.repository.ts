@@ -43,6 +43,17 @@ const referralWithdrawalSelect = {
   cancelledAt: true,
 } as const;
 
+const adminReferralWithdrawalSelect = {
+  ...referralWithdrawalSelect,
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+} as const;
+
 type ReferralDatabaseClient = Prisma.TransactionClient | typeof prisma;
 
 export type ReferralCodeRecord = {
@@ -81,6 +92,20 @@ export type ReferralWithdrawalRecord = {
   rejectedAt: Date | null;
   cancelledAt: Date | null;
 };
+
+export type AdminReferralWithdrawalRecord = ReferralWithdrawalRecord & {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+};
+
+type WithdrawalStatusFilter = ReferralWithdrawalStatus | undefined;
+
+function buildWithdrawalStatusWhere(status: WithdrawalStatusFilter) {
+  return status ? { status } : {};
+}
 
 export abstract class ReferralRepository {
   static async findCodeByUserId(
@@ -244,6 +269,54 @@ export abstract class ReferralRepository {
     return db.referralWithdrawal.create({
       data,
       select: referralWithdrawalSelect,
+    });
+  }
+
+  static async countAdminWithdrawals(
+    status: WithdrawalStatusFilter,
+    db: ReferralDatabaseClient = prisma,
+  ): Promise<number> {
+    return db.referralWithdrawal.count({
+      where: buildWithdrawalStatusWhere(status),
+    });
+  }
+
+  static async listAdminWithdrawals(
+    params: {
+      status?: ReferralWithdrawalStatus;
+      skip: number;
+      take: number;
+    },
+    db: ReferralDatabaseClient = prisma,
+  ): Promise<AdminReferralWithdrawalRecord[]> {
+    return db.referralWithdrawal.findMany({
+      where: buildWithdrawalStatusWhere(params.status),
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: params.skip,
+      take: params.take,
+      select: adminReferralWithdrawalSelect,
+    });
+  }
+
+  static async updateWithdrawalStatus(
+    params: {
+      id: string;
+      status: ReferralWithdrawalStatus;
+      paidAt: Date | null;
+      rejectedAt: Date | null;
+      cancelledAt: Date | null;
+    },
+    db: ReferralDatabaseClient = prisma,
+  ): Promise<AdminReferralWithdrawalRecord> {
+    return db.referralWithdrawal.update({
+      where: { id: params.id },
+      data: {
+        status: params.status,
+        paidAt: params.paidAt,
+        rejectedAt: params.rejectedAt,
+        cancelledAt: params.cancelledAt,
+      },
+      select: adminReferralWithdrawalSelect,
     });
   }
 

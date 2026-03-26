@@ -3,7 +3,7 @@ import { isAdminRole } from "@/lib/roles";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default async function AdminPage() {
+export async function getAdminSession() {
   const session = await authClient.getSession({
     fetchOptions: {
       headers: await headers(),
@@ -11,9 +11,19 @@ export default async function AdminPage() {
     },
   });
 
-  if (!session) redirect("/");
+  if (!session || !isAdminRole(session.user.role)) {
+    return null;
+  }
 
-  if (!isAdminRole(session.user.role)) redirect("/");
+  return session;
+}
 
-  redirect("/admin/utm");
+export async function requireAdminSession() {
+  const session = await getAdminSession();
+
+  if (!session) {
+    redirect("/");
+  }
+
+  return session;
 }

@@ -5,6 +5,11 @@ export const Errors = {
       message: "Não autorizado",
       httpStatus: 401,
     },
+    FORBIDDEN: {
+      code: "FORBIDDEN",
+      message: "Acesso negado",
+      httpStatus: 403,
+    },
   },
 
   ACCOUNT: {
@@ -217,6 +222,11 @@ export const Errors = {
       code: "REFERRAL_WITHDRAWAL_INVALID_PIX_KEY",
       message: "Informe uma chave Pix válida",
       httpStatus: 400,
+    },
+    WITHDRAWAL_NOT_FOUND: {
+      code: "REFERRAL_WITHDRAWAL_NOT_FOUND",
+      message: "Solicitação de saque não encontrada",
+      httpStatus: 404,
     },
     WITHDRAWAL_INSUFFICIENT_BALANCE: {
       code: "REFERRAL_WITHDRAWAL_INSUFFICIENT_BALANCE",

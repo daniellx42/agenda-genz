@@ -57,7 +57,7 @@ model ReferralWithdrawal {
   userId        String?
   amountInCents Int
   pixKey        String
-  pixKeyType    ReferralPixKeyType
+  pixKeyType    ReferralPixKeyType       @default(EMAIL)
   status        ReferralWithdrawalStatus @default(PENDING)
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt

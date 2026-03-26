@@ -67,7 +67,7 @@ const chartConfig = {
 
 type UtmDashboardProps = {
   initialData: UtmDashboardData;
-  userName: string;
+  userName?: string;
 };
 
 function formatCompactNumber(value: number) {
@@ -224,8 +224,8 @@ export default function UtmDashboard({ initialData, userName }: UtmDashboardProp
                 <Badge variant="outline">Admin UTM</Badge>
                 <CardTitle className="text-xl sm:text-2xl">Painel de atribuicao e downloads</CardTitle>
                 <CardDescription>
-                  Bem-vindo, {userName}. Por padrao exibimos aggregate; quando o switch realtime estiver ativo
-                  lemos direto da base bruta.
+                  Bem-vindo, {userName ?? "admin"}. Por padrao exibimos aggregate; quando o switch
+                  realtime estiver ativo lemos direto da base bruta.
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">

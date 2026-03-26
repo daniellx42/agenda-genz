@@ -1,9 +1,16 @@
-import type { Prisma, ReferralPixKeyType } from "@agenda-genz/db";
+import type {
+  Prisma,
+  ReferralPixKeyType,
+  ReferralWithdrawalStatus,
+} from "@agenda-genz/db";
 import { status } from "elysia";
 import crypto from "node:crypto";
 import { prisma } from "../../shared/lib/db";
 import { Errors } from "../../shared/constants/errors";
-import { ReferralRepository } from "./referral.repository";
+import {
+  ReferralRepository,
+  type AdminReferralWithdrawalRecord,
+} from "./referral.repository";
 import type { ReferralModel } from "./referral.model";
 
 const REFERRAL_REWARD_IN_CENTS = 100;
@@ -13,6 +20,7 @@ const REFERRAL_CODE_LENGTH = 8;
 const WITHDRAWAL_TRANSACTION_RETRIES = 2;
 
 type ReferralPromptStatus = ReferralModel.promptStatus;
+type ReferralWithdrawalResponseItem = ReferralModel.adminWithdrawalItem;
 
 function normalizeReferralCode(code: string): string {
   return code.trim().replace(/\s+/g, "").toUpperCase();
@@ -44,6 +52,10 @@ function isUniqueConstraintError(error: unknown): boolean {
 
 function isTransactionRetryError(error: unknown): boolean {
   return hasPrismaErrorCode(error, "P2034");
+}
+
+function isRecordNotFoundError(error: unknown): boolean {
+  return hasPrismaErrorCode(error, "P2025");
 }
 
 function resolvePromptStatus(
@@ -203,6 +215,68 @@ function resolvePixKey(
   }
 
   return null;
+}
+
+function toIsoString(value: Date | null): string | null {
+  return value ? value.toISOString() : null;
+}
+
+function mapAdminWithdrawal(
+  withdrawal: AdminReferralWithdrawalRecord,
+): ReferralWithdrawalResponseItem {
+  return {
+    id: withdrawal.id,
+    amountInCents: withdrawal.amountInCents,
+    pixKey: withdrawal.pixKey,
+    pixKeyType: withdrawal.pixKeyType,
+    status: withdrawal.status,
+    createdAt: withdrawal.createdAt.toISOString(),
+    updatedAt: withdrawal.updatedAt.toISOString(),
+    paidAt: toIsoString(withdrawal.paidAt),
+    rejectedAt: toIsoString(withdrawal.rejectedAt),
+    cancelledAt: toIsoString(withdrawal.cancelledAt),
+    user: withdrawal.user
+      ? {
+          id: withdrawal.user.id,
+          name: withdrawal.user.name,
+          email: withdrawal.user.email,
+        }
+      : null,
+  };
+}
+
+function resolveWithdrawalStatusTimestamps(statusValue: ReferralWithdrawalStatus) {
+  const now = new Date();
+
+  if (statusValue === "PAID") {
+    return {
+      paidAt: now,
+      rejectedAt: null,
+      cancelledAt: null,
+    };
+  }
+
+  if (statusValue === "REJECTED") {
+    return {
+      paidAt: null,
+      rejectedAt: now,
+      cancelledAt: null,
+    };
+  }
+
+  if (statusValue === "CANCELLED") {
+    return {
+      paidAt: null,
+      rejectedAt: null,
+      cancelledAt: now,
+    };
+  }
+
+  return {
+    paidAt: null,
+    rejectedAt: null,
+    cancelledAt: null,
+  };
 }
 
 async function computeAvailableBalanceInCents(
@@ -417,6 +491,58 @@ export abstract class ReferralService {
     }
 
     throw new Error("Não foi possível criar a solicitação de saque.");
+  }
+
+  static async listAdminWithdrawals(
+    input: ReferralModel.adminListWithdrawalsQuery,
+  ): Promise<ReferralModel.adminListWithdrawalsResponse> {
+    const parsedPageSize = Number.parseInt(input.pageSize ?? "20", 10);
+    const parsedPage = Number.parseInt(input.page ?? "1", 10);
+    const pageSize = Math.min(Math.max(Number.isFinite(parsedPageSize) ? parsedPageSize : 20, 1), 100);
+    const requestedPage = Math.max(Number.isFinite(parsedPage) ? parsedPage : 1, 1);
+    const statusFilter = input.status;
+
+    const total = await ReferralRepository.countAdminWithdrawals(statusFilter);
+    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+    const page = Math.min(requestedPage, totalPages);
+    const items = await ReferralRepository.listAdminWithdrawals({
+      status: statusFilter,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    return {
+      items: items.map(mapAdminWithdrawal),
+      page,
+      pageSize,
+      total,
+      totalPages,
+      status: statusFilter ?? null,
+    };
+  }
+
+  static async updateAdminWithdrawalStatus(
+    withdrawalId: string,
+    nextStatus: ReferralModel.withdrawalStatus,
+  ): Promise<ReferralModel.adminWithdrawalItem> {
+    try {
+      const updatedWithdrawal = await ReferralRepository.updateWithdrawalStatus({
+        id: withdrawalId,
+        status: nextStatus,
+        ...resolveWithdrawalStatusTimestamps(nextStatus),
+      });
+
+      return mapAdminWithdrawal(updatedWithdrawal);
+    } catch (error) {
+      if (isRecordNotFoundError(error)) {
+        throw status(
+          Errors.REFERRAL.WITHDRAWAL_NOT_FOUND.httpStatus,
+          Errors.REFERRAL.WITHDRAWAL_NOT_FOUND.message,
+        );
+      }
+
+      throw error;
+    }
   }
 
   static async grantOwnerRewardForApprovedPayment(

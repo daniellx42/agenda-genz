@@ -2,6 +2,14 @@ import { t } from "elysia";
 import { Errors } from "../../shared/constants/errors";
 
 export namespace ReferralModel {
+  export const withdrawalStatus = t.Union([
+    t.Literal("PENDING"),
+    t.Literal("PAID"),
+    t.Literal("REJECTED"),
+    t.Literal("CANCELLED"),
+  ]);
+  export type withdrawalStatus = typeof withdrawalStatus.static;
+
   export const promptStatus = t.Union([
     t.Literal("PENDING"),
     t.Literal("APPLIED"),
@@ -63,8 +71,63 @@ export namespace ReferralModel {
   });
   export type createWithdrawalResponse = typeof createWithdrawalResponse.static;
 
+  export const adminListWithdrawalsQuery = t.Object({
+    page: t.Optional(t.String({ default: "1" })),
+    pageSize: t.Optional(t.String({ default: "20" })),
+    status: t.Optional(withdrawalStatus),
+  });
+  export type adminListWithdrawalsQuery = typeof adminListWithdrawalsQuery.static;
+
+  export const adminWithdrawalItem = t.Object({
+    id: t.String(),
+    amountInCents: t.Number(),
+    pixKey: t.String(),
+    pixKeyType,
+    status: withdrawalStatus,
+    createdAt: t.String({ format: "date-time" }),
+    updatedAt: t.String({ format: "date-time" }),
+    paidAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
+    rejectedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
+    cancelledAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
+    user: t.Union([
+      t.Object({
+        id: t.String(),
+        name: t.String(),
+        email: t.String(),
+      }),
+      t.Null(),
+    ]),
+  });
+  export type adminWithdrawalItem = typeof adminWithdrawalItem.static;
+
+  export const adminListWithdrawalsResponse = t.Object({
+    items: t.Array(adminWithdrawalItem),
+    page: t.Number(),
+    pageSize: t.Number(),
+    total: t.Number(),
+    totalPages: t.Number(),
+    status: t.Union([withdrawalStatus, t.Null()]),
+  });
+  export type adminListWithdrawalsResponse =
+    typeof adminListWithdrawalsResponse.static;
+
+  export const adminUpdateWithdrawalStatusParams = t.Object({
+    id: t.String({ minLength: 1 }),
+  });
+  export type adminUpdateWithdrawalStatusParams =
+    typeof adminUpdateWithdrawalStatusParams.static;
+
+  export const adminUpdateWithdrawalStatusBody = t.Object({
+    status: withdrawalStatus,
+  });
+  export type adminUpdateWithdrawalStatusBody =
+    typeof adminUpdateWithdrawalStatusBody.static;
+
   export const errorUnauthorized = t.Literal(Errors.AUTH.UNAUTHORIZED.message);
   export type errorUnauthorized = typeof errorUnauthorized.static;
+
+  export const errorForbidden = t.Literal(Errors.AUTH.FORBIDDEN.message);
+  export type errorForbidden = typeof errorForbidden.static;
 
   export const errorCodeNotFound = t.Literal(
     Errors.REFERRAL.CODE_NOT_FOUND.message,
@@ -100,6 +163,12 @@ export namespace ReferralModel {
   );
   export type errorWithdrawalInvalidPixKey =
     typeof errorWithdrawalInvalidPixKey.static;
+
+  export const errorWithdrawalNotFound = t.Literal(
+    Errors.REFERRAL.WITHDRAWAL_NOT_FOUND.message,
+  );
+  export type errorWithdrawalNotFound =
+    typeof errorWithdrawalNotFound.static;
 
   export const errorWithdrawalInsufficientBalance = t.Literal(
     Errors.REFERRAL.WITHDRAWAL_INSUFFICIENT_BALANCE.message,

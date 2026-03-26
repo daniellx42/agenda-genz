@@ -256,3 +256,129 @@ describe("ReferralService.createWithdrawal", () => {
     );
   });
 });
+
+describe("ReferralService.listAdminWithdrawals", () => {
+  it("lista saques paginados com filtro de status", async () => {
+    mock.module("../referral.repository", () => ({
+      ReferralRepository: {
+        countAdminWithdrawals: mock(() => Promise.resolve(1)),
+        listAdminWithdrawals: mock(() =>
+          Promise.resolve([
+            {
+              id: "withdrawal-1",
+              userId: "user-1",
+              amountInCents: 15_000,
+              pixKey: "user@test.com",
+              pixKeyType: "EMAIL" as const,
+              status: "PENDING" as const,
+              createdAt: now,
+              updatedAt: now,
+              paidAt: null,
+              rejectedAt: null,
+              cancelledAt: null,
+              user: {
+                id: "user-1",
+                name: "Cliente Admin",
+                email: "user@test.com",
+              },
+            },
+          ]),
+        ),
+      },
+    }));
+
+    const { ReferralService: RS } = await loadReferralService();
+    const result = await RS.listAdminWithdrawals({
+      page: "2",
+      pageSize: "20",
+      status: "PENDING",
+    });
+
+    expect(result).toEqual({
+      items: [
+        {
+          id: "withdrawal-1",
+          amountInCents: 15_000,
+          pixKey: "user@test.com",
+          pixKeyType: "EMAIL",
+          status: "PENDING",
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          paidAt: null,
+          rejectedAt: null,
+          cancelledAt: null,
+          user: {
+            id: "user-1",
+            name: "Cliente Admin",
+            email: "user@test.com",
+          },
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      totalPages: 1,
+      status: "PENDING",
+    });
+  });
+});
+
+describe("ReferralService.updateAdminWithdrawalStatus", () => {
+  it("atualiza o status para pago e registra paidAt", async () => {
+    const updateWithdrawalStatusMock = mock(() =>
+      Promise.resolve({
+        id: "withdrawal-1",
+        userId: "user-1",
+        amountInCents: 10_000,
+        pixKey: "user@test.com",
+        pixKeyType: "EMAIL" as const,
+        status: "PAID" as const,
+        createdAt: now,
+        updatedAt: now,
+        paidAt: now,
+        rejectedAt: null,
+        cancelledAt: null,
+        user: {
+          id: "user-1",
+          name: "Cliente Admin",
+          email: "user@test.com",
+        },
+      }),
+    );
+
+    mock.module("../referral.repository", () => ({
+      ReferralRepository: {
+        updateWithdrawalStatus: updateWithdrawalStatusMock,
+      },
+    }));
+
+    const { ReferralService: RS } = await loadReferralService();
+    const result = await RS.updateAdminWithdrawalStatus("withdrawal-1", "PAID");
+
+    expect(updateWithdrawalStatusMock).toHaveBeenCalledTimes(1);
+    expect(updateWithdrawalStatusMock).toHaveBeenCalledWith({
+      id: "withdrawal-1",
+      status: "PAID",
+      paidAt: expect.any(Date),
+      rejectedAt: null,
+      cancelledAt: null,
+    });
+    expect(result).toEqual({
+      id: "withdrawal-1",
+      amountInCents: 10_000,
+      pixKey: "user@test.com",
+      pixKeyType: "EMAIL",
+      status: "PAID",
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      paidAt: now.toISOString(),
+      rejectedAt: null,
+      cancelledAt: null,
+      user: {
+        id: "user-1",
+        name: "Cliente Admin",
+        email: "user@test.com",
+      },
+    });
+  });
+});
