@@ -1,21 +1,24 @@
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          String    @default("USER")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String               @id
+  name                String
+  email               String
+  emailVerified       Boolean              @default(false)
+  image               String?
+  role                String               @default("USER")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   trialStartedAt DateTime?
-  planExpiresAt DateTime?
-  sessions      Session[]
-  accounts      Account[]
-  payments      BillingPayment[]
-  clients       Client[]
-  services      Service[]
-  timeSlots     TimeSlot[]
-  appointments  Appointment[]
+  planExpiresAt       DateTime?
+  sessions            Session[]
+  accounts            Account[]
+  payments            BillingPayment[]
+  clients             Client[]
+  services            Service[]
+  timeSlots           TimeSlot[]
+  appointments        Appointment[]
+  referralCode        ReferralCode?
+  referralUse         ReferralUse?         @relation("ReferralInvitedUser")
+  referralWithdrawals ReferralWithdrawal[]
 
   @@unique([email])
   @@map("user")

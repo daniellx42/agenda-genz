@@ -3,17 +3,41 @@ import { NewAppointmentSheet } from "@/features/appointments/components/new-appo
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { useAuthSession } from "@/features/auth/lib/auth-session-context";
 import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
+import {
+  applyReferralCode,
+  dismissReferralPrompt,
+  generateReferralCode,
+} from "@/features/referrals/api/referral-mutations";
+import {
+  referralKeys,
+  referralSummaryQueryOptions,
+} from "@/features/referrals/api/referral-query-options";
+import { ReferralReminderModal } from "@/features/referrals/components/referral-reminder-modal";
+import {
+  buildDeferredReferralReminderSnapshot,
+  getHasSeenReferralPrompt,
+  getReferralReminderSnapshot,
+  markReferralPromptSeen,
+  saveReferralReminderSnapshot,
+  shouldShowReferralReminder,
+  type ReferralReminderSnapshot,
+} from "@/features/referrals/lib/referral-storage";
+import { normalizeReferralCode } from "@/features/referrals/lib/referral-form";
+import { ApplyReferralCodeSheet } from "@/features/referrals/sheets/apply-referral-code-sheet";
+import { getApiErrorMessage } from "@/hooks/api-error-actions";
 import { useApiError } from "@/hooks/use-api-error";
 import { ensureCalendarPtBrLocale } from "@/lib/calendar-locale";
 import { toLocalDateString } from "@/lib/formatters";
+import * as Clipboard from "expo-clipboard";
 import Feather from '@expo/vector-icons/Feather';
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { CalendarList, DateData } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import {
   appointmentCalendarDotsQueryOptions,
   appointmentListQueryOptions,
@@ -60,10 +84,12 @@ export default function AppointmentsScreen() {
   const { session } = useAuthSession();
   const { showError } = useApiError();
   const sheetRef = useRef<BottomSheetModal>(null);
+  const referralPromptSheetRef = useRef<BottomSheetModal>(null);
   const { setDate, reset } = useAppointmentDraft();
   const queryClient = useQueryClient();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const calendarRef = useRef<CalendarListHandle | null>(null);
+  const hasPresentedReferralPromptRef = useRef(false);
 
   const today = toLocalDateString();
   const initialMonth = useRef<CalendarMonthState>({
@@ -74,8 +100,22 @@ export default function AppointmentsScreen() {
   const visibleMonthRef = useRef<CalendarMonthState>(initialMonth);
   const selectedDateRef = useRef(today);
   const previousImageKeysRef = useRef<string[]>([]);
+  const reminderCopyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [selectedDate, setSelectedDate] = useState(today);
   const [committedMonth, setCommittedMonth] = useState(initialMonth);
+  const [referralCodeInput, setReferralCodeInput] = useState("");
+  const [referralCodeError, setReferralCodeError] = useState("");
+  const [hasSeenReferralPrompt, setHasSeenReferralPrompt] = useState(false);
+  const [isReferralPromptReady, setIsReferralPromptReady] = useState(false);
+  const [referralReminderVisible, setReferralReminderVisible] = useState(false);
+  const [hasCopiedReminderCode, setHasCopiedReminderCode] = useState(false);
+  const [referralReminderSnapshot, setReferralReminderSnapshot] =
+    useState<ReferralReminderSnapshot | null>(null);
+  const [isReferralReminderReady, setIsReferralReminderReady] = useState(false);
+  const [generatedReferralReminderCode, setGeneratedReferralReminderCode] =
+    useState<string | null>(null);
   const calendarHeight = getCalendarHeight(committedMonth);
 
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -101,13 +141,108 @@ export default function AppointmentsScreen() {
   const { data: appointments, isLoading, refetch: refetchAppointments } = useQuery(
     appointmentListQueryOptions(selectedDate, showError),
   );
+  const { data: referralSummary, refetch: refetchReferralSummary } = useQuery(
+    referralSummaryQueryOptions(showError, Boolean(session?.user.id)),
+  );
+
+  const applyReferralCodeMutation = useMutation({
+    mutationFn: (code: string) => applyReferralCode({ code }),
+    onSuccess: async (result) => {
+      if (!result) {
+        return;
+      }
+
+      toast.success(`Codigo aplicado! Voce ganhou R$ ${result.rewardAmountInCents / 100},00.`);
+      setReferralCodeInput("");
+      setReferralCodeError("");
+      referralPromptSheetRef.current?.dismiss();
+      await queryClient.invalidateQueries({ queryKey: referralKeys.all });
+    },
+    onError: (error) => {
+      setReferralCodeError(getApiErrorMessage(error));
+      showError(error);
+    },
+  });
+
+  const dismissReferralPromptMutation = useMutation({
+    mutationFn: async () => dismissReferralPrompt(),
+    onSuccess: async () => {
+      setReferralCodeInput("");
+      setReferralCodeError("");
+      referralPromptSheetRef.current?.dismiss();
+      await queryClient.invalidateQueries({ queryKey: referralKeys.all });
+    },
+    onError: showError,
+  });
+
+  const generateReferralCodeMutation = useMutation({
+    mutationFn: async () => generateReferralCode(),
+    onSuccess: async (result) => {
+      if (!result) {
+        return;
+      }
+
+      setGeneratedReferralReminderCode(result.code);
+      setHasCopiedReminderCode(false);
+      toast.success("Codigo de convite gerado!");
+      await queryClient.invalidateQueries({ queryKey: referralKeys.all });
+    },
+    onError: showError,
+  });
+
+  useEffect(() => {
+    return () => {
+      if (reminderCopyResetTimerRef.current) {
+        clearTimeout(reminderCopyResetTimerRef.current);
+      }
+    };
+  }, []);
 
   useFocusEffect(
     useRef(() => {
       refetchCalendarDots();
       refetchAppointments();
+      refetchReferralSummary();
     }).current,
   );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    hasPresentedReferralPromptRef.current = false;
+    setReferralCodeInput("");
+    setReferralCodeError("");
+    setHasSeenReferralPrompt(false);
+    setIsReferralPromptReady(false);
+    setGeneratedReferralReminderCode(null);
+    setHasCopiedReminderCode(false);
+    setReferralReminderVisible(false);
+
+    if (!session?.user.id) {
+      setReferralReminderSnapshot(null);
+      setIsReferralReminderReady(false);
+      return;
+    }
+
+    setIsReferralReminderReady(false);
+    void Promise.all([
+      getReferralReminderSnapshot(session.user.id),
+      getHasSeenReferralPrompt(session.user.id),
+    ]).then(([snapshot, hasSeenPrompt]) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setReferralReminderSnapshot(snapshot);
+      setHasSeenReferralPrompt(hasSeenPrompt);
+      setIsReferralPromptReady(true);
+      setIsReferralReminderReady(true);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session?.user.id]);
 
   useEffect(() => {
     selectedDateRef.current = selectedDate;
@@ -143,6 +278,51 @@ export default function AppointmentsScreen() {
       .catch(() => undefined);
   }, [committedMonth, queryClient]);
 
+  useEffect(() => {
+    if (!referralSummary || !isReferralPromptReady) {
+      return;
+    }
+
+    if (referralSummary.promptStatus === "PENDING") {
+      if (hasPresentedReferralPromptRef.current || hasSeenReferralPrompt) {
+        return;
+      }
+
+      hasPresentedReferralPromptRef.current = true;
+      setHasSeenReferralPrompt(true);
+      void markReferralPromptSeen(session?.user.id);
+      requestAnimationFrame(() => {
+        referralPromptSheetRef.current?.present();
+      });
+      return;
+    }
+
+    referralPromptSheetRef.current?.dismiss();
+  }, [hasSeenReferralPrompt, isReferralPromptReady, referralSummary, session?.user.id]);
+
+  useEffect(() => {
+    if (
+      !referralSummary ||
+      referralSummary.promptStatus === "PENDING" ||
+      !referralReminderSnapshot ||
+      !isReferralReminderReady ||
+      referralReminderVisible
+    ) {
+      return;
+    }
+
+    if (!shouldShowReferralReminder(referralReminderSnapshot)) {
+      return;
+    }
+
+    setReferralReminderVisible(true);
+  }, [
+    isReferralReminderReady,
+    referralReminderSnapshot,
+    referralReminderVisible,
+    referralSummary,
+  ]);
+
   const handleDayPress = (day: DateData) => {
     const pressedMonth = { year: day.year, month: day.month };
     const shouldNavigateToPressedMonth =
@@ -172,6 +352,64 @@ export default function AppointmentsScreen() {
   const handleDismissCreateSheet = useCallback(() => {
     reset();
   }, [reset]);
+
+  const scheduleNextReferralReminder = useCallback(async () => {
+    if (!session?.user.id) {
+      return;
+    }
+
+    const nextSnapshot = buildDeferredReferralReminderSnapshot(21);
+    setReferralReminderSnapshot(nextSnapshot);
+    await saveReferralReminderSnapshot(session.user.id, nextSnapshot);
+  }, [session?.user.id]);
+
+  const handleReferralPromptClose = useCallback(() => {
+    if (dismissReferralPromptMutation.isPending) {
+      return;
+    }
+
+    dismissReferralPromptMutation.mutate();
+  }, [dismissReferralPromptMutation]);
+
+  const handleReferralPromptSubmit = useCallback(() => {
+    const normalizedCode = normalizeReferralCode(referralCodeInput);
+
+    if (!normalizedCode) {
+      setReferralCodeError("Digite um codigo para continuar.");
+      return;
+    }
+
+    setReferralCodeError("");
+    applyReferralCodeMutation.mutate(normalizedCode);
+  }, [applyReferralCodeMutation, referralCodeInput]);
+
+  const handleReminderClose = useCallback(() => {
+    setReferralReminderVisible(false);
+    setGeneratedReferralReminderCode(null);
+    setHasCopiedReminderCode(false);
+    void scheduleNextReferralReminder();
+  }, [scheduleNextReferralReminder]);
+
+  const handleReminderCopyCode = useCallback(async () => {
+    const currentCode =
+      generatedReferralReminderCode ?? referralSummary?.referralCode ?? null;
+
+    if (!currentCode) {
+      return;
+    }
+
+    await Clipboard.setStringAsync(currentCode);
+    setHasCopiedReminderCode(true);
+
+    if (reminderCopyResetTimerRef.current) {
+      clearTimeout(reminderCopyResetTimerRef.current);
+    }
+
+    reminderCopyResetTimerRef.current = setTimeout(() => {
+      setHasCopiedReminderCode(false);
+    }, 1600);
+    toast.success("Codigo de convite copiado!");
+  }, [generatedReferralReminderCode, referralSummary?.referralCode]);
 
   useRegisterTabContextualAction({
     routeName: "appointments",
@@ -336,6 +574,38 @@ export default function AppointmentsScreen() {
         ref={sheetRef}
         onDismiss={handleDismissCreateSheet}
         onRequestClose={closeCreateSheet}
+      />
+
+      <ApplyReferralCodeSheet
+        sheetRef={referralPromptSheetRef}
+        value={referralCodeInput}
+        error={referralCodeError}
+        loading={
+          applyReferralCodeMutation.isPending ||
+          dismissReferralPromptMutation.isPending
+        }
+        onChangeText={(value) => {
+          setReferralCodeInput(normalizeReferralCode(value));
+          setReferralCodeError("");
+        }}
+        onSubmit={handleReferralPromptSubmit}
+        onClose={handleReferralPromptClose}
+      />
+
+      <ReferralReminderModal
+        visible={referralReminderVisible}
+        referralCode={
+          generatedReferralReminderCode ?? referralSummary?.referralCode ?? null
+        }
+        hasCopiedCode={hasCopiedReminderCode}
+        generatingCode={generateReferralCodeMutation.isPending}
+        onGenerateCode={() => {
+          generateReferralCodeMutation.mutate();
+        }}
+        onCopyCode={() => {
+          void handleReminderCopyCode();
+        }}
+        onClose={handleReminderClose}
       />
     </SafeAreaView>
   );

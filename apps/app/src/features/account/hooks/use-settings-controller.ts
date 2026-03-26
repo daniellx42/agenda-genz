@@ -3,6 +3,18 @@ import {
   deleteProfileImageObject,
 } from "../api/account-mutations";
 import {
+  createReferralWithdrawal,
+  generateReferralCode,
+} from "@/features/referrals/api/referral-mutations";
+import {
+  referralKeys,
+  referralSummaryQueryOptions,
+} from "@/features/referrals/api/referral-query-options";
+import {
+  getReferralPixKey,
+  saveReferralPixKey,
+} from "@/features/referrals/lib/referral-storage";
+import {
   buildSettingsProfileImageState,
   isOwnedProfileImageKey,
 } from "../lib/profile-image";
@@ -18,8 +30,9 @@ import { useApiError } from "@/hooks/use-api-error";
 import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
 import { authClient } from "@/lib/auth-client";
 import { useResolvedImage } from "@/lib/media/use-resolved-image";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import * as Clipboard from "expo-clipboard";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner-native";
 import type { ImagePickerAsset } from "expo-image-picker";
 
@@ -35,6 +48,13 @@ export function useSettingsController() {
     useState<ImagePickerAsset | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
+  const [savedReferralPixKey, setSavedReferralPixKey] = useState<string | null>(
+    null,
+  );
+  const [hasCopiedReferralCode, setHasCopiedReferralCode] = useState(false);
+  const referralCopyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const currentUserId = session?.user.id ?? null;
   const currentImageValue = session?.user.image ?? null;
@@ -51,10 +71,43 @@ export function useSettingsController() {
       enabled: Boolean(currentStoredProfileImageKey),
       handleError: showError,
     });
+  const referralSummaryQuery = useQuery(
+    referralSummaryQueryOptions(showError, Boolean(currentUserId)),
+  );
 
   useEffect(() => {
     setDisplayName(session?.user.name ?? "");
   }, [session?.user.name]);
+
+  useEffect(() => {
+    return () => {
+      if (referralCopyResetTimerRef.current) {
+        clearTimeout(referralCopyResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!currentUserId) {
+      setSavedReferralPixKey(null);
+      setHasCopiedReferralCode(false);
+      return;
+    }
+
+    void getReferralPixKey(currentUserId).then((value) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setSavedReferralPixKey(value);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUserId]);
 
   const trimmedDisplayName = useMemo(
     () => getTrimmedDisplayName(displayName),
@@ -123,6 +176,40 @@ export function useSettingsController() {
       toast.success("Conta deletada com sucesso");
       setDeleteConfirmation("");
       await resetSessionState();
+    },
+    onError: showError,
+  });
+
+  const generateReferralCodeMutation = useMutation({
+    mutationFn: async () => generateReferralCode(),
+    onSuccess: async () => {
+      setHasCopiedReferralCode(false);
+      toast.success("Codigo de convite gerado!");
+      await queryClient.invalidateQueries({ queryKey: referralKeys.all });
+    },
+    onError: showError,
+  });
+
+  const requestReferralWithdrawalMutation = useMutation({
+    mutationFn: async (input: {
+      amountInCents: number;
+      pixKey: string;
+      savePixKey: boolean;
+    }) =>
+      createReferralWithdrawal(
+        {
+          amountInCents: input.amountInCents,
+          pixKey: input.pixKey,
+        },
+      ),
+    onSuccess: async (_result, variables) => {
+      if (currentUserId && variables.savePixKey) {
+        await saveReferralPixKey(currentUserId, variables.pixKey);
+        setSavedReferralPixKey(variables.pixKey);
+      }
+
+      toast.success("Solicitacao de saque enviada!");
+      await queryClient.invalidateQueries({ queryKey: referralKeys.all });
     },
     onError: showError,
   });
@@ -226,6 +313,24 @@ export function useSettingsController() {
     setProfileImageAsset(null);
   }, []);
 
+  const copyReferralCode = useCallback(async (code: string | null) => {
+    if (!code) {
+      return;
+    }
+
+    await Clipboard.setStringAsync(code);
+    setHasCopiedReferralCode(true);
+
+    if (referralCopyResetTimerRef.current) {
+      clearTimeout(referralCopyResetTimerRef.current);
+    }
+
+    referralCopyResetTimerRef.current = setTimeout(() => {
+      setHasCopiedReferralCode(false);
+    }, 1600);
+    toast.success("Codigo de convite copiado!");
+  }, []);
+
   return {
     session,
     displayName,
@@ -255,5 +360,11 @@ export function useSettingsController() {
     clearLocalProfileImage,
     resetDisplayName,
     resetDeleteConfirmation,
+    referralSummaryQuery,
+    savedReferralPixKey,
+    hasCopiedReferralCode,
+    generateReferralCodeMutation,
+    requestReferralWithdrawalMutation,
+    copyReferralCode,
   };
 }

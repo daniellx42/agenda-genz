@@ -8,6 +8,7 @@ import { appointmentController } from "./modules/appointments/appointment.contro
 import { billingController } from "./modules/billing/billing.controller";
 import { billingWs } from "./modules/billing/billing.ws";
 import { clientController } from "./modules/clients/client.controller";
+import { referralController } from "./modules/referrals/referral.controller";
 import { serviceController } from "./modules/services/service.controller";
 import { timeSlotController } from "./modules/time-slots/time-slot.controller";
 import { uploadController } from "./modules/uploads/upload.controller";
@@ -43,7 +44,8 @@ export const app = new Elysia()
       .use(timeSlotController)
       .use(appointmentController)
       .use(uploadController)
-      .use(billingController),
+      .use(billingController)
+      .use(referralController),
   );
 
 export type App = typeof app;

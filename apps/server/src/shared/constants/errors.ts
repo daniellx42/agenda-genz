@@ -186,6 +186,44 @@ export const Errors = {
       httpStatus: 401,
     },
   },
+
+  REFERRAL: {
+    CODE_NOT_FOUND: {
+      code: "REFERRAL_CODE_NOT_FOUND",
+      message: "Código de convite inválido",
+      httpStatus: 404,
+    },
+    SELF_REFERRAL_FORBIDDEN: {
+      code: "REFERRAL_SELF_REFERRAL_FORBIDDEN",
+      message: "Você não pode usar o seu próprio código",
+      httpStatus: 400,
+    },
+    PROMPT_ALREADY_COMPLETED: {
+      code: "REFERRAL_PROMPT_ALREADY_COMPLETED",
+      message: "Você já concluiu o fluxo de código de convite",
+      httpStatus: 409,
+    },
+    WITHDRAWAL_INVALID_AMOUNT: {
+      code: "REFERRAL_WITHDRAWAL_INVALID_AMOUNT",
+      message: "Informe um valor de saque válido",
+      httpStatus: 400,
+    },
+    WITHDRAWAL_MIN_AMOUNT: {
+      code: "REFERRAL_WITHDRAWAL_MIN_AMOUNT",
+      message: "O valor mínimo de saque é R$ 100,00",
+      httpStatus: 400,
+    },
+    WITHDRAWAL_INVALID_PIX_KEY: {
+      code: "REFERRAL_WITHDRAWAL_INVALID_PIX_KEY",
+      message: "Informe uma chave Pix válida",
+      httpStatus: 400,
+    },
+    WITHDRAWAL_INSUFFICIENT_BALANCE: {
+      code: "REFERRAL_WITHDRAWAL_INSUFFICIENT_BALANCE",
+      message: "Saldo insuficiente para solicitar este saque",
+      httpStatus: 409,
+    },
+  },
 } as const;
 
 export type ErrorCode =
@@ -196,4 +234,5 @@ export type ErrorCode =
   | (typeof Errors.TIME_SLOT)[keyof typeof Errors.TIME_SLOT]["code"]
   | (typeof Errors.APPOINTMENT)[keyof typeof Errors.APPOINTMENT]["code"]
   | (typeof Errors.UPLOAD)[keyof typeof Errors.UPLOAD]["code"]
-  | (typeof Errors.BILLING)[keyof typeof Errors.BILLING]["code"];
+  | (typeof Errors.BILLING)[keyof typeof Errors.BILLING]["code"]
+  | (typeof Errors.REFERRAL)[keyof typeof Errors.REFERRAL]["code"];

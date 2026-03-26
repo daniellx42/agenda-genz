@@ -1,0 +1,73 @@
+enum ReferralUseStatus {
+  DISMISSED
+  APPLIED
+}
+
+enum ReferralWithdrawalStatus {
+  PENDING
+  PAID
+  REJECTED
+  CANCELLED
+}
+
+enum ReferralPixKeyType {
+  CPF
+  PHONE
+  EMAIL
+  RANDOM
+}
+
+model ReferralCode {
+  id        String   @id @default(cuid())
+  userId    String?  @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  referrals ReferralUse[] @relation("ReferralCodeUsages")
+
+  @@map("referral_code")
+}
+
+model ReferralUse {
+  id                        String            @id @default(cuid())
+  referralCodeId            String?
+  invitedUserId             String?           @unique
+  status                    ReferralUseStatus
+  code                      String?
+  appliedAt                 DateTime?
+  dismissedAt               DateTime?
+  invitedRewardGrantedAt    DateTime?
+  ownerRewardGrantedAt      DateTime?
+  ownerRewardSourcePaymentId String?          @unique
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+
+  referralCode ReferralCode? @relation("ReferralCodeUsages", fields: [referralCodeId], references: [id], onDelete: SetNull)
+  invitedUser  User?         @relation("ReferralInvitedUser", fields: [invitedUserId], references: [id], onDelete: SetNull)
+
+  @@index([referralCodeId])
+  @@index([status])
+  @@map("referral_use")
+}
+
+model ReferralWithdrawal {
+  id            String                   @id @default(cuid())
+  userId        String?
+  amountInCents Int
+  pixKey        String
+  pixKeyType    ReferralPixKeyType
+  status        ReferralWithdrawalStatus @default(PENDING)
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  paidAt        DateTime?
+  rejectedAt    DateTime?
+  cancelledAt   DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@map("referral_withdrawal")
+}

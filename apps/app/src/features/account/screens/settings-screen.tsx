@@ -1,5 +1,7 @@
-import { useAppExperience } from "@/features/app-experience/lib/app-experience-context";
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
+import { useAppExperience } from "@/features/app-experience/lib/app-experience-context";
+import { ReferralSettingsCard } from "@/features/referrals/components/referral-settings-card";
+import { ReferralWithdrawalSheet } from "@/features/referrals/sheets/referral-withdrawal-sheet";
 import { openPrivacyPolicy, openTermsOfService } from "@/lib/legal-links";
 import { openWhatsApp } from "@/lib/whatsapp";
 import Feather from "@expo/vector-icons/Feather";
@@ -44,10 +46,17 @@ export default function SettingsScreen() {
     clearLocalProfileImage,
     resetDisplayName,
     resetDeleteConfirmation,
+    referralSummaryQuery,
+    savedReferralPixKey,
+    hasCopiedReferralCode,
+    generateReferralCodeMutation,
+    requestReferralWithdrawalMutation,
+    copyReferralCode,
   } = useSettingsController();
   const editNameSheetRef = useRef<BottomSheetModal>(null);
   const deleteAccountSheetRef = useRef<BottomSheetModal>(null);
   const imageSourceSheetRef = useRef<BottomSheetModal>(null);
+  const withdrawalSheetRef = useRef<BottomSheetModal>(null);
 
   const openEditNameSheet = useCallback(() => {
     resetDisplayName();
@@ -63,6 +72,14 @@ export default function SettingsScreen() {
     if (profileImage.isBusy) return;
     imageSourceSheetRef.current?.present();
   }, [profileImage.isBusy]);
+
+  const openWithdrawalSheet = useCallback(() => {
+    if (!referralSummaryQuery.data?.canWithdraw) {
+      return;
+    }
+
+    withdrawalSheetRef.current?.present();
+  }, [referralSummaryQuery.data?.canWithdraw]);
 
   const handleGoBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -142,6 +159,25 @@ export default function SettingsScreen() {
           onDeleteAccount={openDeleteAccountSheet}
         />
 
+        <ReferralSettingsCard
+          referralCode={referralSummaryQuery.data?.referralCode ?? null}
+          copiedCode={hasCopiedReferralCode}
+          availableBalanceInCents={
+            referralSummaryQuery.data?.availableBalanceInCents ?? 0
+          }
+          referralUsersCount={referralSummaryQuery.data?.referralUsersCount ?? 0}
+          canWithdraw={referralSummaryQuery.data?.canWithdraw ?? false}
+          generatingCode={generateReferralCodeMutation.isPending}
+          requestingWithdrawal={requestReferralWithdrawalMutation.isPending}
+          onGenerateCode={() => {
+            generateReferralCodeMutation.mutate();
+          }}
+          onCopyCode={() => {
+            void copyReferralCode(referralSummaryQuery.data?.referralCode ?? null);
+          }}
+          onWithdraw={openWithdrawalSheet}
+        />
+
         <SettingsSupportCard
           phone={SUPPORT_WHATSAPP_NUMBER}
           onPress={() => {
@@ -214,6 +250,23 @@ export default function SettingsScreen() {
         onSelect={(value) => {
           imageSourceSheetRef.current?.dismiss();
           void selectImageSource(value);
+        }}
+      />
+
+      <ReferralWithdrawalSheet
+        sheetRef={withdrawalSheetRef}
+        availableBalanceInCents={
+          referralSummaryQuery.data?.availableBalanceInCents ?? 0
+        }
+        savedPixKey={savedReferralPixKey}
+        loading={requestReferralWithdrawalMutation.isPending}
+        onClose={() => undefined}
+        onSubmit={(input) => {
+          requestReferralWithdrawalMutation.mutate(input, {
+            onSuccess: () => {
+              withdrawalSheetRef.current?.dismiss();
+            },
+          });
         }}
       />
 

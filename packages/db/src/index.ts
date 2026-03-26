@@ -11,6 +11,9 @@ export type {
   Appointment,
   BillingPayment,
   BillingPlan,
+  ReferralCode,
+  ReferralUse,
+  ReferralWithdrawal,
   User,
 } from "../prisma/generated/client";
 export {
@@ -18,5 +21,8 @@ export {
   BillingPaymentStatus,
   BillingPlanInterval,
   PaymentStatus,
+  ReferralPixKeyType,
+  ReferralUseStatus,
+  ReferralWithdrawalStatus,
 } from "../prisma/generated/enums";
 export default prisma;

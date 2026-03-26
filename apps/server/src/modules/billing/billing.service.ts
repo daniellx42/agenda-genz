@@ -8,6 +8,7 @@ import {
   type BillingPaymentRecord,
   type BillingPaymentWithPlanDetailsRecord,
 } from "./billing.repository";
+import { ReferralService } from "../referrals/referral.service";
 
 const PIX_EXPIRY_MINUTES = 30;
 
@@ -397,6 +398,7 @@ export abstract class BillingService {
       });
     }
 
+    const userId = payment.userId;
     const newExpiresAt = BillingService.calcNewExpiry(
       user.planExpiresAt,
       payment.durationDays,
@@ -406,22 +408,30 @@ export abstract class BillingService {
       import("./billing.ws"),
     ]);
 
-    await prisma.$transaction([
-      prisma.billingPayment.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.billingPayment.update({
         where: { id: payment.id },
         data: {
           status: "APPROVED",
           paidAt,
           expiresAt: newExpiresAt,
         },
-      }),
-      prisma.user.update({
-        where: { id: payment.userId },
-        data: { planExpiresAt: newExpiresAt },
-      }),
-    ]);
+      });
 
-    notifyPaymentApproved(payment.userId, {
+      await tx.user.update({
+        where: { id: userId },
+        data: { planExpiresAt: newExpiresAt },
+      });
+
+      await ReferralService.grantOwnerRewardForApprovedPayment(
+        userId,
+        payment.id,
+        paidAt,
+        tx,
+      );
+    });
+
+    notifyPaymentApproved(userId, {
       paymentId: payment.id,
       planExpiresAt: newExpiresAt.toISOString(),
     });
