@@ -82,9 +82,6 @@ export default (_context: ConfigContext): ExpoConfig => {
       output: "static",
       favicon: "./assets/images/favicon.png",
     },
-    runtimeVersion: {
-      policy: "fingerprint",
-    },
     updates: {
       url: `https://u.expo.dev/${easProjectId}`,
       checkAutomatically: "ON_LOAD",
