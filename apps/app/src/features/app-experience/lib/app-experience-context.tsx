@@ -35,6 +35,7 @@ import {
   IMMEDIATE_IN_APP_UPDATE,
   type InAppUpdatesClient,
 } from "./in-app-updates";
+import { getDefaultStoreUpdateUrl, getStoreOpenUrls } from "./store-platform";
 import { resolveStoreUpdate } from "./version-utils";
 
 interface AppExperienceContextValue {
@@ -72,18 +73,6 @@ function getCurrentAppVersion(): string | null {
   return Constants.expoConfig?.version ?? null;
 }
 
-function getDefaultStoreUpdateUrl(): string | null {
-  if (Platform.OS === "ios") {
-    return Constants.expoConfig?.ios?.appStoreUrl ?? null;
-  }
-
-  if (Platform.OS === "android") {
-    return Constants.expoConfig?.android?.playStoreUrl ?? null;
-  }
-
-  return null;
-}
-
 function getStoreReviewUrl(): string | null {
   const baseUrl = StoreReview.storeUrl();
 
@@ -97,15 +86,6 @@ function getStoreReviewUrl(): string | null {
 
   return baseUrl;
 }
-
-function getPreferredStoreOpenUrl(url: string | null): string | null {
-  if (Platform.OS !== "ios" || !url || !url.startsWith("https://")) {
-    return url;
-  }
-
-  return url.replace("https://", "itms-apps://");
-}
-
 export function AppExperienceProvider({ children }: { children: ReactNode }) {
   const platform = Platform.OS;
   const isNativeMobile = platform === "ios" || platform === "android";
@@ -245,6 +225,19 @@ export function AppExperienceProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
+  const openFirstAvailableUrl = useCallback(
+    async (urls: readonly string[]): Promise<boolean> => {
+      for (const url of urls) {
+        if (await openUrl(url)) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+    [openUrl],
+  );
+
   const openStoreUpdate = useCallback(async (): Promise<void> => {
     if (!storeUpdateState.isAvailable) {
       return;
@@ -263,8 +256,10 @@ export function AppExperienceProvider({ children }: { children: ReactNode }) {
         });
         return;
       } catch {
-        const didOpenFallbackStore = await openUrl(
-          storeUpdateState.storeUrl ?? getDefaultStoreUpdateUrl(),
+        const didOpenFallbackStore = await openFirstAvailableUrl(
+          getStoreOpenUrls(
+            storeUpdateState.storeUrl ?? getDefaultStoreUpdateUrl(),
+          ),
         );
 
         if (didOpenFallbackStore) {
@@ -274,16 +269,16 @@ export function AppExperienceProvider({ children }: { children: ReactNode }) {
     }
 
     const storeUrl = storeUpdateState.storeUrl ?? getDefaultStoreUpdateUrl();
-    const didOpenStore =
-      (await openUrl(getPreferredStoreOpenUrl(storeUrl))) ||
-      (await openUrl(storeUrl));
+    const didOpenStore = await openFirstAvailableUrl(
+      getStoreOpenUrls(storeUrl),
+    );
 
     if (!didOpenStore) {
       toast.error("Não foi possível abrir a loja do aplicativo.");
     }
   }, [
     getInAppUpdatesClient,
-    openUrl,
+    openFirstAvailableUrl,
     platform,
     storeUpdateState.canUseAndroidImmediate,
     storeUpdateState.isAvailable,

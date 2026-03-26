@@ -1,5 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { UPDATE_CHECK_DESCRIPTION } from "@/features/app-experience/lib/store-platform";
 
 interface SettingsAppActionsCardProps {
   currentVersion: string | null;
@@ -21,7 +22,7 @@ export function SettingsAppActionsCard({
     : "Verificar atualização";
   const updateDescription = updateAvailable
     ? "Encontramos uma versão mais recente na loja."
-    : "Veja se existe uma nova versão publicada na App Store ou Google Play.";
+    : UPDATE_CHECK_DESCRIPTION;
 
   return (
     <View className="rounded-[28px] border border-amber-100 bg-white p-5">

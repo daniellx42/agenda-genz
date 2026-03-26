@@ -1,5 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
 import { Modal, Pressable, Text, View } from "react-native";
+import { STORE_UPDATE_MODAL_DESCRIPTION } from "../lib/store-platform";
 
 interface StoreUpdateModalProps {
   visible: boolean;
@@ -39,9 +40,7 @@ export function StoreUpdateModal({
           </Text>
           <Text className="mt-3 text-sm leading-6 text-zinc-500">
             Para continuar usando o Agenda GenZ, atualize agora.{" "}
-            {platform === "android"
-              ? "A atualização será iniciada pela Google Play dentro do app."
-              : "Você será levado para a App Store."}
+            {STORE_UPDATE_MODAL_DESCRIPTION}
           </Text>
 
           {shouldShowVersions ? (

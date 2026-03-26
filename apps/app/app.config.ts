@@ -2,9 +2,6 @@ import "dotenv/config";
 import { env } from "@agenda-genz/env/native";
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
-const defaultAppStoreUrl = "https://apps.apple.com/app/id6760943633";
-const defaultPlayStoreUrl =
-  "https://play.google.com/store/apps/details?id=com.daniellx42.agendagenz";
 const googleIosUrlScheme = env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
 const easProjectId = "411da2ab-584a-404f-a776-dd0c7a2d2554";
 const staticPlugins: NonNullable<ExpoConfig["plugins"]> = [
@@ -63,10 +60,17 @@ export default (_context: ConfigContext): ExpoConfig => {
       supportsTablet: false,
       usesAppleSignIn: true,
       bundleIdentifier: "com.daniellx42.agendagenz",
-      appStoreUrl: defaultAppStoreUrl,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         LSApplicationQueriesSchemes: ["itms-apps"],
+        NSCameraUsageDescription:
+          "Este app usa a câmera para capturar fotos dos clientes, como fotos de perfil e registros de antes e depois dos serviços realizados, ajudando na organização e acompanhamento dos atendimentos.",
+
+        NSPhotoLibraryUsageDescription:
+          "Este app acessa a galeria para permitir que você selecione imagens dos clientes e anexe fotos aos atendimentos e cadastros.",
+
+        NSPhotoLibraryAddUsageDescription:
+          "Este app permite salvar e baixar imagens no seu dispositivo, como registros e fotos relacionadas aos atendimentos realizados.",
       },
     },
     android: {
@@ -75,7 +79,6 @@ export default (_context: ConfigContext): ExpoConfig => {
         backgroundColor: "#ffffff",
       },
       package: "com.daniellx42.agendagenz",
-      playStoreUrl: defaultPlayStoreUrl,
       predictiveBackGestureEnabled: false,
     },
     web: {
