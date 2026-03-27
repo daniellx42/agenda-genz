@@ -30,7 +30,7 @@ const faqJsonLd = {
       name: "O app é realmente gratuito?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Sim! O app é 100% gratuito com trial de 90 dias completo. Após o trial, planos a partir de R$9,99/mês.",
+        text: "Sim! O app é 100% gratuito para baixar e usar.",
       },
     },
     {

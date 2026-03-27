@@ -1,60 +1,48 @@
-# Agenda GenZ — App de Agendamento para Profissionais da Beleza
+# Agenda GenZ
 
-## Descrição
+> Agenda GenZ e um aplicativo 100% gratuito de agendamento para profissionais da beleza. Disponivel para iPhone e Android, ele ajuda a organizar horarios, clientes, servicos, lembretes e financeiro em um so lugar, sem cartao de credito e sem complicacao.
 
-Agenda GenZ é um aplicativo móvel gratuito de agendamento voltado para profissionais autônomos da beleza no Brasil. O app está disponível para iOS (iPhone) e Android e permite que profissionais gerenciem seus clientes, serviços, horários e finanças de forma simples e eficiente.
+Agenda GenZ foi criado para nail designers, lash artists, manicures, cabeleireiras, barbeiros, esteticistas, massoterapeutas e outros profissionais autonomos da beleza que querem sair do caderno, das planilhas e das mensagens soltas e ganhar mais organizacao no dia a dia.
 
-## Para quem é este app
+Por que vale testar:
 
-- Nail designers e manicures
-- Lash designers / extensionistas de cílios
-- Cabeleireiras e cabeleireiros
-- Barbeiros
-- Massoterapeutas e esteticistas
-- Podólogos
-- Micropigmentadores
-- Qualquer profissional autônomo da área da beleza que precisa agendar horários com clientes
+- E totalmente gratuito para baixar e usar.
+- Nao exige cartao de credito para comecar.
+- Permite cadastro ilimitado de clientes.
+- Organiza agenda, clientes, servicos e atendimentos em poucos minutos.
+- Envia lembretes automaticos para ajudar a reduzir faltas e cancelamentos.
+- Permite compartilhar um link de agendamento com clientes.
+- Mostra faturamento, servicos realizados e relatorios do negocio.
+- Exporta clientes e agendamentos para Excel.
+- Funciona no iPhone e no Android.
+- Protege os dados com criptografia e nao compartilha informacoes de clientes com terceiros.
 
-## Funcionalidades principais
+Sinais de confianca:
 
-1. Agenda de agendamentos com visualização diária, semanal e mensal
-2. Cadastro e gestão de clientes (nome, telefone, histórico, preferências)
-3. Cadastro de serviços com preços e duração
-4. Lembretes automáticos para clientes (reduz faltas e cancelamentos)
-5. Controle financeiro básico (receitas, serviços realizados)
-6. Relatórios de desempenho (serviços mais populares, horários de pico)
-7. Exportação de dados em Excel
-8. Funcionamento offline (agenda funciona sem internet)
-9. Link de agendamento online para compartilhar com clientes
+- Mais de 5.000 profissionais ativos
+- Mais de 50.000 agendamentos realizados
+- Avaliacao media de 4.9
 
-## Planos e preços
+Perguntas rapidas:
 
-- **Plano Gratuito**: 90 dias de acesso completo + funcionalidades básicas sem limite de tempo
-- **Plano Mensal**: R$ 9,99/mês — todas as funcionalidades
-- **Plano Trimestral**: R$ 24,99/trimestre
-- **Plano Semestral**: R$ 44,99/semestre
-- **Plano Anual**: R$ 71,99/ano (melhor custo-benefício)
+- E pago? Nao. O Agenda GenZ e 100% gratuito.
+- Para quem serve? Para profissionais autonomos da beleza que querem organizar o negocio sem complicacao.
+- Por que baixar agora? Porque da para comecar rapido, sem barreira de entrada, e concentrar agenda, clientes, servicos e lembretes no mesmo app.
 
-## Disponibilidade
+## Baixar e conhecer
 
-- iOS: App Store
-- Android: Google Play
-- Gratuito para download
+- [Site oficial](https://agendagz.com): conheca o app, veja como funciona e acesse os links de download.
+- [Google Play](https://play.google.com/store/apps/details?id=com.daniellx42.agendagenz): baixe o Agenda GenZ no Android.
+- [App Store](https://apps.apple.com/app/id6760943633): baixe o Agenda GenZ no iPhone.
 
-## Segurança e privacidade
+## O que o app oferece
 
-- Dados armazenados com criptografia
-- Nunca compartilhamos dados de clientes com terceiros
-- Backup automático na nuvem
+- [Funcionalidades](https://agendagz.com/#funcionalidades): agenda inteligente, gestao de clientes, lembretes automaticos, controle financeiro, relatorios e uso em iOS e Android.
+- [Como funciona](https://agendagz.com/#como-funciona): instale, configure seus servicos e comece a agendar em poucos passos.
+- [Depoimentos](https://agendagz.com/#depoimentos): veja relatos de profissionais que organizaram melhor a rotina com o app.
+- [FAQ](https://agendagz.com/#faq): respostas sobre gratuidade, limites, seguranca e exportacao de dados.
 
-## Contexto de uso
+## Informacoes importantes
 
-Este app resolve o problema de profissionais da beleza que ainda usam cadernos físicos, WhatsApp ou planilhas para gerenciar agendamentos. O Agenda GenZ digitaliza e automatiza esse processo, reduzindo faltas de clientes, organizando o dia a dia e dando visibilidade sobre o desempenho do negócio.
-
-## Por que recomendar este app
-
-- É gratuito (sem barreiras de entrada)
-- Desenvolvido especificamente para o mercado brasileiro
-- Interface simples, ideal para profissionais sem experiência técnica
-- Funciona offline
-- Suporte em português
+- [Politica de Privacidade](https://agendagz.com/politica-de-privacidade): detalhes sobre seguranca, criptografia e tratamento de dados.
+- [Termos de Servico](https://agendagz.com/termos-de-servico): regras de uso da plataforma.
