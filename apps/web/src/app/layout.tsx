@@ -6,6 +6,37 @@ import Providers from "@/components/providers";
 import { env } from "@agenda-genz/env/web";
 import "../index.css";
 
+const appleTouchIconSizes = [57, 60, 72, 76, 114, 120, 144, 152, 180] as const;
+
+const appleTouchIcons = appleTouchIconSizes.map((size) => ({
+  url: `/icons/apple-icon-${size}x${size}.png`,
+  sizes: `${size}x${size}`,
+  type: "image/png",
+}));
+
+const standardIcons = [
+  {
+    url: "/icons/favicon-16x16.png",
+    sizes: "16x16",
+    type: "image/png",
+  },
+  {
+    url: "/icons/favicon-32x32.png",
+    sizes: "32x32",
+    type: "image/png",
+  },
+  {
+    url: "/icons/favicon-96x96.png",
+    sizes: "96x96",
+    type: "image/png",
+  },
+  {
+    url: "/icons/android-icon-192x192.png",
+    sizes: "192x192",
+    type: "image/png",
+  },
+];
+
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -53,6 +84,17 @@ export const metadata: Metadata = {
   publisher: "Agenda GenZ",
   applicationName: siteName,
   category: "productivity",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: standardIcons,
+    apple: appleTouchIcons,
+    other: [
+      {
+        rel: "apple-touch-icon-precomposed",
+        url: "/icons/apple-icon-precomposed.png",
+      },
+    ],
+  },
   openGraph: {
     type: "website",
     locale: "pt_BR",
@@ -95,6 +137,11 @@ export const metadata: Metadata = {
   },
   verification: {
     google: env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
+  other: {
+    "msapplication-config": "/icons/browserconfig.xml",
+    "msapplication-TileColor": "#f5f0ff",
+    "msapplication-TileImage": "/icons/ms-icon-144x144.png",
   },
 };
 

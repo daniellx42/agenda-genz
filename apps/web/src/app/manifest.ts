@@ -9,19 +9,44 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     background_color: "#f5f0ff",
-    theme_color: "#7c3aed",
+    theme_color: "#f5f0ff",
     orientation: "portrait",
     categories: ["productivity", "business", "lifestyle"],
     lang: "pt-BR",
     icons: [
       {
-        src: "/icon-192.png",
+        src: "/icons/android-icon-36x36.png",
+        sizes: "36x36",
+        type: "image/png",
+      },
+      {
+        src: "/icons/android-icon-48x48.png",
+        sizes: "48x48",
+        type: "image/png",
+      },
+      {
+        src: "/icons/android-icon-72x72.png",
+        sizes: "72x72",
+        type: "image/png",
+      },
+      {
+        src: "/icons/android-icon-96x96.png",
+        sizes: "96x96",
+        type: "image/png",
+      },
+      {
+        src: "/icons/android-icon-144x144.png",
+        sizes: "144x144",
+        type: "image/png",
+      },
+      {
+        src: "/icons/android-icon-192x192.png",
         sizes: "192x192",
         type: "image/png",
       },
       {
-        src: "/icon-512.png",
-        sizes: "512x512",
+        src: "/icons/apple-icon-180x180.png",
+        sizes: "180x180",
         type: "image/png",
       },
     ],
