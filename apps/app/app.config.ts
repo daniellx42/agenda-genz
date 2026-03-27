@@ -54,6 +54,8 @@ export default (_context: ConfigContext): ExpoConfig => {
     slug: "agenda-genz",
     version: "1.0.0",
     orientation: "portrait",
+    userInterfaceStyle: "light",
+    backgroundColor: "#ffffff",
     icon: "./assets/images/icon.png",
     scheme: "app",
     ios: {

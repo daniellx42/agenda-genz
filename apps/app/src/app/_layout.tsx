@@ -1,6 +1,6 @@
 import "../../global.css";
 
-import { AppExperienceProvider } from "@/features/app-experience/lib/app-experience-context";
+import { AppStorePromptsProvider } from "@/features/app-experience/lib/app-store-prompts-context";
 import { AuthSessionProvider } from "@/features/auth/lib/auth-session-context";
 import { useSubscriptionStore } from "@/features/billing/store/subscription-store";
 import { authClient } from "@/lib/auth-client";
@@ -13,6 +13,7 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, usePathname, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as SystemUI from "expo-system-ui";
 import { useEffect, useRef } from "react";
 import { AppState, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -20,6 +21,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Toaster } from "sonner-native";
 
 setupNotificationHandler();
+void SystemUI.setBackgroundColorAsync("#ffffff");
 
 SplashScreen.preventAutoHideAsync();
 
@@ -119,12 +121,12 @@ export default function RootLayout() {
   }, [refetchSession]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#ffffff" }}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <BottomSheetModalProvider>
-            <AuthSessionProvider session={session} isPending={isPending}>
-              <AppExperienceProvider>
+          <AuthSessionProvider session={session} isPending={isPending}>
+            <AppStorePromptsProvider>
+              <BottomSheetModalProvider>
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="(auth)" />
                   <Stack.Screen name="(paywall)" />
@@ -135,11 +137,11 @@ export default function RootLayout() {
                   <Stack.Screen name="settings" />
                   <Stack.Screen name="index" options={{ animation: "none" }} />
                 </Stack>
-              </AppExperienceProvider>
-            </AuthSessionProvider>
-            <StatusBar backgroundColor="#ffccd3" barStyle="dark-content" />
-            <Toaster />
-          </BottomSheetModalProvider>
+              </BottomSheetModalProvider>
+            </AppStorePromptsProvider>
+          </AuthSessionProvider>
+          <StatusBar backgroundColor="#ffccd3" barStyle="dark-content" />
+          <Toaster />
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

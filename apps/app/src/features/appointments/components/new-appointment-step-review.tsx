@@ -1,5 +1,5 @@
 import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
-import { useAppExperience } from "@/features/app-experience/lib/app-experience-context";
+import { useAppStorePrompts } from "@/features/app-experience/lib/app-store-prompts-context";
 import { AppointmentClientAvatar } from "@/features/appointments/components/appointment-client-avatar";
 import { createAppointment } from "@/features/appointments/api/appointment-mutations";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
@@ -26,7 +26,7 @@ interface Props {
 export function StepReview({ onClose }: Props) {
   const { client, service, timeSlot, date, notes, setNotes, goBack, reset } =
     useAppointmentDraft();
-  const appExperience = useAppExperience();
+  const appStorePrompts = useAppStorePrompts();
   const { showError } = useApiError();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -80,7 +80,7 @@ export function StepReview({ onClose }: Props) {
       }
       await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
       await queryClient.invalidateQueries({ queryKey: timeSlotKeys.all });
-      await appExperience.registerSuccessfulAppointment();
+      await appStorePrompts.registerSuccessfulAppointment();
       reset();
       onClose();
     } catch (err) {

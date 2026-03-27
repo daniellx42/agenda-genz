@@ -1,5 +1,5 @@
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
-import { useAppExperience } from "@/features/app-experience/lib/app-experience-context";
+import { useAppStorePrompts } from "@/features/app-experience/lib/app-store-prompts-context";
 import { ReferralSettingsCard } from "@/features/referrals/components/referral-settings-card";
 import { ReferralWithdrawalSheet } from "@/features/referrals/sheets/referral-withdrawal-sheet";
 import { openPrivacyPolicy, openTermsOfService } from "@/lib/legal-links";
@@ -26,7 +26,7 @@ const SUPPORT_WHATSAPP_MESSAGE =
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const appExperience = useAppExperience();
+  const appStorePrompts = useAppStorePrompts();
   const {
     session,
     displayName,
@@ -189,14 +189,14 @@ export default function SettingsScreen() {
         />
 
         <SettingsAppActionsCard
-          currentVersion={appExperience.currentVersion}
-          updateAvailable={appExperience.hasStoreUpdate}
-          checkingForUpdates={appExperience.isCheckingForUpdates}
+          currentVersion={appStorePrompts.currentVersion}
+          updateAvailable={appStorePrompts.hasStoreUpdate}
+          checkingForUpdates={appStorePrompts.isCheckingForUpdates}
           onCheckUpdates={() => {
-            void appExperience.checkForUpdates(true);
+            void appStorePrompts.checkForUpdates(true);
           }}
           onReviewApp={() => {
-            void appExperience.openStoreReview();
+            void appStorePrompts.openStoreReview();
           }}
         />
 

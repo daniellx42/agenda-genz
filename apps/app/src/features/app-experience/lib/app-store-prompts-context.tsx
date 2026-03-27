@@ -38,7 +38,7 @@ import {
 import { getDefaultStoreUpdateUrl, getStoreOpenUrls } from "./store-platform";
 import { resolveStoreUpdate } from "./version-utils";
 
-interface AppExperienceContextValue {
+interface AppStorePromptsContextValue {
   currentVersion: string | null;
   hasStoreUpdate: boolean;
   isCheckingForUpdates: boolean;
@@ -49,7 +49,7 @@ interface AppExperienceContextValue {
   registerSuccessfulAppointment: () => Promise<void>;
 }
 
-const AppExperienceContext = createContext<AppExperienceContextValue | null>(
+const AppStorePromptsContext = createContext<AppStorePromptsContextValue | null>(
   null,
 );
 
@@ -86,7 +86,11 @@ function getStoreReviewUrl(): string | null {
 
   return baseUrl;
 }
-export function AppExperienceProvider({ children }: { children: ReactNode }) {
+export function AppStorePromptsProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const platform = Platform.OS;
   const isNativeMobile = platform === "ios" || platform === "android";
   const [storeUpdateState, setStoreUpdateState] = useState<StoreUpdateState>(
@@ -394,7 +398,7 @@ export function AppExperienceProvider({ children }: { children: ReactNode }) {
     };
   }, [isNativeMobile, syncStoreUpdateState]);
 
-  const value = useMemo<AppExperienceContextValue>(
+  const value = useMemo<AppStorePromptsContextValue>(
     () => ({
       currentVersion: storeUpdateState.currentVersion,
       hasStoreUpdate: storeUpdateState.isAvailable,
@@ -418,7 +422,7 @@ export function AppExperienceProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AppExperienceContext.Provider value={value}>
+    <AppStorePromptsContext.Provider value={value}>
       {children}
 
       <StoreUpdateModal
@@ -440,16 +444,16 @@ export function AppExperienceProvider({ children }: { children: ReactNode }) {
           void deferReview();
         }}
       />
-    </AppExperienceContext.Provider>
+    </AppStorePromptsContext.Provider>
   );
 }
 
-export function useAppExperience() {
-  const context = useContext(AppExperienceContext);
+export function useAppStorePrompts() {
+  const context = useContext(AppStorePromptsContext);
 
   if (!context) {
     throw new Error(
-      "useAppExperience must be used within AppExperienceProvider",
+      "useAppStorePrompts must be used within AppStorePromptsProvider",
     );
   }
 
