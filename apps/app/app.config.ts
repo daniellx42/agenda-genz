@@ -85,7 +85,7 @@ export default (_context: ConfigContext): ExpoConfig => {
         backgroundColor: "#fff9fb",
       },
       package: "com.daniellx42.agendagenz",
-      predictiveBackGestureEnabled: true,
+      predictiveBackGestureEnabled: false,
     },
     updates: {
       url: `https://u.expo.dev/${easProjectId}`,
