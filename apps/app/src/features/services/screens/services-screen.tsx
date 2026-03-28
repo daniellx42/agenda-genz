@@ -14,6 +14,7 @@ import { ServiceFormSheet } from "../sheets/service-form-sheet";
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
 import { useAuthSession } from "@/features/auth/lib/auth-session-context";
 import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
+import { useCurvedTabBarHeight } from "@/features/navigation/lib/use-curved-tab-bar-height";
 import { useApiError } from "@/hooks/use-api-error";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import Feather from "@expo/vector-icons/Feather";
@@ -44,6 +45,7 @@ export default function ServicesScreen() {
   const [pendingDeleteService, setPendingDeleteService] = useState<ServiceItem | null>(null);
   const [exportingServices, setExportingServices] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 400);
+  const tabBarHeight = useCurvedTabBarHeight();
 
   const {
     data,
@@ -136,7 +138,10 @@ export default function ServicesScreen() {
   }, [queryClient, session?.user?.name, showError]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={{ flex: 1, backgroundColor: "#fff9fb" }}
+    >
       <View className="flex-row items-center justify-between px-5 pb-3 pt-3">
         <View>
           <Text className="text-xl font-bold text-zinc-900">Serviços</Text>
@@ -198,7 +203,10 @@ export default function ServicesScreen() {
               deleting={deleteMutation.isPending && deleteMutation.variables === item.id}
             />
           )}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: tabBarHeight,
+          }}
           showsVerticalScrollIndicator={false}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.35}

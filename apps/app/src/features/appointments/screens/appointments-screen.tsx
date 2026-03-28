@@ -3,6 +3,7 @@ import { NewAppointmentSheet } from "@/features/appointments/components/new-appo
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { useAuthSession } from "@/features/auth/lib/auth-session-context";
 import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
+import { useCurvedTabBarHeight } from "@/features/navigation/lib/use-curved-tab-bar-height";
 import {
   applyReferralCode,
   dismissReferralPrompt,
@@ -422,10 +423,14 @@ export default function AppointmentsScreen() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const markedDates = buildMarkedDates(calendarDots ?? [], selectedDate);
+  const tabBarHeight = useCurvedTabBarHeight();
   const scrollContentMinHeight = windowHeight + calendarHeight + 80;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={{ flex: 1, backgroundColor: "#fff9fb" }}
+    >
       <View className="px-5 pb-2 pt-3">
         <View className="flex-row items-center justify-between">
           <View>
@@ -522,7 +527,7 @@ export default function AppointmentsScreen() {
           overScrollMode="always"
           contentContainerStyle={{
             paddingTop: calendarHeight,
-            paddingBottom: calendarHeight + 120,
+            paddingBottom: calendarHeight + tabBarHeight,
             minHeight: scrollContentMinHeight,
           }}
           stickyHeaderIndices={[0]}

@@ -13,6 +13,7 @@ import { ClientEditSheet } from "../sheets/client-edit-sheet";
 import { ClientFormSheet } from "../sheets/client-form-sheet";
 import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
 import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
+import { useCurvedTabBarHeight } from "@/features/navigation/lib/use-curved-tab-bar-height";
 import { useApiError } from "@/hooks/use-api-error";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import Feather from "@expo/vector-icons/Feather";
@@ -51,6 +52,7 @@ export default function ClientsScreen() {
   const [followUpClient, setFollowUpClient] = useState<ClientItem | null>(null);
   const [followUpDraftMessage, setFollowUpDraftMessage] = useState("");
   const debouncedSearch = useDebouncedValue(search, 400);
+  const tabBarHeight = useCurvedTabBarHeight();
 
   const {
     data,
@@ -171,7 +173,10 @@ export default function ClientsScreen() {
   const hasFollowUpPhone = (followUpClient?.phone ?? "").trim().length > 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={{ flex: 1, backgroundColor: "#fff9fb" }}
+    >
       <View className="flex-row items-center justify-between px-5 pb-3 pt-3">
         <View>
           <Text className="text-xl font-bold text-zinc-900">Clientes</Text>
@@ -215,7 +220,10 @@ export default function ClientsScreen() {
               onOpenFollowUpShare={() => openFollowUpShareSheet(item)}
             />
           )}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: tabBarHeight,
+          }}
           showsVerticalScrollIndicator={false}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.35}

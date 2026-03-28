@@ -19,6 +19,7 @@ import { ConfirmActionSheet } from "@/components/ui/confirm-action-sheet";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
 import { useRegisterTabContextualAction } from "@/features/navigation/lib/tab-contextual-action-context";
+import { useCurvedTabBarHeight } from "@/features/navigation/lib/use-curved-tab-bar-height";
 import { useApiError } from "@/hooks/use-api-error";
 import Feather from "@expo/vector-icons/Feather";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -33,6 +34,7 @@ import type { BlockTimeSlotTarget } from "../sheets/block-time-slot-date-sheet";
 export default function TimeSlotsScreen() {
   const { showError } = useApiError();
   const queryClient = useQueryClient();
+  const tabBarHeight = useCurvedTabBarHeight();
   const actionSheetRef = useRef<BottomSheetModal>(null);
   const blockDateSheetRef = useRef<BottomSheetModal>(null);
   const confirmDeleteSheetRef = useRef<BottomSheetModal>(null);
@@ -311,7 +313,10 @@ export default function TimeSlotsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff9fb" }}>
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={{ flex: 1, backgroundColor: "#fff9fb" }}
+    >
       <View className="px-5 pb-3 pt-3">
         <Text className="text-xl font-bold text-zinc-900">Horários</Text>
         <Text className="text-xs text-zinc-400">
@@ -323,7 +328,7 @@ export default function TimeSlotsScreen() {
         <ScrollView
           className="flex-1 px-5"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingBottom: tabBarHeight }}
         >
           <ShareTimeSlotsCard />
           {timeSlotsSection}
@@ -332,7 +337,7 @@ export default function TimeSlotsScreen() {
         <ScrollView
           className="flex-1 px-5"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{ paddingBottom: tabBarHeight }}
         >
           <ShareTimeSlotsCard />
           {timeSlotsSection}
