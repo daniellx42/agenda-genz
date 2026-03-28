@@ -1,13 +1,9 @@
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { formatAppointmentShortDate } from "@/features/appointments/lib/appointment-date";
 import { useAppointmentDraft } from "@/features/appointments/store/appointment-draft";
 import { useFormSheet } from "@/hooks/use-form-sheet";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
-import { forwardRef, useCallback } from "react";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { forwardRef } from "react";
 import { Text, View } from "react-native";
 import { StepClient } from "./new-appointment-step-client";
 import { StepReview } from "./new-appointment-step-review";
@@ -28,47 +24,26 @@ const STEP_LABELS = {
   review: "Confirmação",
 };
 
-const Backdrop = (props: BottomSheetBackdropProps) => (
-  <BottomSheetBackdrop
-    {...props}
-    disappearsOnIndex={-1}
-    appearsOnIndex={0}
-    opacity={0.5}
-  />
-);
-
 export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
   function NewAppointmentSheet({ onDismiss, onRequestClose }, ref) {
     const { date, step, goBack } = useAppointmentDraft();
     const formSheet = useFormSheet();
 
-    const renderBackdrop = useCallback(
-      (props: BottomSheetBackdropProps) => <Backdrop {...props} />,
-      [],
-    );
-
     const canGoBack = step !== "client";
 
     return (
-      <BottomSheetModal
+      <FormSheetModal
         ref={ref}
+        formSheet={formSheet}
         snapPoints={SNAP_POINTS}
-        bottomInset={formSheet.bottomInset}
         enablePanDownToClose
-        enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-        backdropComponent={renderBackdrop}
-        handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
-        backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
         onDismiss={onDismiss}
-        keyboardBehavior={formSheet.keyboardBehavior}
-        keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-        android_keyboardInputMode={formSheet.androidKeyboardInputMode}
       >
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
-          keyboardDismissMode="interactive"
+          keyboardDismissMode={formSheet.keyboardDismissMode}
         >
           {/* Header */}
           <View className="mb-6 mt-2 flex-row items-start justify-between gap-3">
@@ -106,7 +81,7 @@ export const NewAppointmentSheet = forwardRef<BottomSheetModal, Props>(
           {step === "slot" && <StepTimeSlot />}
           {step === "review" && <StepReview onClose={onRequestClose} />}
         </BottomSheetScrollView>
-      </BottomSheetModal>
+      </FormSheetModal>
     );
   },
 );

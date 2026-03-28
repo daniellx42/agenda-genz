@@ -1,3 +1,4 @@
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import { formatPrice } from "@/features/billing/lib/billing-formatters";
@@ -8,14 +9,9 @@ import {
   maskPixKey,
   resolvePixKey,
 } from "../lib/referral-form";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 
 interface ReferralWithdrawalSheetProps {
   sheetRef: React.RefObject<BottomSheetModal | null>;
@@ -59,18 +55,6 @@ export function ReferralWithdrawalSheet({
     setPixKeyError("");
     setUseSavedPixKey(Boolean(savedPixKey));
   }, [savedPixKey]);
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.45}
-      />
-    ),
-    [],
-  );
 
   const handleDismiss = useCallback(() => {
     resetForm();
@@ -116,24 +100,20 @@ export function ReferralWithdrawalSheet({
   };
 
   return (
-    <BottomSheetModal
+    <FormSheetModal
       ref={sheetRef}
+      formSheet={formSheet}
+      theme="rose"
+      backdropOpacity={0.45}
       snapPoints={["78%"]}
-      bottomInset={formSheet.bottomInset}
       enablePanDownToClose={!loading}
-      enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-      backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: "#fbcfe8", width: 42 }}
-      backgroundStyle={{ backgroundColor: "#fff9fb", borderRadius: 28 }}
       onDismiss={handleDismiss}
       keyboardBehavior="fillParent"
-      keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-      android_keyboardInputMode={formSheet.androidKeyboardInputMode}
     >
       <BottomSheetScrollView
         contentContainerStyle={formSheet.scrollContentContainerStyle}
         keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
-        keyboardDismissMode="interactive"
+        keyboardDismissMode={formSheet.keyboardDismissMode}
       >
         <Text className="text-lg font-bold text-zinc-900">
           Solicitar saque
@@ -303,6 +283,6 @@ export function ReferralWithdrawalSheet({
           </Pressable>
         </View>
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </FormSheetModal>
   );
 }

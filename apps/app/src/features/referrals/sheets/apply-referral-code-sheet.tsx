@@ -1,15 +1,11 @@
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import Feather from "@expo/vector-icons/Feather";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
-import { useCallback, useRef } from "react";
+import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
+import { useRef } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 
 interface ApplyReferralCodeSheetProps {
   sheetRef: React.RefObject<BottomSheetModal | null>;
@@ -36,33 +32,17 @@ export function ApplyReferralCodeSheet({
     bottomPadding: 24,
   });
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.45}
-      />
-    ),
-    [],
-  );
-
   return (
-    <BottomSheetModal
+    <FormSheetModal
       ref={sheetRef}
+      formSheet={formSheet}
+      theme="rose"
+      backdropOpacity={0.45}
       snapPoints={["48%"]}
-      bottomInset={formSheet.bottomInset}
       enablePanDownToClose={false}
-      enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-      backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: "#fbcfe8", width: 42 }}
-      backgroundStyle={{ backgroundColor: "#fff9fb", borderRadius: 28 }}
       keyboardBehavior="fillParent"
-      keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-      android_keyboardInputMode={formSheet.androidKeyboardInputMode}
     >
-      <BottomSheetView style={{ paddingHorizontal: 24, paddingBottom: 28 }}>
+      <BottomSheetView style={formSheet.viewContentContainerStyle}>
         <View className="rounded-[28px] border border-rose-100 bg-white p-5">
           <View className="h-12 w-12 items-center justify-center rounded-2xl bg-rose-50">
             <Feather name="gift" size={20} color="#f43f5e" />
@@ -139,6 +119,6 @@ export function ApplyReferralCodeSheet({
           </Pressable>
         </View>
       </BottomSheetView>
-    </BottomSheetModal>
+    </FormSheetModal>
   );
 }

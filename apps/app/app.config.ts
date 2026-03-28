@@ -14,14 +14,16 @@ const staticPlugins: NonNullable<ExpoConfig["plugins"]> = [
       image: "./assets/images/splash-icon.png",
       imageWidth: 200,
       resizeMode: "contain",
-      backgroundColor: "#ffffff",
+      backgroundColor: "#fff9fb",
+      dark: {
+        backgroundColor: "#fff9fb"
+      }
     },
   ],
   [
     "expo-notifications",
     {
-      icon: "./assets/images/notification-icon.png",
-      color: "#7d0000",
+      icon: "./assets/images/icon.png",
       sounds: [
         "./assets/sounds/notifications/agendamento1h.wav",
         "./assets/sounds/notifications/agendamento30min.wav",
@@ -55,7 +57,7 @@ export default (_context: ConfigContext): ExpoConfig => {
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "light",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff9fb",
     icon: "./assets/images/icon.png",
     scheme: "app",
     ios: {
@@ -77,15 +79,13 @@ export default (_context: ConfigContext): ExpoConfig => {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        foregroundImage: "./assets/images/android-icon-foreground.png",
+        backgroundImage: "./assets/images/android-icon-background.png",
+        monochromeImage: "./assets/images/android-icon-monochrome.png",
+        backgroundColor: "#fff9fb",
       },
       package: "com.daniellx42.agendagenz",
-      predictiveBackGestureEnabled: false,
-    },
-    web: {
-      output: "static",
-      favicon: "./assets/images/favicon.png",
+      predictiveBackGestureEnabled: true,
     },
     updates: {
       url: `https://u.expo.dev/${easProjectId}`,

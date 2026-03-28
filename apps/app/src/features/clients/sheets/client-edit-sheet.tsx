@@ -7,6 +7,7 @@ import {
   updateClient,
 } from "../api/client-mutations";
 import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
@@ -22,7 +23,7 @@ import {
 } from "@/lib/formatters";
 import { useResolvedImage } from "@/lib/media/use-resolved-image";
 import Feather from "@expo/vector-icons/Feather";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -33,7 +34,6 @@ import { formatBirthDateInputFromValue } from "../lib/client-birthday";
 import { ProfileAvatarEdit } from "../components/profile-avatar-edit";
 import { clientSchema } from "../lib/client-form-schema";
 import { uploadImageToR2 } from "../lib/client-image";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import type { ImagePickerAsset } from "expo-image-picker";
 import type { ClientDetail } from "../types";
 
@@ -202,18 +202,6 @@ export function ClientEditSheet({
     setShowAdditionalInfo(shouldShowAdditionalInfo(client));
   }, [client, form]);
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
-    ),
-    [],
-  );
-
   const focusFirstInvalidField = useCallback(() => {
     const { name, phone } = form.state.values;
 
@@ -244,30 +232,23 @@ export function ClientEditSheet({
 
   return (
     <>
-      <BottomSheetModal
+      <FormSheetModal
         ref={sheetRef}
+        formSheet={formSheet}
         snapPoints={["85%"]}
-        bottomInset={formSheet.bottomInset}
         enablePanDownToClose={
           !uploadingPhoto && !deletingPhoto && !form.state.isSubmitting
         }
-        enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-        backdropComponent={renderBackdrop}
-        handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
-        backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
         onDismiss={() => {
           setProfileImageAsset(null);
           setShowAdditionalInfo(false);
           onClose();
         }}
-        keyboardBehavior={formSheet.keyboardBehavior}
-        keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-        android_keyboardInputMode={formSheet.androidKeyboardInputMode}
       >
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
           keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
-          keyboardDismissMode="interactive"
+          keyboardDismissMode={formSheet.keyboardDismissMode}
         >
           <Text className="mb-5 mt-2 text-lg font-bold text-zinc-900">
             Editar cliente
@@ -328,7 +309,7 @@ export function ClientEditSheet({
             </>
           )}
         </BottomSheetScrollView>
-      </BottomSheetModal>
+      </FormSheetModal>
 
       <SelectionSheet
         sheetRef={imageSourceSheetRef}

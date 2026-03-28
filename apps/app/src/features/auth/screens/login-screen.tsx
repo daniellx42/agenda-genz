@@ -73,7 +73,7 @@ export default function LoginScreen() {
     >
       <View className="items-center mb-2 px-8 w-full">
         <Image
-          source={require("../../../../assets/images/adaptive-icon.png")}
+          source={require("../../../../assets/images/icon-full-transparent.png")}
           style={{ width: 200, height: 200 }}
         />
       </View>

@@ -1,13 +1,9 @@
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import Feather from "@expo/vector-icons/Feather";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
-import { useCallback, type ComponentProps } from "react";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { type ComponentProps } from "react";
 import { Pressable, Text, View } from "react-native";
 
 type HighlightTone = "rose" | "sky" | "red";
@@ -77,37 +73,20 @@ export function ClientMessageShareSheet({
   const canShare = message.trim().length > 0;
   const highlightStyles = HIGHLIGHT_STYLES[highlightTone];
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.45}
-      />
-    ),
-    [],
-  );
-
   return (
-    <BottomSheetModal
+    <FormSheetModal
       ref={sheetRef}
+      formSheet={formSheet}
+      theme="rose"
+      backdropOpacity={0.45}
       snapPoints={SNAP_POINTS}
-      bottomInset={formSheet.bottomInset}
       enablePanDownToClose
-      enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-      backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: "#fbcfe8", width: 44 }}
-      backgroundStyle={{ backgroundColor: "#fff9fb", borderRadius: 28 }}
-      keyboardBehavior={formSheet.keyboardBehavior}
-      keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-      android_keyboardInputMode={formSheet.androidKeyboardInputMode}
       onDismiss={onDismiss}
     >
       <BottomSheetScrollView
         contentContainerStyle={formSheet.scrollContentContainerStyle}
         keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
-        keyboardDismissMode="interactive"
+        keyboardDismissMode={formSheet.keyboardDismissMode}
       >
         <View className="rounded-[28px] border border-rose-100 bg-white p-4">
           <Text className="text-base font-bold text-zinc-900">{title}</Text>
@@ -213,6 +192,6 @@ export function ClientMessageShareSheet({
           <Text className="text-sm font-semibold text-zinc-600">Fechar</Text>
         </Pressable>
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </FormSheetModal>
   );
 }

@@ -1,10 +1,9 @@
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { SheetTextInput } from "@/components/ui/sheet-text-input";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import Feather from "@expo/vector-icons/Feather";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
-import { useCallback } from "react";
+import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 
 interface DeleteAccountSheetProps {
   sheetRef: React.RefObject<BottomSheetModal | null>;
@@ -29,39 +28,17 @@ export function DeleteAccountSheet({
 }: DeleteAccountSheetProps) {
   const formSheet = useFormSheet({ bottomPadding: 20 });
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.45}
-      />
-    ),
-    [],
-  );
-
   return (
-    <BottomSheetModal
+    <FormSheetModal
       ref={sheetRef}
+      formSheet={formSheet}
+      theme="rose"
+      backdropOpacity={0.45}
       snapPoints={["62%"]}
-      bottomInset={formSheet.bottomInset}
       enablePanDownToClose={!loading}
-      enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-      backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: "#fbcfe8", width: 44 }}
-      backgroundStyle={{ backgroundColor: "#fff9fb", borderRadius: 28 }}
-      keyboardBehavior={formSheet.keyboardBehavior}
-      keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-      android_keyboardInputMode={formSheet.androidKeyboardInputMode}
       onDismiss={onClose}
     >
-      <BottomSheetView
-        style={{
-          paddingHorizontal: 20,
-          paddingBottom: formSheet.contentBottomPadding,
-        }}
-      >
+      <BottomSheetView style={formSheet.viewContentContainerStyle}>
         <View className="rounded-[28px] border border-rose-100 bg-white p-5">
           <View className="h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
             <Feather name="alert-triangle" size={20} color="#ef4444" />
@@ -132,6 +109,6 @@ export function DeleteAccountSheet({
           </Pressable>
         </View>
       </BottomSheetView>
-    </BottomSheetModal>
+    </FormSheetModal>
   );
 }

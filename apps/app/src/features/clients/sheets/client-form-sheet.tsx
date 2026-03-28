@@ -1,3 +1,4 @@
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import type { SheetTextInputRef } from "@/components/ui/sheet-text-input";
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
@@ -6,8 +7,7 @@ import { useFormSheet } from "@/hooks/use-form-sheet";
 import { useSquareImagePicker } from "@/hooks/use-square-image-picker";
 import { isValidPhone, normalizeWhitespace } from "@/lib/formatters";
 import Feather from "@expo/vector-icons/Feather";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -118,18 +118,6 @@ export function ClientFormSheet({
     },
   });
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
-    ),
-    [],
-  );
-
   const focusFirstInvalidField = useCallback(() => {
     const { name, phone } = form.state.values;
 
@@ -160,28 +148,21 @@ export function ClientFormSheet({
 
   return (
     <>
-      <BottomSheetModal
+      <FormSheetModal
         ref={sheetRef}
+        formSheet={formSheet}
         snapPoints={["85%"]}
-        bottomInset={formSheet.bottomInset}
         enablePanDownToClose={!uploadingPhoto && !form.state.isSubmitting}
-        enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-        backdropComponent={renderBackdrop}
-        handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
-        backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
         onDismiss={() => {
           setProfileImageAsset(null);
           setShowAdditionalInfo(false);
           onClose();
         }}
-        keyboardBehavior={formSheet.keyboardBehavior}
-        keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-        android_keyboardInputMode={formSheet.androidKeyboardInputMode}
       >
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
           keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
-          keyboardDismissMode="interactive"
+          keyboardDismissMode={formSheet.keyboardDismissMode}
         >
           <Text className="mb-5 mt-2 text-lg font-bold text-zinc-900">
             Novo cliente +
@@ -233,7 +214,7 @@ export function ClientFormSheet({
             )}
           </form.Subscribe>
         </BottomSheetScrollView>
-      </BottomSheetModal>
+      </FormSheetModal>
 
       <SelectionSheet
         sheetRef={imageSourceSheetRef}

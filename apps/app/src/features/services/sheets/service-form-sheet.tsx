@@ -1,6 +1,7 @@
 import { serviceKeys } from "../api/service-query-options";
 import { createService, updateService } from "../api/service-mutations";
 import { ServiceImage } from "../components/service-image";
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { SquareImageCropModal } from "@/components/ui/square-image-crop-modal";
 import { SelectionSheet } from "@/components/ui/selection-sheet";
 import { appointmentKeys } from "@/features/appointments/api/appointment-query-options";
@@ -15,13 +16,12 @@ import {
   normalizeWhitespace,
 } from "@/lib/formatters";
 import Feather from "@expo/vector-icons/Feather";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Switch, Text, View } from "react-native";
 import { toast } from "sonner-native";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import type { ImagePickerAsset } from "expo-image-picker";
 import type { ServiceItem } from "../types";
 
@@ -146,18 +146,6 @@ export function ServiceFormSheet({
     },
   });
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
-    ),
-    [],
-  );
-
   useEffect(() => {
     form.reset({
       name: service?.name ?? "",
@@ -210,28 +198,21 @@ export function ServiceFormSheet({
 
   return (
     <>
-      <BottomSheetModal
+      <FormSheetModal
         ref={sheetRef}
+        formSheet={formSheet}
         snapPoints={["85%"]}
-        bottomInset={formSheet.bottomInset}
         enablePanDownToClose={!form.state.isSubmitting}
-        enableBlurKeyboardOnGesture={formSheet.enableBlurKeyboardOnGesture}
-        backdropComponent={renderBackdrop}
-        handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
-        backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
         onDismiss={() => {
           setServiceImageAsset(null);
           setDidAttemptSubmit(false);
           onClose();
         }}
-        keyboardBehavior={formSheet.keyboardBehavior}
-        keyboardBlurBehavior={formSheet.keyboardBlurBehavior}
-        android_keyboardInputMode={formSheet.androidKeyboardInputMode}
       >
         <BottomSheetScrollView
           contentContainerStyle={formSheet.scrollContentContainerStyle}
           keyboardShouldPersistTaps={formSheet.keyboardShouldPersistTaps}
-          keyboardDismissMode="interactive"
+          keyboardDismissMode={formSheet.keyboardDismissMode}
         >
           <Text className="mb-5 mt-2 text-lg font-bold text-zinc-900">
             {service ? "Editar serviço" : "Novo serviço"}
@@ -511,7 +492,7 @@ export function ServiceFormSheet({
             )}
           </form.Subscribe>
         </BottomSheetScrollView>
-      </BottomSheetModal>
+      </FormSheetModal>
 
       <SelectionSheet
         sheetRef={imageSourceSheetRef}

@@ -3,15 +3,12 @@ import {
   timeSlotBlockedDatesQueryOptions,
 } from "../api/time-slot-query-options";
 import { CalendarMarkedDay } from "@/components/ui/calendar-marked-day";
+import { FormSheetModal } from "@/components/ui/form-sheet-modal";
 import { useApiError } from "@/hooks/use-api-error";
 import { useFormSheet } from "@/hooks/use-form-sheet";
 import { toLocalDateString } from "@/lib/formatters";
 import type { DateLikeInput } from "@/lib/types/date-like";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -21,7 +18,6 @@ import {
   getNextTimeSlotDate,
   isMatchingTimeSlotDate,
 } from "../lib/time-slot-blocking";
-import type { BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 
 export interface BlockTimeSlotTarget {
   id: string;
@@ -91,18 +87,6 @@ export function BlockTimeSlotDateSheet({
     setSelectedDate(nextDate);
     setCurrentMonth(nextDate);
   }, [slot, today]);
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
-    ),
-    [],
-  );
 
   const normalizedBlockedDates = useMemo(
     () =>
@@ -178,14 +162,11 @@ export function BlockTimeSlotDateSheet({
   };
 
   return (
-    <BottomSheetModal
+    <FormSheetModal
       ref={sheetRef}
+      formSheet={formSheet}
       snapPoints={["76%"]}
-      bottomInset={formSheet.bottomInset}
       enablePanDownToClose={!loading}
-      backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: "#e4e4e7", width: 40 }}
-      backgroundStyle={{ backgroundColor: "white", borderRadius: 24 }}
       onDismiss={onClose}
     >
       <BottomSheetScrollView
@@ -279,6 +260,6 @@ export function BlockTimeSlotDateSheet({
           </Pressable>
         </View>
       </BottomSheetScrollView>
-    </BottomSheetModal>
+    </FormSheetModal>
   );
 }
