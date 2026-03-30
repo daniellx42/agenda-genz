@@ -1,2 +1,5 @@
+[test]
+pathIgnorePatterns = ["**/dist/**"]
+
 [install]
 linker = "hoisted"

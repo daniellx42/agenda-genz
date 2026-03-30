@@ -60,9 +60,59 @@ const mockUser = {
   planExpiresAt: null as Date | null,
 };
 
+function mockPrismaInteractiveTransaction(options?: {
+  billingPaymentResult?: unknown;
+  userResult?: unknown;
+  referralRewardCount?: number;
+}) {
+  const billingPaymentUpdateMock = mock(() =>
+    Promise.resolve(options?.billingPaymentResult ?? mockPayment),
+  );
+  const userUpdateMock = mock(() =>
+    Promise.resolve(options?.userResult ?? mockUser),
+  );
+  const referralUseUpdateManyMock = mock(() =>
+    Promise.resolve({ count: options?.referralRewardCount ?? 0 }),
+  );
+  const tx = {
+    billingPayment: {
+      update: billingPaymentUpdateMock,
+    },
+    user: {
+      update: userUpdateMock,
+    },
+    referralUse: {
+      updateMany: referralUseUpdateManyMock,
+    },
+  };
+  type TxType = typeof tx;
+  const transactionMock = mock(async <T>(
+    callback: (tx: TxType) => Promise<T>,
+  ) => callback(tx));
+
+  mock.module("../../../shared/lib/db", () => ({
+    prisma: {
+      $transaction: transactionMock,
+    },
+  }));
+
+  return {
+    billingPaymentUpdateMock,
+    referralUseUpdateManyMock,
+    transactionMock,
+    tx,
+    userUpdateMock,
+  };
+}
+
 beforeEach(() => {
   mock.restore();
   delete process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+  mock.module("../../referrals/referral.service", () => ({
+    ReferralService: {
+      grantOwnerRewardForApprovedPayment: mock(() => Promise.resolve()),
+    },
+  }));
 });
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -320,30 +370,19 @@ describe("BillingService.createPixPayment", () => {
       },
     }));
 
-    mock.module("../../../shared/lib/db", () => ({
-      prisma: {
-        $transaction: mock(<T>(ops: Promise<T>[]) => Promise.all(ops)),
-        billingPayment: {
-          update: mock(() =>
-            Promise.resolve({
-              ...mockPayment,
-              id: "payment-old",
-              status: "APPROVED" as const,
-              paidAt: new Date(),
-              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            }),
-          ),
-        },
-        user: {
-          update: mock(() =>
-            Promise.resolve({
-              ...mockUser,
-              planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            }),
-          ),
-        },
+    mockPrismaInteractiveTransaction({
+      billingPaymentResult: {
+        ...mockPayment,
+        id: "payment-old",
+        status: "APPROVED" as const,
+        paidAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
-    }));
+      userResult: {
+        ...mockUser,
+        planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
 
     mock.module("../billing.ws", () => ({
       notifyPaymentApproved: notifyPaymentApprovedMock,
@@ -565,29 +604,18 @@ describe("BillingService.getPaymentStatus", () => {
       },
     }));
 
-    mock.module("../../../shared/lib/db", () => ({
-      prisma: {
-        $transaction: mock(<T>(ops: Promise<T>[]) => Promise.all(ops)),
-        billingPayment: {
-          update: mock(() =>
-            Promise.resolve({
-              ...payment,
-              status: "APPROVED",
-              paidAt: new Date("2026-03-23T12:00:00.000Z"),
-              expiresAt: futureExpiry,
-            }),
-          ),
-        },
-        user: {
-          update: mock(() =>
-            Promise.resolve({
-              ...mockUser,
-              planExpiresAt: futureExpiry,
-            }),
-          ),
-        },
+    mockPrismaInteractiveTransaction({
+      billingPaymentResult: {
+        ...payment,
+        status: "APPROVED",
+        paidAt: new Date("2026-03-23T12:00:00.000Z"),
+        expiresAt: futureExpiry,
       },
-    }));
+      userResult: {
+        ...mockUser,
+        planExpiresAt: futureExpiry,
+      },
+    });
 
     mock.module("../billing.ws", () => ({
       notifyPaymentApproved: notifyPaymentApprovedMock,
@@ -728,19 +756,7 @@ describe("BillingService.processWebhook", () => {
     }));
 
     // Mock prisma transaction
-    mock.module("../../../shared/lib/db", () => ({
-      prisma: {
-        $transaction: mock(<T>(ops: Promise<T>[]) =>
-          Promise.all(ops),
-        ),
-        billingPayment: {
-          update: mock(() => Promise.resolve(mockPayment)),
-        },
-        user: {
-          update: mock(() => Promise.resolve(mockUser)),
-        },
-      },
-    }));
+    mockPrismaInteractiveTransaction();
 
     mock.module("../billing.ws", () => ({
       notifyPaymentApproved: mock(),
@@ -786,19 +802,7 @@ describe("BillingService.processWebhook", () => {
       },
     }));
 
-    mock.module("../../../shared/lib/db", () => ({
-      prisma: {
-        $transaction: mock(<T>(ops: Promise<T>[]) =>
-          Promise.all(ops),
-        ),
-        billingPayment: {
-          update: mock(() => Promise.resolve(mockPayment)),
-        },
-        user: {
-          update: mock(() => Promise.resolve(mockUser)),
-        },
-      },
-    }));
+    mockPrismaInteractiveTransaction();
 
     mock.module("../billing.ws", () => ({
       notifyPaymentApproved: mock(),

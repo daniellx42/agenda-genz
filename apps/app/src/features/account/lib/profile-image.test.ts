@@ -23,12 +23,6 @@ describe("profile-image", () => {
     ).toBe(false);
   });
 
-  it("aceita temporariamente keys legadas da pasta profile", () => {
-    expect(isOwnedProfileImageKey("user-1", "profile/user-1/avatar.png")).toBe(
-      true,
-    );
-  });
-
   it("resolve o estado visual para imagem externa", () => {
     expect(
       buildSettingsProfileImageState({
