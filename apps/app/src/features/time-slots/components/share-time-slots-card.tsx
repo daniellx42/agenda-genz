@@ -93,9 +93,12 @@ export function ShareTimeSlotsCard() {
       const message = getShareTimeSlotsMessage(data);
 
       if (!message) {
-        toast.error("Nos dias selecionados não foi encontrado nenhum horário.", {
-          duration: 5000,
-        });
+        toast.error(
+          "Nos dias selecionados não foi encontrado nenhum horário disponível.",
+          {
+            duration: 5000,
+          },
+        );
         return;
       }
 

@@ -1,5 +1,24 @@
 import { addLocalDays, toLocalDateString } from "@/lib/formatters";
 
+type ShareTimeSlot = {
+  time: string;
+  available: boolean;
+};
+
+type ShareTimeSlotsDay = {
+  dayLabel: string;
+  slots: ShareTimeSlot[];
+};
+
+function getAvailableShareDays(data: ShareTimeSlotsDay[]) {
+  return data
+    .map((day) => ({
+      ...day,
+      slots: day.slots.filter((slot) => slot.available),
+    }))
+    .filter((day) => day.slots.length > 0);
+}
+
 export function getRangeDates(start: string, end: string) {
   const dates: string[] = [];
   let current = new Date(`${start}T12:00:00`);
@@ -87,27 +106,20 @@ export function formatSelectedRange(start: string | null, end: string | null) {
 }
 
 export function buildShareTimeSlotsMessage(
-  data: Array<{
-    dayLabel: string;
-    slots: Array<{ time: string; available: boolean }>;
-  }>,
+  data: ShareTimeSlotsDay[],
 ) {
-  return data
-    .map((day) =>
-      `${day.dayLabel}\n${day.slots
-        .map((slot) =>
-          `${slot.time} (${slot.available ? "Disponível ✅" : "Indisponível ❌"})`,
-        )
-        .join("\n")}`,
+  return getAvailableShareDays(data)
+    .map(
+      (day) =>
+        `${day.dayLabel}\n${day.slots
+          .map((slot) => `${slot.time} (Disponível ✅)`)
+          .join("\n")}`,
     )
     .join("\n\n");
 }
 
 export function getShareTimeSlotsMessage(
-  data: Array<{
-    dayLabel: string;
-    slots: Array<{ time: string; available: boolean }>;
-  }>,
+  data: ShareTimeSlotsDay[],
 ) {
   const message = buildShareTimeSlotsMessage(data).trim();
   return message.length > 0 ? message : null;

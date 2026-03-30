@@ -39,7 +39,7 @@ describe("buildShareMarkedDates", () => {
 });
 
 describe("buildShareTimeSlotsMessage", () => {
-  it("monta a mensagem com horários livres e ocupados", () => {
+  it("monta a mensagem listando apenas horários disponíveis", () => {
     const message = buildShareTimeSlotsMessage([
       {
         dayLabel: "Terça-feira, 03/03",
@@ -50,13 +50,24 @@ describe("buildShareTimeSlotsMessage", () => {
       },
     ]);
 
-    expect(message).toContain("09:00 (Disponivel)");
-    expect(message).toContain("12:00 (Indisponivel)");
+    expect(message).toContain("09:00 (Disponível ✅)");
+    expect(message).not.toContain("12:00");
   });
 });
 
 describe("getShareTimeSlotsMessage", () => {
   it("retorna null quando não existe nenhum horário para compartilhar", () => {
     expect(getShareTimeSlotsMessage([])).toBeNull();
+  });
+
+  it("retorna null quando todos os horários do período estão indisponíveis", () => {
+    expect(
+      getShareTimeSlotsMessage([
+        {
+          dayLabel: "Terça-feira, 03/03",
+          slots: [{ time: "12:00", available: false }],
+        },
+      ]),
+    ).toBeNull();
   });
 });

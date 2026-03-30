@@ -649,7 +649,12 @@ describe("AppointmentService.getAvailableSlotsByDateRange", () => {
       {
         date: "2026-03-10",
         dayLabel: "Terça, 10/03",
-        slots: [{ time: "14:00", available: true }],
+        slots: [{ time: "14:00", available: false }],
+      },
+      {
+        date: "2026-03-11",
+        dayLabel: "Quarta, 11/03",
+        slots: [{ time: "15:00", available: true }],
       },
     ];
 
@@ -663,12 +668,20 @@ describe("AppointmentService.getAvailableSlotsByDateRange", () => {
     const result = await AS.getAvailableSlotsByDateRange(
       "user-1",
       "2026-03-09",
-      "2026-03-10",
+      "2026-03-11",
     );
 
     expect(result).toHaveLength(2);
-    expect(result[0]?.slots[0]?.time).toBe("09:00");
-    expect(result[0]?.slots[1]?.available).toBe(false);
+    expect(result[0]).toEqual({
+      date: "2026-03-09",
+      dayLabel: "Segunda, 09/03",
+      slots: [{ time: "09:00", available: true }],
+    });
+    expect(result[1]).toEqual({
+      date: "2026-03-11",
+      dayLabel: "Quarta, 11/03",
+      slots: [{ time: "15:00", available: true }],
+    });
   });
 
   it("deve lançar erro para datas inválidas", async () => {

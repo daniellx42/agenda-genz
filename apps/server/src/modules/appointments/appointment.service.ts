@@ -7,6 +7,17 @@ import { AppointmentRepository } from "./appointment.repository";
 import type { AppointmentModel } from "./appointment.model";
 
 export abstract class AppointmentService {
+  private static filterShareableSlots(
+    data: AppointmentModel.shareSlotsResponse,
+  ): AppointmentModel.shareSlotsResponse {
+    return data
+      .map((day) => ({
+        ...day,
+        slots: day.slots.filter((slot) => slot.available),
+      }))
+      .filter((day) => day.slots.length > 0);
+  }
+
   private static async deleteStoredObject(
     userId: string,
     key: string,
@@ -306,10 +317,12 @@ export abstract class AppointmentService {
       );
     }
 
-    return AppointmentRepository.getAvailableSlotsByDateRange(
+    const shareSlots = await AppointmentRepository.getAvailableSlotsByDateRange(
       userId,
       fromDate,
       toDate,
     );
+
+    return AppointmentService.filterShareableSlots(shareSlots);
   }
 }
