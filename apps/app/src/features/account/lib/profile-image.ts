@@ -19,7 +19,7 @@ export function isOwnedProfileImageKey(
     typeof userId === "string" &&
     userId.length > 0 &&
     typeof value === "string" &&
-    value.startsWith(`profile/${userId}/`)
+    (value.startsWith(`profiles/${userId}/`))
   );
 }
 

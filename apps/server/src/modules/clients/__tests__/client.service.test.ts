@@ -275,7 +275,7 @@ describe("ClientService.delete", () => {
   });
 
   it("deve deletar foto de perfil do R2 ao deletar cliente", async () => {
-    const clientWithImage = { ...mockClient, profileImageKey: "profile/user-1/abc.jpg" };
+    const clientWithImage = { ...mockClient, profileImageKey: "clients/user-1/abc.jpg" };
 
     mock.module("../client.repository", () => ({
       ClientRepository: {
@@ -350,7 +350,7 @@ describe("ClientService.deleteProfileImage", () => {
   }
 
   it("deve deletar a foto de perfil e limpar no banco", async () => {
-    const clientWithImage = { ...mockClient, profileImageKey: "profile/user-1/abc-avatar.jpg" };
+    const clientWithImage = { ...mockClient, profileImageKey: "clients/user-1/abc-avatar.jpg" };
     const clientNoImage = { ...mockClient, profileImageKey: null };
 
     mock.module("../client.repository", () => ({
@@ -400,7 +400,7 @@ describe("ClientService.deleteProfileImage", () => {
   });
 
   it("deve limpar o banco mesmo se R2 falhar", async () => {
-    const clientWithImage = { ...mockClient, profileImageKey: "profile/user-1/abc.jpg" };
+    const clientWithImage = { ...mockClient, profileImageKey: "clients/user-1/abc.jpg" };
     const clientNoImage = { ...mockClient, profileImageKey: null };
 
     mock.module("../client.repository", () => ({
@@ -421,7 +421,7 @@ describe("ClientService — profileImageKey", () => {
   it("deve criar cliente com profileImageKey", async () => {
     const clientWithImage = {
       ...mockClient,
-      profileImageKey: "profile/user-1/abc123-avatar.jpg",
+      profileImageKey: "clients/user-1/abc123-avatar.jpg",
     };
     const createMock = mock(() => Promise.resolve(clientWithImage));
 
@@ -435,10 +435,10 @@ describe("ClientService — profileImageKey", () => {
     const result = await CS.create("user-1", {
       name: "Ana Silva",
       phone: "11999999999",
-      profileImageKey: "profile/user-1/abc123-avatar.jpg",
+      profileImageKey: "clients/user-1/abc123-avatar.jpg",
     });
 
-    expect(result.profileImageKey).toBe("profile/user-1/abc123-avatar.jpg");
+    expect(result.profileImageKey).toBe("clients/user-1/abc123-avatar.jpg");
     expect(createMock).toHaveBeenCalledWith("user-1", {
       name: "Ana Silva",
       phone: "11999999999",
@@ -449,7 +449,7 @@ describe("ClientService — profileImageKey", () => {
       birthDate: undefined,
       gender: undefined,
       notes: undefined,
-      profileImageKey: "profile/user-1/abc123-avatar.jpg",
+      profileImageKey: "clients/user-1/abc123-avatar.jpg",
     });
   });
 

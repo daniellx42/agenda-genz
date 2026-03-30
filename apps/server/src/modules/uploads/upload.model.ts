@@ -20,7 +20,11 @@ export namespace UploadModel {
   // ─── Body ────────────────────────────────────────────────────────────────────
 
   export const presignedPutBody = t.Object({
-    folder: t.Union([t.Literal("services"), t.Literal("profile")]),
+    folder: t.Union([
+      t.Literal("services"),
+      t.Literal("clients"),
+      t.Literal("profiles"),
+    ]),
     filename: t.String({ minLength: 1, maxLength: 255 }),
     contentType: t.String({ minLength: 1 }),
   });

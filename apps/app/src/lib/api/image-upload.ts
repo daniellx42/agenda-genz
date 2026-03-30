@@ -23,7 +23,7 @@ const TEMP_UPLOAD_DIRECTORY = cacheDirectory
   ? `${cacheDirectory}uploads/`
   : null;
 
-export type UploadFolder = "profile" | "services";
+export type UploadFolder = "clients" | "profiles" | "services";
 
 export interface UploadImageSource {
   uri: string;

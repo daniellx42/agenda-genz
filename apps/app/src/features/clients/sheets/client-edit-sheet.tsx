@@ -144,7 +144,7 @@ export function ClientEditSheet({
             fileName: profileImageAsset.fileName,
             mimeType: profileImageAsset.mimeType,
           },
-          "profile",
+          "clients",
           showError,
         );
         setUploadingPhoto(false);

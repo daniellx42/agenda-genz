@@ -39,7 +39,7 @@ export function imageUrlQueryOptions(
 
 export async function createPresignedUpload(
   input: {
-    folder: "profile" | "services";
+    folder: "clients" | "profiles" | "services";
     filename: string;
     contentType: string;
   },

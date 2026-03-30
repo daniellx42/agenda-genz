@@ -73,18 +73,33 @@ describe("UploadService.generatePutUrl", () => {
     expect(result.key).toMatch(/^services\/user-1\/[a-f0-9-]+-minha-foto\.jpg$/);
   });
 
-  it("deve retornar uploadUrl e key para imagem png na pasta profile", async () => {
+  it("deve retornar uploadUrl e key para imagem png na pasta clients", async () => {
     mockEnv();
     mockS3();
 
     const { UploadService } = await loadUploadService();
     const result = await UploadService.generatePutUrl("user-1", {
-      folder: "profile",
+      folder: "clients",
       filename: "avatar.png",
       contentType: "image/png",
     });
 
-    expect(result.key).toMatch(/^profile\/user-1\//);
+    expect(result.key).toMatch(/^clients\/user-1\//);
+    expect(result.uploadUrl).toContain("https://");
+  });
+
+  it("deve retornar uploadUrl e key para imagem png na pasta profiles", async () => {
+    mockEnv();
+    mockS3();
+
+    const { UploadService } = await loadUploadService();
+    const result = await UploadService.generatePutUrl("user-1", {
+      folder: "profiles",
+      filename: "avatar.png",
+      contentType: "image/png",
+    });
+
+    expect(result.key).toMatch(/^profiles\/user-1\//);
     expect(result.uploadUrl).toContain("https://");
   });
 
@@ -186,7 +201,7 @@ describe("UploadService.deleteObject", () => {
     expect(sendMock).toHaveBeenCalledTimes(1);
   });
 
-  it("deve deletar objeto do R2 para key válida (profile)", async () => {
+  it("deve deletar objeto do R2 para key válida (clients)", async () => {
     mockEnv();
     const sendMock = mock(() => Promise.resolve({}));
     mock.module("../../../shared/lib/cloudeflare", () => ({
@@ -194,7 +209,20 @@ describe("UploadService.deleteObject", () => {
     }));
 
     const { UploadService } = await loadUploadService();
-    await UploadService.deleteObject("user-1", "profile/user-1/abc123-avatar.jpg");
+    await UploadService.deleteObject("user-1", "clients/user-1/abc123-avatar.jpg");
+
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("deve deletar objeto do R2 para key válida (profiles)", async () => {
+    mockEnv();
+    const sendMock = mock(() => Promise.resolve({}));
+    mock.module("../../../shared/lib/cloudeflare", () => ({
+      cloudflareR2: { send: sendMock },
+    }));
+
+    const { UploadService } = await loadUploadService();
+    await UploadService.deleteObject("user-1", "profiles/user-1/abc123-avatar.jpg");
 
     expect(sendMock).toHaveBeenCalledTimes(1);
   });
@@ -226,14 +254,27 @@ describe("UploadService.generateGetUrl", () => {
     expect(result.url).toBe("https://r2.example.com/signed-get-url");
   });
 
-  it("deve retornar url para key que pertence ao usuário (profile)", async () => {
+  it("deve retornar url para key que pertence ao usuário (clients)", async () => {
     mockEnv();
     mockS3("https://r2.example.com/get-url");
 
     const { UploadService } = await loadUploadService();
     const result = await UploadService.generateGetUrl(
       "user-1",
-      "profile/user-1/abc123-avatar.jpg",
+      "clients/user-1/abc123-avatar.jpg",
+    );
+
+    expect(result.url).toContain("https://");
+  });
+
+  it("deve retornar url para key que pertence ao usuário (profiles)", async () => {
+    mockEnv();
+    mockS3("https://r2.example.com/get-url");
+
+    const { UploadService } = await loadUploadService();
+    const result = await UploadService.generateGetUrl(
+      "user-1",
+      "profiles/user-1/abc123-avatar.jpg",
     );
 
     expect(result.url).toContain("https://");

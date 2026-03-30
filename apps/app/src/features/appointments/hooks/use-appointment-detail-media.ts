@@ -71,7 +71,7 @@ export function useAppointmentDetailMedia({
   const uploadAssetToFolder = useCallback(
     async (
       asset: ImagePickerAsset,
-      folder: "profile" | "services",
+      folder: "clients" | "services",
     ): Promise<string | null> => {
       const uploadedKey = await uploadImageAsset(
         {
@@ -157,7 +157,7 @@ export function useAppointmentDetailMedia({
 
       setUploadingProfileImage(true);
       try {
-        const imageKey = await uploadAssetToFolder(asset, "profile");
+        const imageKey = await uploadAssetToFolder(asset, "clients");
         if (!imageKey) return;
 
         await updateClientProfileImage({

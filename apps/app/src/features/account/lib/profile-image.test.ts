@@ -11,15 +11,21 @@ describe("profile-image", () => {
     expect(isExternalImageUrl("https://lh3.googleusercontent.com/avatar")).toBe(
       true,
     );
-    expect(isExternalImageUrl("profile/user-1/avatar.png")).toBe(false);
+    expect(isExternalImageUrl("profiles/user-1/avatar.png")).toBe(false);
   });
 
   it("reconhece apenas keys próprias do usuário como imagem do R2", () => {
+    expect(
+      isOwnedProfileImageKey("user-1", "profiles/user-1/avatar.png"),
+    ).toBe(true);
+    expect(
+      isOwnedProfileImageKey("user-1", "profiles/user-2/avatar.png"),
+    ).toBe(false);
+  });
+
+  it("aceita temporariamente keys legadas da pasta profile", () => {
     expect(isOwnedProfileImageKey("user-1", "profile/user-1/avatar.png")).toBe(
       true,
-    );
-    expect(isOwnedProfileImageKey("user-1", "profile/user-2/avatar.png")).toBe(
-      false,
     );
   });
 
@@ -43,14 +49,14 @@ describe("profile-image", () => {
     expect(
       buildSettingsProfileImageState({
         userId: "user-1",
-        imageValue: "profile/user-1/avatar.png",
+        imageValue: "profiles/user-1/avatar.png",
         resolvedStoredImageUrl: "https://signed.example/avatar.png",
-        resolvedStoredImageCacheKey: "profile/user-1/avatar.png",
+        resolvedStoredImageCacheKey: "profiles/user-1/avatar.png",
       }),
     ).toEqual({
-      storedProfileImageKey: "profile/user-1/avatar.png",
+      storedProfileImageKey: "profiles/user-1/avatar.png",
       displayedProfileImageUrl: "https://signed.example/avatar.png",
-      displayedProfileImageCacheKey: "profile/user-1/avatar.png",
+      displayedProfileImageCacheKey: "profiles/user-1/avatar.png",
       isLoadingStoredProfileImage: false,
     });
   });
@@ -59,7 +65,7 @@ describe("profile-image", () => {
     expect(
       buildSettingsProfileImageState({
         userId: "user-1",
-        imageValue: getStoredProfileImageKey("user-1", "profile/user-1/avatar.png"),
+        imageValue: getStoredProfileImageKey("user-1", "profiles/user-1/avatar.png"),
         resolvedStoredImageUrl: null,
         resolvedStoredImageCacheKey: null,
       }).isLoadingStoredProfileImage,

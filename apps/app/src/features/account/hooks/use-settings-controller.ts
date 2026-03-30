@@ -240,7 +240,7 @@ export function useSettingsController() {
             fileName: asset.fileName,
             mimeType: asset.mimeType,
           },
-          "profile",
+          "profiles",
           showError,
         );
 

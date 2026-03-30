@@ -83,7 +83,7 @@ export function ClientFormSheet({
             fileName: profileImageAsset.fileName,
             mimeType: profileImageAsset.mimeType,
           },
-          "profile",
+          "clients",
           showError,
         );
         setUploadingPhoto(false);

@@ -4,7 +4,9 @@ import { Errors } from "../../shared/constants/errors";
 import { UploadService } from "../uploads/upload.service";
 
 function isOwnedProfileImageKey(userId: string, key: string) {
-  return key.startsWith(`profile/${userId}/`);
+  return (
+    key.startsWith(`profiles/${userId}/`)
+  );
 }
 
 export abstract class AccountService {

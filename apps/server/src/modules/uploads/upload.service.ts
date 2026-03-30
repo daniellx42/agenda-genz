@@ -19,6 +19,9 @@ const GET_EXPIRES_IN = 86400;  // 24 hours
 function getAuthorizedPrefixes(userId: string): string[] {
   return [
     `services/${userId}/`,
+    `clients/${userId}/`,
+    `profiles/${userId}/`,
+    // Legacy folder kept during the R2 migration window.
     `profile/${userId}/`,
   ];
 }
